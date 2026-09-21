@@ -1,26 +1,86 @@
 @import "tailwindcss";
 
+/*
+ * BERRYiT – designsystem.
+ * Mörk teknisk bas, en varm bär-accent och en kall signalfärg.
+ * Alla färger går via tokens så att ljust/mörkt läge styrs på ett ställe.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --ink: #0c0b10;
+  --ink-2: #14121b;
+  --ink-3: #1d1a27;
+  --line: #2a2636;
+  --paper: #f6f4f8;
+  --muted: #a39db3;
+  --berry: #db1f68;
+  --berry-deep: #c2185b;
+  --berry-2: #ff5f9e;
+  --grape: #7b3fe4;
+  --signal: #35e0c1;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-paper: var(--paper);
+  --color-muted: var(--muted);
+  --color-berry: var(--berry);
+  --color-berry-2: var(--berry-2);
+  --color-berry-deep: var(--berry-deep);
+  --color-grape: var(--grape);
+  --color-signal: var(--signal);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-display);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--ink);
+  color: var(--paper);
+}
+
+::selection {
+  background: var(--berry);
+  color: white;
+}
+
+/* Rutnätet bakom hero och mörka sektioner – "teknisk" utan att bli brus. */
+.bg-grid {
+  background-image:
+    linear-gradient(to right, rgb(255 255 255 / 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse at top, black 30%, transparent 75%);
+}
+
+.text-gradient {
+  background: linear-gradient(100deg, var(--berry-2), var(--grape) 60%, var(--signal));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }

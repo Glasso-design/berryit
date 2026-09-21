@@ -1,36 +1,104 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# BERRYiT V2
 
-## Getting Started
+Företagssajt och teknisk portfolio för BERRYiT – *Teknik som bara fungerar.*
+Vi fixar tekniken du har och hjälper dig bygga tekniken du behöver.
 
-First, run the development server:
+| | |
+|---|---|
+| Canonical root | `C:\projects\berryit` |
+| GitHub | https://github.com/Glasso-design/berryit.git |
+| Branch | `main` |
+| Lokal port | `3501` (registrerad i `C:\projects\PORTS.md`) |
+| Status | Baseline – **ej driftsatt** |
+
+Stack: Next.js 16.3.5 (App Router, typed routes) · React 19 · TypeScript · Tailwind CSS 4 · zod 4.
+Språk: svenska (`lang="sv"`). Package manager: npm.
+
+## Kommandon
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install          # eller: npm ci
+npm run dev          # http://localhost:3501
+npm run typecheck    # tsc --noEmit
+npm run lint         # eslint
+npm run build        # production build
+npm start            # kör production build på 3501
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Det finns ingen testsvit ännu.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Miljövariabler
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Se `.env.example`. Lägg lokala värden i `.env.local` (ignoreras av git). Inga secrets i repot.
 
-## Learn More
+| Variabel | Syfte | Krävs för live |
+|---|---|---|
+| `SITE_URL` | Kanonisk bas-URL (canonical, OpenGraph, sitemap, robots, JSON-LD). Default `http://localhost:3501`. | Ja |
+| `CONTACT_WEBHOOK_URL` | Mottagare för kontaktformuläret. POST `multipart/form-data` med `summary` (text), `data` (JSON) och `files`. | Ja |
 
-To learn more about Next.js, take a look at the following resources:
+Saknas `CONTACT_WEBHOOK_URL` svarar `/api/contact` **503** med ett tydligt meddelande om att kontaktfunktionen
+inte är ansluten. Formuläret behåller användarens uppgifter. Ingen falsk success.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Innehåll
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+All text och data som ändras ofta ligger i `src/content/`:
 
-## Deploy on Vercel
+| Fil | Innehåll |
+|---|---|
+| `src/content/site.ts` | Namn, budskap, navigation, kontaktuppgifter (null = dolt), arbetslägen, utvecklingsnivåer |
+| `src/content/services.ts` | Tjänstelistor per område |
+| `src/content/projects.ts` | Egna produkter (portfolio) |
+| `src/content/cases.ts` | Kundcase |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Kontaktformulärets val och valideringsschema: `src/lib/contact.ts` (delas av klient och API).
+Metadata-hjälpare: `src/lib/seo.ts`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Routes
+
+| Route | Innehåll |
+|---|---|
+| `/` | Startsida |
+| `/it-teknik` `/ljud-ljus` `/webb` `/appar-system` | Tjänsteområden |
+| `/foretag` (inkl. automation & AI) · `/privat` · `/om` | Målgrupper / om |
+| `/projects` | Egna produkter + kundcase (`#cases`) |
+| `/projects/[slug]` | Produktsida |
+| `/cases/[slug]` | Kundcase: Problemet → Lösningen → Vad BERRYiT gjorde → Teknik → Resultatet |
+| `/cases` | Redirect till `/projects#cases` |
+| `/kontakt` | Stegvist formulär. `?area=<område>&intent=<läge>` förväljer val |
+| `/api/contact` | POST – validerar (zod) och vidarebefordrar till webhook |
+| `/sitemap.xml` `/robots.txt` `/icon.svg` | Genereras |
+
+### Dynamiska projekt och case
+
+Lägg till en post i `projects.ts` eller `cases.ts` – ingen ny route behövs. Posten får automatiskt:
+statiskt genererad sida (`generateStaticParams`), metadata/canonical, kort på listsidor och sitemap-post.
+Okänd slug ger 404 (`notFound()`). Slugs måste vara unika.
+
+Fält utan verifierad information (logotyp, screenshots, plattform, teknik, status, länk, resultat) lämnas
+tomma och döljs automatiskt i gränssnittet.
+
+## Innehållsregel
+
+Inga påhittade uppgifter. Telefon, e-post, org.nr, adress, kundresultat, KPI:er, testimonials,
+certifieringar och partnerskap publiceras bara när ägaren har bekräftat dem.
+Egna produkter (ONARLY, ONARLY DRIVE, QabGo, …) visas som exempel på vad vi byggt/utvecklar; varje
+varumärke behåller sin egen identitet och ingen får märkas som lanserad utan verifiering.
+
+## Kända placeholders (TBD)
+
+- Riktig BERRYiT-logotyp – nu ett typografiskt ordmärke (`src/components/Logo.tsx`) och en enkel `icon.svg`
+- Telefon, e-post, org.nr, adress – `src/content/site.ts` (`contact`)
+- Logotyper, screenshots, plattform, teknik och status per produkt – `src/content/projects.ts`
+  (produktkorten visar tills vidare en genererad yta i varumärkets accentfärg)
+- AuroraPark-case: resultat först efter lansering och kundens godkännande – `src/content/cases.ts`
+- OpenGraph-bild
+- Mottagare bakom `CONTACT_WEBHOOK_URL`
+
+## Blockers innan live
+
+1. Kontaktmottagare + `CONTACT_WEBHOOK_URL`
+2. Verifierade kontaktuppgifter (minst e-post) och org.nr
+3. Integritetstext (formuläret samlar personuppgifter och filer)
+4. Rate limiting på `/api/contact` (idag endast honeypot + validering)
+5. Riktig logotyp
+6. `SITE_URL`, hosting, domän/DNS – separat deployment-gate
