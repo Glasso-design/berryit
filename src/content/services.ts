@@ -184,22 +184,6 @@ export const businessServices = [
   "Tekniska projekt",
 ];
 
-export const privateServices = [
-  "Datorer",
-  "Mobiler",
-  "Surfplattor",
-  "Wi-Fi",
-  "TV",
-  "Ljud",
-  "Skrivare",
-  "Backup",
-  "Konton",
-  "Lösenord",
-  "Installation",
-  "Smarta hem",
-  "Annan teknik",
-];
-
 export const automationFlows: [string, string][] = [
   ["Bokning", "Kalender"],
   ["Webb", "CRM"],

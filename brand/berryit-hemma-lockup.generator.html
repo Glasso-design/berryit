@@ -1,0 +1,42 @@
+<html><head><style>@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&display=block');</style></head><body><script>
+const load=src=>new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.src=src;});
+(async()=>{
+ await document.fonts.load('700 100px "Space Grotesk"'); await document.fonts.load('600 60px "Space Grotesk"');
+ const fontOK=document.fonts.check('700 100px "Space Grotesk"');
+ const [LD,LL]=await Promise.all([load('ld.png'),load('ll.png')]);
+ // lockup: logo height H, divider, HEMMA
+ function lockup(logo,text,divider,roof,H){
+   // Mät Space Grotesk: cap-höjd per px fontstorlek.
+   const m=document.createElement('canvas').getContext('2d'); m.font='700 100px "Space Grotesk"';
+   const capPerPx=m.measureText('H').actualBoundingBoxAscent/100;
+   const cap=0.40*H*0.80, fs=cap/capPerPx, ls=fs*0.14, gap=H*0.16;
+   m.font=`700 ${fs}px "Space Grotesk"`; m.letterSpacing=`${ls}px`;
+   const tw=m.measureText('HEMMA').width-ls;
+   const lw=logo.width*H/logo.height, pad=Math.round(H*0.04);
+   const W=Math.ceil(pad+lw+gap+2+gap+tw+pad), Hc=Math.ceil(H+pad*2);
+   const c=document.createElement('canvas');c.width=W;c.height=Hc;const g=c.getContext('2d');
+   g.imageSmoothingQuality='high'; g.drawImage(logo,pad,pad,lw,H);
+   const base=pad+H*0.823; // samma baslinje som BERRY
+   const dx=pad+lw+gap; g.fillStyle=divider; g.fillRect(dx,base-0.40*H*1.05,Math.max(2,H*0.011),0.40*H*1.25);
+   const tx=dx+gap+2; g.font=`700 ${fs}px "Space Grotesk"`; g.letterSpacing=`${ls}px`; g.fillStyle=text; g.fillText('HEMMA',tx,base);
+   // Takvinkel strax ovanför versalerna.
+   g.strokeStyle=roof; g.lineWidth=Math.max(2,cap*0.10); g.lineJoin='round'; g.lineCap='round';
+   const top=base-cap-cap*0.30, rh=cap*0.42; g.beginPath(); g.moveTo(tx+cap*0.05,top); g.lineTo(tx+tw/2,top-rh); g.lineTo(tx+tw-cap*0.05,top); g.stroke();
+   return c;
+ }
+ const dark=lockup(LD,'#f6f4f8','rgba(246,244,248,0.28)','#c10c43',260);
+ const light=lockup(LL,'#1c1e21','rgba(28,30,33,0.25)','#c10c43',260);
+ // OG
+ const og=document.createElement('canvas');og.width=1200;og.height=630;const g=og.getContext('2d');
+ g.fillStyle='#0c0b10';g.fillRect(0,0,1200,630);
+ const r1=g.createRadialGradient(1050,60,10,1050,60,720);r1.addColorStop(0,'rgba(193,12,67,0.38)');r1.addColorStop(1,'rgba(193,12,67,0)');g.fillStyle=r1;g.fillRect(0,0,1200,630);
+ const r2=g.createRadialGradient(120,620,10,120,620,620);r2.addColorStop(0,'rgba(123,63,228,0.26)');r2.addColorStop(1,'rgba(123,63,228,0)');g.fillStyle=r2;g.fillRect(0,0,1200,630);
+ const s=lockup(LD,'#f6f4f8','rgba(246,244,248,0.28)','#c10c43',130); g.drawImage(s,78,60);
+ g.fillStyle='#f6f4f8'; g.font='600 76px "Space Grotesk"'; g.letterSpacing='-1px'; g.fillText('Hela hemmets teknik.',86,340);
+ g.fillStyle='#ff5c86'; g.fillText('Ett ställe.',86,425);
+ g.fillStyle='#a39db3'; g.font='600 28px "Space Grotesk"'; g.letterSpacing='0px'; g.fillText('Dator · Wi-Fi · Skrivare · Gaming · TV · Ljud · Smart hem',88,510);
+ g.fillStyle='rgba(53,224,193,0.14)'; g.beginPath(); g.roundRect(86,545,260,44,22); g.fill(); g.fillStyle='#35e0c1'; g.font='600 22px "Space Grotesk"'; g.fillText('RUT-avdrag kan gälla',108,574);
+ const out={fontOK,dark:dark.toDataURL('image/png'),light:light.toDataURL('image/png'),og:og.toDataURL('image/png'),sizes:[dark.width,dark.height]};
+ const pre=document.createElement('pre');pre.id='out';pre.textContent=JSON.stringify(out);document.body.appendChild(pre);
+})();
+</script></body></html>

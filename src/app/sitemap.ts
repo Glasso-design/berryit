@@ -7,7 +7,9 @@ import { siteUrl as base } from "@/lib/seo";
 export default function sitemap(): MetadataRoute.Sitemap {
   const paths = [
     ...mainNav.map((n) => n.href as string),
-    "/privat",
+    "/teknikhjalp-hemma",
+    "/smart-hem",
+    "/rut-avdrag",
     ...projects.map((p) => `/projects/${p.slug}`),
     ...cases.map((c) => `/cases/${c.slug}`),
   ];

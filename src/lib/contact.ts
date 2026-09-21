@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { buildTypes, helpAreas, intents } from "./contact-options";
+import { buildTypes, customerTypes, helpAreas, intents } from "./contact-options";
 
 export * from "./contact-options";
 
@@ -7,13 +7,14 @@ export * from "./contact-options";
 z.config(z.locales.sv());
 
 type Opt = readonly { value: string }[];
-const oneOf = <T extends Opt>(opts: T) =>
-  z.enum(opts.map((o) => o.value) as [T[number]["value"], ...T[number]["value"][]]);
+const oneOf = <T extends Opt>(opts: T, message?: string) =>
+  z.enum(opts.map((o) => o.value) as [T[number]["value"], ...T[number]["value"][]], message ? { message } : undefined);
 
 const optionalText = (max: number) => z.string().trim().max(max).optional().or(z.literal("").transform(() => undefined));
 
 export const contactSchema = z
   .object({
+    customerType: oneOf(customerTypes, "Välj om det gäller hemmet eller ett företag."),
     areas: z.array(oneOf(helpAreas)).min(1, "Välj minst ett område."),
     intent: oneOf(intents),
     buildType: oneOf(buildTypes).optional(),

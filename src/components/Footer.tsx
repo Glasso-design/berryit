@@ -16,9 +16,17 @@ const cols: { title: string; links: { label: string; href: Route }[] }[] = [
     ],
   },
   {
+    title: "BERRYiT HEMMA",
+    links: [
+      { label: "Hemma", href: "/hemma" },
+      { label: "Teknikhjälp hemma", href: "/teknikhjalp-hemma" },
+      { label: "Smart hem", href: "/smart-hem" },
+      { label: "RUT-avdrag", href: "/rut-avdrag" },
+    ],
+  },
+  {
     title: "För dig",
     links: [
-      { label: "Privatpersoner", href: "/privat" },
       { label: "Företag", href: "/foretag" },
       { label: "Om BERRYiT", href: "/om" },
       { label: "Kontakt", href: "/kontakt" },
@@ -30,8 +38,8 @@ export function Footer() {
   return (
     <footer className="border-t border-line bg-ink-2">
       <Container className="py-16">
-        <div className="grid gap-12 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
-          <div>
+        <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr_1fr]">
+          <div className="sm:col-span-2 lg:col-span-1">
             <Logo className="h-12 w-auto" />
             <p className="mt-4 max-w-sm text-paper/90">{site.coreMessage}</p>
             <p className="mt-3 max-w-sm text-muted">{site.oneLiner}</p>

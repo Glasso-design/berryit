@@ -54,6 +54,7 @@ All text och data som ändras ofta ligger i `src/content/`:
 | `src/content/services.ts` | Tjänstelistor per område |
 | `src/content/projects.ts` | Egna produkter (portfolio) |
 | `src/content/cases.ts` | Kundcase |
+| `src/content/home.ts` | BERRYiT HEMMA: tjänsteområden, besöksexempel, smart hem, RUT-text, Sunvolt |
 
 Kontaktformulärets val och valideringsschema: `src/lib/contact.ts` (delas av klient och API).
 Metadata-hjälpare: `src/lib/seo.ts`.
@@ -64,14 +65,17 @@ Metadata-hjälpare: `src/lib/seo.ts`.
 |---|---|
 | `/` | Startsida |
 | `/it-teknik` `/ljud-ljus` `/webb` `/appar-system` | Tjänsteområden |
-| `/foretag` (inkl. automation & AI) · `/privat` · `/om` | Målgrupper / om |
+| `/hemma` | BERRYiT HEMMA – privat/hem-erbjudandet (tjänster, samma besök, RUT, smart hem, Sunvolt) |
+| `/teknikhjalp-hemma` · `/smart-hem` · `/rut-avdrag` | Hemma-undersidor |
+| `/privat` | 308-redirect till `/hemma` |
+| `/foretag` (inkl. automation & AI) · `/om` | Målgrupper / om |
 | `/projects` | Egna produkter + kundcase (`#cases`) |
 | `/projects/[slug]` | Produktsida |
 | `/cases/[slug]` | Kundcase: Problemet → Lösningen → Vad BERRYiT gjorde → Teknik → Resultatet |
 | `/cases` | Redirect till `/projects#cases` |
-| `/kontakt` | Stegvist formulär. `?area=<område>&intent=<läge>` förväljer val |
+| `/kontakt` | Stegvist formulär: Hemma / Företag → flera områden → läge. `?kund=hem|foretag&area=<område>&intent=<läge>` förväljer val |
 | `/api/contact` | POST – validerar (zod) och vidarebefordrar till webhook |
-| `/sitemap.xml` `/robots.txt` `/icon.svg` | Genereras |
+| `/sitemap.xml` `/robots.txt` `/icon.png` `/apple-icon.png` | Genereras |
 
 ### Dynamiska projekt och case
 
@@ -89,6 +93,13 @@ Sajten använder mörk-bakgrundsvarianten (`src/assets/brand/berryit-logo-dark.p
 Favicon/app-ikon (`src/app/icon.png`, `apple-icon.png`) och delningsbild (`public/brand/berryit-og.png`) är
 genererade från originalet. Accentfärgen `--berry` är logons röda `#C10C43`.
 
+**BERRYiT HEMMA** är en sekundär lockup (masterlogo + "HEMMA" på samma baslinje, tunn takvinkel i logoröd) –
+`src/components/hemma.tsx` → `HemmaLockup`. Masterlogon ändras aldrig. **Sunvolt** ingår aldrig i BERRYiT-logon;
+samarbetet visas i en separat partneryta (`SunvoltPartner`). Ingen godkänd Sunvolt-logotyp finns – namnet visas som text.
+
+**RUT:** texterna följer Skatteverkets villkor för fiber- och it-tjänster (kontrollerat 2026-09-22) och lovar aldrig
+att en tjänst automatiskt omfattas. Material, utrustning och resor omfattas inte. Inga procentsatser/tak anges.
+
 ## Innehållsregel
 
 Inga påhittade uppgifter. Telefon, e-post, org.nr, adress, kundresultat, KPI:er, testimonials,
@@ -103,6 +114,7 @@ varumärke behåller sin egen identitet och ingen får märkas som lanserad utan
   (produktkorten visar tills vidare en genererad yta i varumärkets accentfärg)
 - AuroraPark-case: resultat först efter lansering och kundens godkännande – `src/content/cases.ts`
 - Mottagare bakom `CONTACT_WEBHOOK_URL`
+- Sunvolt: godkänd logotyp, webbadress och godkänd beskrivning av samarbetet
 
 ## Blockers innan live
 
@@ -110,4 +122,6 @@ varumärke behåller sin egen identitet och ingen får märkas som lanserad utan
 2. Verifierade kontaktuppgifter (minst e-post) och org.nr
 3. Integritetstext (formuläret samlar personuppgifter och filer)
 4. Rate limiting på `/api/contact` (idag endast honeypot + validering)
-5. `NEXT_PUBLIC_SITE_URL`, hosting, domän/DNS – separat deployment-gate
+5. RUT: bekräfta att BERRYiT har F-skatt och hur RUT hanteras på fakturan innan RUT-texterna publiceras
+6. Sunvolt: bekräftelse från Sunvolt att samarbetet får presenteras så här
+7. `NEXT_PUBLIC_SITE_URL`, hosting, domän/DNS – separat deployment-gate

@@ -2,11 +2,13 @@ import type { Metadata, Route } from "next";
 import { pageMeta } from "@/lib/seo";
 import Link from "next/link";
 import { areas, pillars, site } from "@/content/site";
-import { avGroups, itGroups, privateServices, businessServices, smallApps, webBuilds } from "@/content/services";
+import { avGroups, itGroups, smallApps, webBuilds } from "@/content/services";
 import { projects } from "@/content/projects";
 import { cases } from "@/content/cases";
 import { Icon } from "@/components/icons";
 import { ProjectCard } from "@/components/ProjectCard";
+import { RutBadge } from "@/components/hemma";
+import { hemma } from "@/content/home";
 import { ButtonLink, Card, Container, CtaBand, Eyebrow, Section, SectionHeading, Tags } from "@/components/ui";
 
 export const metadata: Metadata = pageMeta({
@@ -15,13 +17,16 @@ export const metadata: Metadata = pageMeta({
   path: "/",
 });
 
-const trust = ["IT", "Teknik", "AV", "Webb", "Appar", "System"];
+const trust = ["Hemma", "IT", "AV", "Webb", "Appar", "System"];
+
+const homeIcons = ["laptop", "wifi", "printer", "gaming", "tv", "smarthome"];
+const businessIcons = ["business", "web", "app", "system"];
 
 export default function Home() {
   return (
     <>
       {/* HERO */}
-      <section className="relative overflow-hidden pt-36 pb-24 sm:pt-48 sm:pb-32">
+      <section className="relative overflow-hidden pt-36 pb-16 sm:pt-48 sm:pb-20">
         <div aria-hidden className="bg-grid absolute inset-0" />
         <div aria-hidden className="absolute -top-32 left-1/2 h-[560px] w-[1100px] -translate-x-1/2 rounded-full bg-grape/25 blur-[140px]" />
         <div aria-hidden className="absolute top-40 right-[-10%] h-[380px] w-[380px] rounded-full bg-berry/25 blur-[120px]" />
@@ -31,7 +36,7 @@ export default function Home() {
             Teknik som <span className="text-gradient">bara fungerar.</span>
           </h1>
           <p className="mt-8 max-w-2xl text-lg leading-relaxed text-muted sm:text-xl">
-            Från datorer, mobiler, nätverk, ljud och ljus till webbplatser, appar och kompletta digitala system.
+            Från datorn, Wi-Fi:t och TV:n hemma till företagets IT, webbplatser, appar och kompletta digitala system.
           </p>
           <p className="mt-4 max-w-2xl text-lg leading-relaxed text-paper/90 sm:text-xl">
             BERRYiT löser problemen du redan har – och hjälper dig bygga det som ännu inte finns.
@@ -51,6 +56,64 @@ export default function Home() {
             ))}
           </ul>
           <p className="mt-6 text-sm text-muted">{site.area}</p>
+        </Container>
+      </section>
+
+      {/* TVÅ INGÅNGAR */}
+      <section aria-labelledby="ingangar" className="pb-20 sm:pb-28">
+        <Container>
+          <h2 id="ingangar" className="sr-only">
+            Välj ingång
+          </h2>
+          <div className="grid gap-5 lg:grid-cols-2">
+            <div className="relative flex flex-col overflow-hidden rounded-3xl border border-berry/40 bg-gradient-to-br from-berry/15 via-ink-2 to-ink-2 p-6 sm:p-10">
+              <div className="flex min-h-7 flex-wrap items-center justify-between gap-3">
+                <p className="font-mono text-xs uppercase tracking-[0.2em] text-berry-2">För hemmet</p>
+                <RutBadge />
+              </div>
+              <h3 className="mt-5 font-display text-3xl font-semibold tracking-tight sm:text-4xl">Teknikhjälp hemma</h3>
+              <p className="mt-3 text-lg text-paper/90">{hemma.lead}</p>
+              <p className="mt-2 text-muted">Flera saker på samma besök – du behöver inte veta vad problemet heter.</p>
+              <ul aria-hidden className="mt-7 flex flex-wrap gap-2">
+                {homeIcons.map((i) => (
+                  <li key={i} className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-white/[0.05] text-berry-2">
+                    <Icon name={i} />
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-auto flex flex-wrap items-center gap-4 pt-9">
+                <ButtonLink href="/kontakt?kund=hem">Få hjälp hemma</ButtonLink>
+                <Link href="/hemma" className="text-sm font-semibold text-paper/85 hover:text-paper">
+                  Om BERRYiT HEMMA <span aria-hidden>→</span>
+                </Link>
+              </div>
+            </div>
+            <div className="relative flex flex-col overflow-hidden rounded-3xl border border-line bg-gradient-to-br from-grape/15 via-ink-2 to-ink-2 p-6 sm:p-10">
+              <div className="flex min-h-7 items-center">
+                <p className="font-mono text-xs uppercase tracking-[0.2em] text-signal">För företag</p>
+              </div>
+              <h3 className="mt-5 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
+                IT, webb, appar och system
+              </h3>
+              <p className="mt-3 text-lg text-paper/90">Support när det behövs – eller verksamhetens löpande tekniska partner.</p>
+              <p className="mt-2 text-muted">Från Microsoft 365 och nätverk till kundportaler och kompletta plattformar.</p>
+              <ul aria-hidden className="mt-7 flex flex-wrap gap-2">
+                {businessIcons.map((i) => (
+                  <li key={i} className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-white/[0.05] text-signal">
+                    <Icon name={i} />
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-auto flex flex-wrap items-center gap-4 pt-9">
+                <ButtonLink href="/foretag" variant="ghost">
+                  BERRYiT för företag
+                </ButtonLink>
+                <Link href="/kontakt?intent=bygga" className="text-sm font-semibold text-paper/85 hover:text-paper">
+                  Jag vill bygga något <span aria-hidden>→</span>
+                </Link>
+              </div>
+            </div>
+          </div>
         </Container>
       </section>
 
@@ -241,34 +304,6 @@ export default function Home() {
               meta={c.category}
             />
           ))}
-        </div>
-      </Section>
-
-      {/* PRIVAT / FÖRETAG */}
-      <Section tone="raised">
-        <div className="grid gap-5 lg:grid-cols-2">
-          <Card className="flex flex-col bg-ink">
-            <Eyebrow>För privatpersoner</Eyebrow>
-            <h2 className="mt-4 font-display text-3xl font-semibold">Teknikhjälp utan teknikspråk.</h2>
-            <p className="mt-4 text-muted">
-              Du behöver inte veta vad problemet heter. Berätta bara vad som inte fungerar.
-            </p>
-            <Tags items={privateServices.slice(0, 8)} className="mt-6" />
-            <div className="mt-auto pt-8">
-              <ButtonLink href="/privat">Teknikhjälp hemma</ButtonLink>
-            </div>
-          </Card>
-          <Card className="flex flex-col bg-ink">
-            <Eyebrow>För företag</Eyebrow>
-            <h2 className="mt-4 font-display text-3xl font-semibold">En teknisk partner för hela verksamheten.</h2>
-            <p className="mt-4 text-muted">
-              Support när det behövs – eller företagets löpande tekniska partner.
-            </p>
-            <Tags items={businessServices.slice(0, 8)} className="mt-6" />
-            <div className="mt-auto pt-8">
-              <ButtonLink href="/foretag">BERRYiT för företag</ButtonLink>
-            </div>
-          </Card>
         </div>
       </Section>
 

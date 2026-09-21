@@ -6,7 +6,8 @@ import { Container, Eyebrow } from "@/components/ui";
 
 export const metadata: Metadata = pageMeta({
   title: "Kontakt",
-  description: "Berätta vad du behöver hjälp med – IT, ljud, ljus, AV, webb, appar eller system.",
+  description:
+    "Berätta vad du behöver hjälp med – teknikhjälp hemma eller IT, AV, webb, appar och system för företag. Flera saker i samma förfrågan.",
   path: "/kontakt",
 });
 
@@ -27,6 +28,9 @@ export default async function Page(props: PageProps<"/kontakt">) {
             <p className="mt-6 text-lg text-muted">
               Berätta vad du försöker göra. Vi hjälper dig hitta tekniken som behövs – oavsett om något har gått sönder
               eller om du vill bygga något helt nytt.
+            </p>
+            <p className="mt-4 text-lg text-paper/90">
+              Hemma eller i verksamheten – samla allt som behöver fixas i samma förfrågan.
             </p>
             <p className="mt-6 text-sm text-muted">{site.area}</p>
             {(site.contact.email || site.contact.phone) && (
@@ -50,7 +54,8 @@ export default async function Page(props: PageProps<"/kontakt">) {
           </div>
           <div className="rounded-3xl border border-line bg-ink-2 p-6 sm:p-10">
             <ContactForm
-              key={`${one(sp.area) ?? ""}-${one(sp.intent) ?? ""}`}
+              key={`${one(sp.kund) ?? ""}-${one(sp.area) ?? ""}-${one(sp.intent) ?? ""}`}
+              initialCustomer={one(sp.kund)}
               initialArea={one(sp.area)}
               initialIntent={one(sp.intent)}
             />

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { buildTypes, contactSchema, helpAreas, intents, labelFor, MAX_FILE_BYTES, MAX_FILES } from "@/lib/contact";
+import { MAX_FILES, MAX_FILE_BYTES, areaLabel, buildTypes, contactSchema, customerTypes, intents, labelFor } from "@/lib/contact";
 
 /*
  * Tar emot förfrågningar från kontaktformuläret.
@@ -17,6 +17,7 @@ export async function POST(req: Request) {
   }
 
   const parsed = contactSchema.safeParse({
+    customerType: form.get("customerType") ?? undefined,
     areas: form.getAll("areas"),
     intent: form.get("intent") ?? undefined,
     buildType: form.get("buildType") || undefined,
@@ -70,7 +71,8 @@ export async function POST(req: Request) {
   out.set(
     "summary",
     [
-      `Område: ${d.areas.map((a) => labelFor(helpAreas, a)).join(", ")}`,
+      `Kund: ${labelFor(customerTypes, d.customerType)}`,
+      `Område: ${d.areas.map((a) => areaLabel(a, d.customerType)).join(", ")}`,
       `Vill: ${labelFor(intents, d.intent)}`,
       d.buildType && `Bygga: ${labelFor(buildTypes, d.buildType)}`,
       `Namn: ${d.name}`,
@@ -79,7 +81,7 @@ export async function POST(req: Request) {
       d.phone && `Telefon: ${d.phone}`,
       d.city && `Ort: ${d.city}`,
       d.budget && `Budget: ${d.budget}`,
-      d.timeline && `Tidplan: ${d.timeline}`,
+      d.timeline && `${d.customerType === "hem" ? "Önskad tid för besök" : "Tidplan"}: ${d.timeline}`,
       "",
       d.description,
     ]

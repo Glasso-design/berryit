@@ -12,14 +12,35 @@ export const ogImage = {
   alt: "BERRYiT – Teknik som bara fungerar.",
 };
 
+/** Delningsbild för BERRYiT HEMMA-sidorna. */
+export const hemmaOgImage = {
+  url: "/brand/berryit-hemma-og.png",
+  width: 1200,
+  height: 630,
+  alt: "BERRYiT HEMMA – Hela hemmets teknik. Ett ställe.",
+};
+
 /**
  * Metadata per route: titel, beskrivning, canonical och OpenGraph/Twitter.
  * Next ärver inte og:title från <title>, så allt sätts här på ett ställe.
  */
-export function pageMeta({ title, description, path }: { title?: string; description: string; path: string }): Metadata {
-  const fullTitle = title ? `${title} – ${site.name}` : `${site.name} – ${site.tagline}`;
+export function pageMeta({
+  title,
+  description,
+  path,
+  image = ogImage,
+  absoluteTitle = false,
+}: {
+  title?: string;
+  description: string;
+  path: string;
+  image?: typeof ogImage;
+  /** Titeln används som den är, utan " – BERRYiT" (för sidor där varumärket redan står i titeln). */
+  absoluteTitle?: boolean;
+}): Metadata {
+  const fullTitle = title ? (absoluteTitle ? title : `${title} – ${site.name}`) : `${site.name} – ${site.tagline}`;
   return {
-    ...(title ? { title } : {}),
+    ...(title ? { title: absoluteTitle ? { absolute: title } : title } : {}),
     description,
     alternates: { canonical: path },
     openGraph: {
@@ -29,8 +50,8 @@ export function pageMeta({ title, description, path }: { title?: string; descrip
       siteName: site.name,
       locale: "sv_SE",
       type: "website",
-      images: [ogImage],
+      images: [image],
     },
-    twitter: { card: "summary_large_image", title: fullTitle, description, images: [ogImage.url] },
+    twitter: { card: "summary_large_image", title: fullTitle, description, images: [image.url] },
   };
 }

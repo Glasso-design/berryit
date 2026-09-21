@@ -23,13 +23,14 @@ export type NavItem = { label: string; href: Route };
 
 export const mainNav: NavItem[] = [
   { label: "Start", href: "/" },
+  { label: "Hemma", href: "/hemma" },
   { label: "IT & Teknik", href: "/it-teknik" },
   { label: "Ljud & Ljus", href: "/ljud-ljus" },
   { label: "Webb", href: "/webb" },
   { label: "Appar & System", href: "/appar-system" },
   { label: "Företag", href: "/foretag" },
   { label: "Våra projekt", href: "/projects" },
-  { label: "Om BERRYiT", href: "/om" },
+  { label: "Om oss", href: "/om" },
   { label: "Kontakt", href: "/kontakt" },
 ];
 
