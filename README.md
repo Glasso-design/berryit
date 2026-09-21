@@ -33,8 +33,13 @@ Se `.env.example`. Lägg lokala värden i `.env.local` (ignoreras av git). Inga 
 
 | Variabel | Syfte | Krävs för live |
 |---|---|---|
-| `SITE_URL` | Kanonisk bas-URL (canonical, OpenGraph, sitemap, robots, JSON-LD). Default `http://localhost:3501`. | Ja |
+| `NEXT_PUBLIC_SITE_URL` | Kanonisk bas-URL (metadataBase, canonical, OpenGraph, sitemap, robots, JSON-LD), t.ex. `https://berryit.se`. | Rekommenderas |
 | `CONTACT_WEBHOOK_URL` | Mottagare för kontaktformuläret. POST `multipart/form-data` med `summary` (text), `data` (JSON) och `files`. | Ja |
+
+Bas-URL:en löses i `src/lib/site-url.ts`: `NEXT_PUBLIC_SITE_URL` → `SITE_URL` (äldre namn) →
+`VERCEL_PROJECT_PRODUCTION_URL` → `VERCEL_URL` → `http://localhost:3501`. Tomma eller ogiltiga värden hoppas över,
+värden utan protokoll får `https://`, och bygget kraschar aldrig på grund av URL-konfiguration.
+Sätt ändå `NEXT_PUBLIC_SITE_URL=https://berryit.se` i Vercel (Production) så att canonical inte blir en `*.vercel.app`-adress.
 
 Saknas `CONTACT_WEBHOOK_URL` svarar `/api/contact` **503** med ett tydligt meddelande om att kontaktfunktionen
 inte är ansluten. Formuläret behåller användarens uppgifter. Ingen falsk success.
@@ -101,4 +106,4 @@ varumärke behåller sin egen identitet och ingen får märkas som lanserad utan
 3. Integritetstext (formuläret samlar personuppgifter och filer)
 4. Rate limiting på `/api/contact` (idag endast honeypot + validering)
 5. Riktig logotyp
-6. `SITE_URL`, hosting, domän/DNS – separat deployment-gate
+6. `NEXT_PUBLIC_SITE_URL`, hosting, domän/DNS – separat deployment-gate

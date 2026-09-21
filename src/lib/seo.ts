@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { site } from "@/content/site";
 
-export const siteUrl = (process.env.SITE_URL ?? "http://localhost:3501").replace(/\/$/, "");
+// Bas-URL:en löses centralt och validerat i site-url.ts.
+export { siteUrl, siteUrlObject } from "./site-url";
 
 /**
  * Metadata per route: titel, beskrivning, canonical och OpenGraph/Twitter.
