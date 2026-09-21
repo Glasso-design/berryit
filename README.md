@@ -82,6 +82,13 @@ Okänd slug ger 404 (`notFound()`). Slugs måste vara unika.
 Fält utan verifierad information (logotyp, screenshots, plattform, teknik, status, länk, resultat) lämnas
 tomma och döljs automatiskt i gränssnittet.
 
+## Varumärke
+
+Logotypen ligger i `brand/` (original + genererade varianter, se `brand/README.md`).
+Sajten använder mörk-bakgrundsvarianten (`src/assets/brand/berryit-logo-dark.png`) via `src/components/Logo.tsx`.
+Favicon/app-ikon (`src/app/icon.png`, `apple-icon.png`) och delningsbild (`public/brand/berryit-og.png`) är
+genererade från originalet. Accentfärgen `--berry` är logons röda `#C10C43`.
+
 ## Innehållsregel
 
 Inga påhittade uppgifter. Telefon, e-post, org.nr, adress, kundresultat, KPI:er, testimonials,
@@ -91,12 +98,10 @@ varumärke behåller sin egen identitet och ingen får märkas som lanserad utan
 
 ## Kända placeholders (TBD)
 
-- Riktig BERRYiT-logotyp – nu ett typografiskt ordmärke (`src/components/Logo.tsx`) och en enkel `icon.svg`
 - Telefon, e-post, org.nr, adress – `src/content/site.ts` (`contact`)
 - Logotyper, screenshots, plattform, teknik och status per produkt – `src/content/projects.ts`
   (produktkorten visar tills vidare en genererad yta i varumärkets accentfärg)
 - AuroraPark-case: resultat först efter lansering och kundens godkännande – `src/content/cases.ts`
-- OpenGraph-bild
 - Mottagare bakom `CONTACT_WEBHOOK_URL`
 
 ## Blockers innan live
@@ -105,5 +110,4 @@ varumärke behåller sin egen identitet och ingen får märkas som lanserad utan
 2. Verifierade kontaktuppgifter (minst e-post) och org.nr
 3. Integritetstext (formuläret samlar personuppgifter och filer)
 4. Rate limiting på `/api/contact` (idag endast honeypot + validering)
-5. Riktig logotyp
-6. `NEXT_PUBLIC_SITE_URL`, hosting, domän/DNS – separat deployment-gate
+5. `NEXT_PUBLIC_SITE_URL`, hosting, domän/DNS – separat deployment-gate

@@ -32,7 +32,7 @@ export function Footer() {
       <Container className="py-16">
         <div className="grid gap-12 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div>
-            <Logo className="text-2xl" />
+            <Logo className="h-12 w-auto" />
             <p className="mt-4 max-w-sm text-paper/90">{site.coreMessage}</p>
             <p className="mt-3 max-w-sm text-muted">{site.oneLiner}</p>
             <p className="mt-4 text-sm text-muted">{site.area}</p>

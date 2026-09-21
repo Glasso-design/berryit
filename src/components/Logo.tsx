@@ -1,12 +1,18 @@
-/** Ordmärke: BERRY i versaler, ett litet "i" som bär-punkt, T. */
-export function Logo({ className = "" }: { className?: string }) {
+import Image from "next/image";
+import logoDark from "@/assets/brand/berryit-logo-dark.png";
+
+/**
+ * BERRYiT-logotypen (bärsymbol + ordmärke) i mörk-bakgrundsvariant:
+ * originalets röda delar, mörka delar i ljus ton. Källfiler i /brand.
+ */
+export function Logo({ className = "h-9 w-auto", priority = false }: { className?: string; priority?: boolean }) {
   return (
-    <span className={`inline-flex items-baseline font-display text-xl font-bold tracking-tight ${className}`}>
-      BERRY
-      <span className="relative mx-[1px] text-berry">
-        i
-      </span>
-      T
-    </span>
+    <Image
+      src={logoDark}
+      alt="BERRYiT"
+      priority={priority}
+      sizes="(min-width: 640px) 320px, 240px"
+      className={className}
+    />
   );
 }

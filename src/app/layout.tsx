@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   description:
     "IT, teknik, ljud, ljus, webb, appar och kompletta digitala system. Vi fixar tekniken du har och hjälper dig bygga tekniken du behöver. Sjöbo, Skåne och digitalt.",
   openGraph: { siteName: site.name, locale: "sv_SE", type: "website" },
-  twitter: { card: "summary" },
+  twitter: { card: "summary_large_image" },
 };
 
 /*
@@ -34,6 +34,7 @@ const jsonLd = {
       "@id": `${siteUrl}/#organization`,
       name: site.name,
       url: siteUrl,
+      logo: `${siteUrl}/brand/berryit-logo.png`,
       slogan: site.tagline,
       description: site.oneLiner,
       areaServed: ["Sjöbo", "Skåne", "Sverige"],
