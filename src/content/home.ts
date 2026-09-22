@@ -5,9 +5,10 @@
  * - RUT beskrivs försiktigt: tjänster KAN omfattas när Skatteverkets villkor
  *   är uppfyllda. Material, resor och utrustning omfattas inte. En helt ny
  *   speldator beskrivs inte som RUT-berättigad.
- * - Sunvolt är samarbetspartner för sol/energi. BERRYiT påstår inte att vi
- *   utför elinstallationer. Ingen Sunvolt-logotyp finns godkänd i repot –
- *   namnet visas som text.
+ * - Sunvolt: ägaren har godkänt formuleringen "I samarbete med Sunvolt"
+ *   (2026-09-22). BERRYiT påstår inte att vi utför elinstallationer. Ingen
+ *   Sunvolt-logotyp finns godkänd i repot – namnet visas som text.
+ * - BERRYiT har F-skatt (bekräftat 2026-09-22) – se site.fSkatt.
  */
 
 export const hemma = {
@@ -138,7 +139,8 @@ export const rut = {
 
 export const sunvolt = {
   heading: "Smartare hem. Smartare energi.",
-  lead: "BERRYiT samarbetar med Sunvolt kring solenergi och energilösningar för hemmet.",
+  partnerLine: "I samarbete med Sunvolt",
+  lead: "Solenergi och energilösningar för hemmet – i samarbete med Sunvolt.",
   berryit: ["Nätverk och uppkoppling", "Appar och konton", "Digital integration i hemmets teknik", "Felsökning av anslutna enheter"],
   sunvoltScope: ["Solenergi", "Energilösningar", "Installationer inom Sunvolts område"],
 };

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { hemmaOgImage, pageMeta } from "@/lib/seo";
 import { rut } from "@/content/home";
+import { site } from "@/content/site";
 import { Icon } from "@/components/icons";
 import { RutHighlight } from "@/components/hemma";
 import { ButtonLink, Card, CtaBand, PageHero, Section, SectionHeading } from "@/components/ui";
@@ -101,14 +102,17 @@ export default function Page() {
             title="Det här behöver stämma."
             lead="RUT-avdrag är inte automatiskt för alla tjänster. Det är arbetets innehåll och Skatteverkets villkor som avgör."
           />
-          <ul className="space-y-3 self-center">
-            {conditions.map((c) => (
-              <li key={c} className="flex gap-3 rounded-xl border border-line bg-ink px-4 py-3">
-                <Icon name="check" className="mt-0.5 h-5 w-5 shrink-0 text-signal" />
-                {c}
-              </li>
-            ))}
-          </ul>
+          <div className="self-center">
+            <ul className="space-y-3">
+              {conditions.map((c) => (
+                <li key={c} className="flex gap-3 rounded-xl border border-line bg-ink px-4 py-3">
+                  <Icon name="check" className="mt-0.5 h-5 w-5 shrink-0 text-signal" />
+                  {c}
+                </li>
+              ))}
+            </ul>
+            {site.fSkatt && <p className="mt-4 px-1 text-sm text-muted">BERRYiT har F-skatt.</p>}
+          </div>
         </div>
       </Section>
 

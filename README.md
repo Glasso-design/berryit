@@ -97,6 +97,9 @@ genererade från originalet. Accentfärgen `--berry` är logons röda `#C10C43`.
 `src/components/hemma.tsx` → `HemmaLockup`. Masterlogon ändras aldrig. **Sunvolt** ingår aldrig i BERRYiT-logon;
 samarbetet visas i en separat partneryta (`SunvoltPartner`). Ingen godkänd Sunvolt-logotyp finns – namnet visas som text.
 
+**Bekräftat av ägaren (2026-09-22):** BERRYiT har F-skatt (`site.fSkatt`, visas på `/rut-avdrag` och i footern)
+och får skriva "I samarbete med Sunvolt".
+
 **RUT:** texterna följer Skatteverkets villkor för fiber- och it-tjänster (kontrollerat 2026-09-22) och lovar aldrig
 att en tjänst automatiskt omfattas. Material, utrustning och resor omfattas inte. Inga procentsatser/tak anges.
 
@@ -114,7 +117,7 @@ varumärke behåller sin egen identitet och ingen får märkas som lanserad utan
   (produktkorten visar tills vidare en genererad yta i varumärkets accentfärg)
 - AuroraPark-case: resultat först efter lansering och kundens godkännande – `src/content/cases.ts`
 - Mottagare bakom `CONTACT_WEBHOOK_URL`
-- Sunvolt: godkänd logotyp, webbadress och godkänd beskrivning av samarbetet
+- Sunvolt: godkänd logotyp och webbadress (formuleringen "I samarbete med Sunvolt" är godkänd)
 
 ## Blockers innan live
 
@@ -122,6 +125,4 @@ varumärke behåller sin egen identitet och ingen får märkas som lanserad utan
 2. Verifierade kontaktuppgifter (minst e-post) och org.nr
 3. Integritetstext (formuläret samlar personuppgifter och filer)
 4. Rate limiting på `/api/contact` (idag endast honeypot + validering)
-5. RUT: bekräfta att BERRYiT har F-skatt och hur RUT hanteras på fakturan innan RUT-texterna publiceras
-6. Sunvolt: bekräftelse från Sunvolt att samarbetet får presenteras så här
-7. `NEXT_PUBLIC_SITE_URL`, hosting, domän/DNS – separat deployment-gate
+5. `NEXT_PUBLIC_SITE_URL`, hosting, domän/DNS – separat deployment-gate

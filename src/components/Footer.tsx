@@ -94,6 +94,7 @@ export function Footer() {
           <p>
             © {new Date().getFullYear()} {site.name}
             {site.contact.orgNr && ` · Org.nr ${site.contact.orgNr}`}
+            {site.fSkatt && " · BERRYiT har F-skatt."}
           </p>
           <p className="font-mono text-xs uppercase tracking-[0.2em]">{site.secondaryMessage}</p>
         </div>

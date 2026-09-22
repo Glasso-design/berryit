@@ -12,6 +12,8 @@ export const site = {
    * CONTENT NEEDED: telefon, e-post, org.nr och adress är inte verifierade.
    * Lämna null tills ägaren bekräftat – sidan visar då bara formuläret.
    */
+  /** Bekräftat av ägaren 2026-09-22. */
+  fSkatt: true,
   contact: {
     email: null as string | null,
     phone: null as string | null,

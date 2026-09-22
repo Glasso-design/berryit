@@ -88,22 +88,17 @@ export function HomeServiceGrid({ services, detailed = false }: { services: Home
 }
 
 /**
- * Samarbete med Sunvolt. Ingen godkänd Sunvolt-logotyp finns – namnet visas
- * som text i sajtens typsnitt, i en egen partneryta, aldrig i BERRYiT-logon.
+ * "I samarbete med Sunvolt" (godkänd formulering). Ingen godkänd Sunvolt-logotyp
+ * finns – namnet visas som text i en egen partneryta, aldrig i BERRYiT-logon.
  */
 export function SunvoltPartner() {
   return (
     <div className="overflow-hidden rounded-3xl border border-line bg-ink-2">
       <div className="grid gap-10 p-6 sm:p-10 lg:grid-cols-[1.1fr_1fr]">
         <div>
-          <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted">I samarbete med Sunvolt</p>
+          <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted">{sunvolt.partnerLine}</p>
           <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight text-balance sm:text-4xl">{sunvolt.heading}</h2>
           <p className="mt-4 text-lg text-muted">{sunvolt.lead}</p>
-          <p className="mt-6 inline-flex items-center gap-3 rounded-full border border-line px-4 py-2 font-display text-sm font-semibold">
-            <span>BERRYiT</span>
-            <span aria-hidden className="text-muted">×</span>
-            <span>Sunvolt</span>
-          </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="rounded-2xl border border-line bg-ink p-5">
