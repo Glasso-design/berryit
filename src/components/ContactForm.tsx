@@ -13,6 +13,7 @@ import {
   MAX_FILES,
   type CustomerType,
 } from "@/lib/contact-options";
+import { rut } from "@/content/home";
 
 type Status = { kind: "idle" } | { kind: "sending" } | { kind: "sent" } | { kind: "error"; message: string };
 
@@ -293,12 +294,15 @@ export function ContactForm({
               <ErrorText id="err-files" text={errors.files} />
             </label>
             {home && (
-              <p className="mt-5 rounded-xl border border-signal/30 bg-signal/5 px-4 py-3 text-sm text-paper/90">
-                Arbete i hemmet kan omfattas av RUT-avdrag när Skatteverkets villkor är uppfyllda.{" "}
-                <Link href="/rut-avdrag" className="font-semibold text-signal hover:underline">
+              <div className="mt-5 rounded-xl border border-signal/30 bg-signal/5 px-4 py-3 text-sm">
+                <p className="font-semibold text-paper">
+                  <span className="text-signal">{rut.headline.amount}</span> {rut.headline.rest}
+                </p>
+                <p className="mt-1 text-muted">{rut.conditions}</p>
+                <Link href="/rut-avdrag" className="mt-1 inline-flex font-semibold text-signal hover:underline">
                   Läs mer om RUT-avdrag
                 </Link>
-              </p>
+              </div>
             )}
           </Step>
 

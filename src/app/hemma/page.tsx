@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { hemmaOgImage, pageMeta } from "@/lib/seo";
 import { hemma, homeServices, smartHome, visitScenario } from "@/content/home";
-import { HemmaLockup, HomeServiceGrid, RutBadge, RutCallout, SunvoltPartner } from "@/components/hemma";
+import { HemmaLockup, HomeServiceGrid, RutCallout, RutHighlight, SunvoltPartner } from "@/components/hemma";
 import { Icon } from "@/components/icons";
 import { ButtonLink, Container, CtaBand, Eyebrow, Section, SectionHeading } from "@/components/ui";
 
@@ -37,8 +37,8 @@ export default function Page() {
             <ButtonLink href="/teknikhjalp-hemma" variant="ghost">
               Det här hjälper vi med
             </ButtonLink>
-            <RutBadge className="sm:ml-2" />
           </div>
+          <RutHighlight className="mt-8 max-w-xl" />
         </Container>
       </section>
 

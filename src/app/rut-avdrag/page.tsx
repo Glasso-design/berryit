@@ -2,20 +2,21 @@ import type { Metadata } from "next";
 import { hemmaOgImage, pageMeta } from "@/lib/seo";
 import { rut } from "@/content/home";
 import { Icon } from "@/components/icons";
+import { RutHighlight } from "@/components/hemma";
 import { ButtonLink, Card, CtaBand, PageHero, Section, SectionHeading } from "@/components/ui";
 
 export const metadata: Metadata = pageMeta({
   title: "RUT-avdrag för IT- och teknikhjälp hemma",
   description:
-    "Många IT- och tekniktjänster i hemmet kan omfattas av RUT-avdrag när Skatteverkets villkor är uppfyllda. Avdraget gäller arbetskostnaden – inte material, utrustning eller resor.",
+    "Upp till 50 % RUT på arbetskostnaden. Många IT- och tekniktjänster i hemmet kan omfattas när Skatteverkets villkor är uppfyllda – material, utrustning och resor ingår inte.",
   path: "/rut-avdrag",
   image: hemmaOgImage,
 });
 
 /*
  * Sammanfattat från Skatteverkets villkor för "Fiber- och it-tjänster" (rutavdrag),
- * kontrollerat 2026-09-22. Inga procentsatser eller takbelopp anges här – de
- * kan ändras och hänvisas till Skatteverket.
+ * kontrollerat 2026-09-22. "Upp till 50 %" = Skatteverkets högsta andel av
+ * arbetskostnaden. Takbelopp anges inte – de kan ändras och hänvisas till Skatteverket.
  */
 const canQualify = [
   "Installation, reparation och underhåll av datorer, surfplattor, mobiler och spelkonsoler",
@@ -39,13 +40,14 @@ const conditions = [
   "Arbetet utförs i, eller i nära anslutning till, din bostad.",
   "Avdraget gäller arbetskostnaden.",
   "Du uppfyller Skatteverkets villkor för att få avdraget.",
-  "Aktuell procentsats och maxbelopp per år finns hos Skatteverket.",
+  "Maxbelopp per år och aktuella regler finns hos Skatteverket.",
 ];
 
 export default function Page() {
   return (
     <>
       <PageHero eyebrow="BERRYiT HEMMA · RUT-avdrag" title="RUT-avdrag för teknikhjälp hemma." lead={rut.statement}>
+        <RutHighlight link={false} className="mb-8 max-w-xl" />
         <div className="flex flex-wrap gap-3">
           <ButtonLink href="/kontakt?kund=hem">Få hjälp hemma</ButtonLink>
           <a

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { hemmaOgImage, pageMeta } from "@/lib/seo";
 import { hemma, homeServices, visitSteps } from "@/content/home";
-import { HomeServiceGrid, RutBadge, RutCallout } from "@/components/hemma";
+import { HomeServiceGrid, RutCallout, RutHighlight } from "@/components/hemma";
 import { ButtonLink, CtaBand, PageHero, Section, SectionHeading } from "@/components/ui";
 
 export const metadata: Metadata = pageMeta({
@@ -20,10 +20,8 @@ export default function Page() {
         title="Teknikhjälp utan teknikspråk."
         lead={`${hemma.lead} ${hemma.categoryNote}`}
       >
-        <div className="flex flex-wrap items-center gap-3">
-          <ButtonLink href="/kontakt?kund=hem">Få hjälp hemma</ButtonLink>
-          <RutBadge />
-        </div>
+        <ButtonLink href="/kontakt?kund=hem">Få hjälp hemma</ButtonLink>
+        <RutHighlight className="mt-8 max-w-xl" />
       </PageHero>
 
       <Section>

@@ -7,7 +7,7 @@ import { projects } from "@/content/projects";
 import { cases } from "@/content/cases";
 import { Icon } from "@/components/icons";
 import { ProjectCard } from "@/components/ProjectCard";
-import { RutBadge } from "@/components/hemma";
+import { RutHighlight } from "@/components/hemma";
 import { hemma } from "@/content/home";
 import { ButtonLink, Card, Container, CtaBand, Eyebrow, Section, SectionHeading, Tags } from "@/components/ui";
 
@@ -69,11 +69,11 @@ export default function Home() {
             <div className="relative flex flex-col overflow-hidden rounded-3xl border border-berry/40 bg-gradient-to-br from-berry/15 via-ink-2 to-ink-2 p-6 sm:p-10">
               <div className="flex min-h-7 flex-wrap items-center justify-between gap-3">
                 <p className="font-mono text-xs uppercase tracking-[0.2em] text-berry-2">För hemmet</p>
-                <RutBadge />
               </div>
               <h3 className="mt-5 font-display text-3xl font-semibold tracking-tight sm:text-4xl">Teknikhjälp hemma</h3>
               <p className="mt-3 text-lg text-paper/90">{hemma.lead}</p>
               <p className="mt-2 text-muted">Flera saker på samma besök – du behöver inte veta vad problemet heter.</p>
+              <RutHighlight className="mt-6" />
               <ul aria-hidden className="mt-7 flex flex-wrap gap-2">
                 {homeIcons.map((i) => (
                   <li key={i} className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-white/[0.05] text-berry-2">

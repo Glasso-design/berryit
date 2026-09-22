@@ -127,6 +127,10 @@ export const smartHome = {
 
 export const rut = {
   short: "RUT-avdrag kan gälla",
+  /** Kommersiell rubrik – visas alltid tillsammans med `conditions`. Skatteverket: högst 50 % av arbetskostnaden. */
+  headline: { amount: "Upp till 50 %", rest: "RUT på arbetskostnaden" },
+  conditions:
+    "Gäller arbete som uppfyller Skatteverkets villkor och endast den godkända arbetskostnaden. Material, utrustning och resor ingår inte, och alla BERRYiT:s tjänster omfattas inte automatiskt.",
   statement:
     "Många av våra IT- och tekniktjänster i hemmet kan omfattas av RUT-avdrag. När arbetet uppfyller Skatteverkets villkor kan du få avdrag på arbetskostnaden.",
   skatteverketUrl: "https://www.skatteverket.se/rotochrut",
