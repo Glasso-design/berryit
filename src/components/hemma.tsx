@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import hemmaLockupDark from "@/assets/brand/berryit-hemma-lockup-dark.png";
+import hemmaLockupLight from "@/assets/brand/berryit-hemma-lockup-light.png";
 import { rut, sunvolt, type HomeService } from "@/content/home";
 import { Icon } from "./icons";
 
@@ -11,7 +12,13 @@ import { Icon } from "./icons";
  */
 export function HemmaLockup({ size = "md", className = "" }: { size?: "sm" | "md" | "lg"; className?: string }) {
   const h = { sm: "h-8", md: "h-11", lg: "h-14 sm:h-20" }[size];
-  return <Image src={hemmaLockupDark} alt="BERRYiT HEMMA" sizes="(min-width: 640px) 420px, 300px" className={`${h} w-auto ${className}`} />;
+  const common = { sizes: "(min-width: 640px) 420px, 300px" } as const;
+  return (
+    <>
+      <Image src={hemmaLockupDark} alt="BERRYiT HEMMA" {...common} className={`on-dark-only ${h} w-auto ${className}`} />
+      <Image src={hemmaLockupLight} alt="BERRYiT HEMMA" {...common} className={`on-light-only ${h} w-auto ${className}`} />
+    </>
+  );
 }
 
 /**

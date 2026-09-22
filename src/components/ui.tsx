@@ -68,7 +68,7 @@ export function ButtonLink({
   const styles =
     variant === "primary"
       ? "bg-berry text-white shadow-[0_8px_30px_-8px_var(--berry)] hover:bg-berry-deep"
-      : "border border-line bg-white/[0.03] text-paper hover:border-muted hover:bg-white/[0.06]";
+      : "border border-line bg-fog/[0.03] text-paper hover:border-muted hover:bg-fog/[0.06]";
   return (
     <Link
       href={href}
@@ -86,7 +86,7 @@ export function Tags({ items, className = "" }: { items: readonly string[]; clas
   return (
     <ul className={`flex flex-wrap gap-2 ${className}`}>
       {items.map((item) => (
-        <li key={item} className="rounded-full border border-line bg-white/[0.03] px-3 py-1 text-sm text-paper/85">
+        <li key={item} className="rounded-full border border-line bg-fog/[0.03] px-3 py-1 text-sm text-paper/85">
           {item}
         </li>
       ))}
@@ -104,7 +104,7 @@ export function PageHero({ eyebrow, title, lead, children }: { eyebrow: string; 
       <div aria-hidden className="bg-grid absolute inset-0" />
       <div
         aria-hidden
-        className="absolute -top-40 left-1/2 h-[480px] w-[900px] -translate-x-1/2 rounded-full bg-grape/20 blur-[120px]"
+        className="glow absolute -top-40 left-1/2 h-[480px] w-[900px] -translate-x-1/2 rounded-full bg-grape/20 blur-[120px]"
       />
       <Container className="relative">
         <Eyebrow>{eyebrow}</Eyebrow>
@@ -131,8 +131,8 @@ export function CtaBand({
     <section className="py-20 sm:py-28">
       <Container>
         <div className="relative overflow-hidden rounded-3xl border border-line bg-ink-2 px-6 py-14 sm:px-14 sm:py-20">
-          <div aria-hidden className="absolute -right-24 -bottom-24 h-80 w-80 rounded-full bg-berry/25 blur-[100px]" />
-          <div aria-hidden className="absolute -top-24 -left-24 h-80 w-80 rounded-full bg-grape/25 blur-[100px]" />
+          <div aria-hidden className="glow absolute -right-24 -bottom-24 h-80 w-80 rounded-full bg-berry/25 blur-[100px]" />
+          <div aria-hidden className="glow absolute -top-24 -left-24 h-80 w-80 rounded-full bg-grape/25 blur-[100px]" />
           <div className="relative max-w-2xl">
             <h2 className="font-display text-3xl font-semibold tracking-tight text-balance sm:text-5xl">{title}</h2>
             <p className="mt-5 text-lg text-muted">{text}</p>

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { mainNav, primaryCta } from "@/content/site";
 import { Logo } from "./Logo";
+import { ThemeToggle } from "./ThemeToggle";
 
 export function Header() {
   const pathname = usePathname();
@@ -54,7 +55,7 @@ export function Header() {
                   href={item.href}
                   aria-current={isActive(item.href) ? "page" : undefined}
                   className={`rounded-full px-3 py-2 text-sm transition ${
-                    isActive(item.href) ? "bg-white/[0.07] text-paper" : "text-muted hover:text-paper"
+                    isActive(item.href) ? "bg-fog/[0.07] text-paper" : "text-muted hover:text-paper"
                   }`}
                 >
                   {item.label}
@@ -65,6 +66,7 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           <Link
             href={primaryCta.href}
             className="hidden rounded-full bg-berry px-5 py-2 text-sm font-semibold text-white transition hover:bg-berry-deep sm:inline-flex"
@@ -99,7 +101,7 @@ export function Header() {
                   href={item.href}
                   aria-current={isActive(item.href) ? "page" : undefined}
                   className={`block rounded-xl px-3 py-3 text-lg ${
-                    isActive(item.href) ? "bg-white/[0.06] text-paper" : "text-paper/80"
+                    isActive(item.href) ? "bg-fog/[0.06] text-paper" : "text-paper/80"
                   }`}
                 >
                   {item.label}

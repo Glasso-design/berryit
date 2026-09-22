@@ -21,8 +21,8 @@ export default function Page() {
       {/* HERO */}
       <section className="relative overflow-hidden border-b border-line pt-32 pb-20 sm:pt-44 sm:pb-28">
         <div aria-hidden className="bg-grid absolute inset-0" />
-        <div aria-hidden className="absolute -top-40 right-[-10%] h-[520px] w-[720px] rounded-full bg-berry/20 blur-[130px]" />
-        <div aria-hidden className="absolute bottom-[-30%] left-[-10%] h-[420px] w-[620px] rounded-full bg-grape/20 blur-[130px]" />
+        <div aria-hidden className="glow absolute -top-40 right-[-10%] h-[520px] w-[720px] rounded-full bg-berry/20 blur-[130px]" />
+        <div aria-hidden className="glow absolute bottom-[-30%] left-[-10%] h-[420px] w-[620px] rounded-full bg-grape/20 blur-[130px]" />
         <Container className="relative">
           <HemmaLockup size="lg" />
           <h1 className="mt-10 max-w-4xl font-display text-5xl leading-[1.03] font-semibold tracking-tight text-balance sm:text-7xl">

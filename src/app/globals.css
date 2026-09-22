@@ -2,21 +2,52 @@
 
 /*
  * BERRYiT – designsystem.
- * Mörk teknisk bas, en varm bär-accent och en kall signalfärg.
- * Alla färger går via tokens så att ljust/mörkt läge styrs på ett ställe.
+ * Två teman via tokens: mörkt (standard) och ljust. Tokennamnen är semantiska:
+ *   ink / ink-2 / ink-3  = bakgrund / yta / upphöjd yta
+ *   paper / muted        = text / dämpad text
+ *   fog                  = bas för subtila överlägg (vitt i mörkt, nära svart i ljust)
+ *   field                = kantlinje för formulärfält (≥ 3:1 mot bakgrunden)
+ * Temat väljs med data-theme på <html> (sätts före första rendering, se layout.tsx).
+ * data-theme kan även sättas på en enskild yta för att låsa den till ett tema.
  */
-:root {
+:root,
+[data-theme="dark"] {
   --ink: #0c0b10;
   --ink-2: #14121b;
   --ink-3: #1d1a27;
   --line: #2a2636;
+  --field: #6b6478;
   --paper: #f6f4f8;
   --muted: #a39db3;
-  --berry: #c10c43; /* logoröd */
+  --fog: #ffffff;
+  --grid-line: rgb(255 255 255 / 0.04);
+  --glow-opacity: 1;
+  --berry: #c10c43; /* logoröd – samma i båda teman */
   --berry-deep: #9e0a37;
   --berry-2: #ff5c86;
   --grape: #7b3fe4;
   --signal: #35e0c1;
+  color-scheme: dark;
+}
+
+/* Ljust tema: varm off-white, nära svart text, dämpade ytor. BERRYiT-rött oförändrat. */
+[data-theme="light"] {
+  --ink: #f6f2ec;
+  --ink-2: #fffcf8;
+  --ink-3: #ece6de;
+  --line: #ddd5ca;
+  --field: #8a8176;
+  --paper: #1a171f;
+  --muted: #5b5563;
+  --fog: #1a171f;
+  --grid-line: rgb(26 23 31 / 0.05);
+  --glow-opacity: 0.45;
+  --berry: #c10c43;
+  --berry-deep: #9e0a37;
+  --berry-2: #b00a3c;
+  --grape: #6a2fd6;
+  --signal: #0a7565;
+  color-scheme: light;
 }
 
 @theme inline {
@@ -24,6 +55,8 @@
   --color-ink-2: var(--ink-2);
   --color-ink-3: var(--ink-3);
   --color-line: var(--line);
+  --color-field: var(--field);
+  --color-fog: var(--fog);
   --color-paper: var(--paper);
   --color-muted: var(--muted);
   --color-berry: var(--berry);
@@ -38,7 +71,6 @@
 
 html {
   scroll-behavior: smooth;
-  color-scheme: dark;
 }
 
 body {
@@ -54,10 +86,22 @@ body {
 /* Rutnätet bakom hero och mörka sektioner – "teknisk" utan att bli brus. */
 .bg-grid {
   background-image:
-    linear-gradient(to right, rgb(255 255 255 / 0.04) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(255 255 255 / 0.04) 1px, transparent 1px);
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
   background-size: 48px 48px;
   mask-image: radial-gradient(ellipse at top, black 30%, transparent 75%);
+}
+
+/* Färgade ljusglöd i hero/CTA – dämpas i ljust tema så att det inte blir pastell. */
+.glow {
+  opacity: var(--glow-opacity);
+}
+
+/* Logotyper: rätt variant per tema, utan att servern behöver känna till temat. */
+[data-theme="light"] .on-dark-only,
+[data-theme="dark"] .on-light-only,
+:root:not([data-theme]) .on-light-only {
+  display: none;
 }
 
 .text-gradient {

@@ -55,7 +55,7 @@ export default function Page() {
             href={rut.skatteverketUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-full border border-line bg-white/[0.03] px-6 py-3 text-sm font-semibold transition hover:border-muted"
+            className="inline-flex items-center gap-2 rounded-full border border-line bg-fog/[0.03] px-6 py-3 text-sm font-semibold transition hover:border-muted"
           >
             Skatteverket om rot och rut <span aria-hidden>↗</span>
           </a>

@@ -103,6 +103,15 @@ och får skriva "I samarbete med Sunvolt".
 **RUT:** texterna följer Skatteverkets villkor för fiber- och it-tjänster (kontrollerat 2026-09-22) och lovar aldrig
 att en tjänst automatiskt omfattas. Material, utrustning och resor omfattas inte. Inga procentsatser/tak anges.
 
+## Tema (mörkt / ljust)
+
+Mörkt är standard. Färger är semantiska tokens i `src/app/globals.css` (`ink`, `paper`, `muted`, `line`, `field`, `fog` …)
+med värden för `[data-theme="dark"]` och `[data-theme="light"]`; `--berry` (#C10C43) är samma i båda.
+`src/lib/theme.ts` innehåller ett litet skript som körs i `<head>` före första rendering: sparat val
+(`localStorage: berryit-theme`) → annars `prefers-color-scheme` → annars mörkt. `ThemeToggle` i headern växlar och sparar.
+Logotyper och HEMMA-lockup renderas i båda godkända varianterna och CSS visar rätt (`.on-dark-only` / `.on-light-only`).
+Projektytor är låsta till mörkt (`data-theme="dark"`) eftersom varumärkesnamnen visas i egna accentfärger.
+
 ## Innehållsregel
 
 Inga påhittade uppgifter. Telefon, e-post, org.nr, adress, kundresultat, KPI:er, testimonials,

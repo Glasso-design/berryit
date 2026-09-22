@@ -4,6 +4,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { site } from "@/content/site";
 import { siteUrl, siteUrlObject } from "@/lib/seo";
+import { themeInitScript } from "@/lib/theme";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -55,10 +56,16 @@ export const viewport: Viewport = { themeColor: "#0c0b10" };
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
+      // data-theme sätts av themeInitScript före hydrering – avsiktlig skillnad mot serverns HTML.
+      suppressHydrationWarning
       lang="sv"
       data-scroll-behavior="smooth"
       className={`${geistSans.variable} ${geistMono.variable} ${display.variable} h-full antialiased`}
     >
+      <head>
+        {/* Körs synkront vid parsning – rätt tema redan i första renderingen, ingen blinkning. */}
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className="flex min-h-full flex-col font-sans">
         <a
           href="#innehall"

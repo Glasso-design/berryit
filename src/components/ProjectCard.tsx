@@ -8,6 +8,7 @@ import type { Route } from "next";
 export function ProjectVisual({ name, accent, className = "" }: { name: string; accent: string; className?: string }) {
   return (
     <div
+      data-theme="dark"
       className={`relative overflow-hidden rounded-xl border border-line bg-ink-3 ${className}`}
       style={{ ["--accent" as string]: accent }}
     >

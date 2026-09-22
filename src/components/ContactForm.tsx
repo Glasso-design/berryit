@@ -18,7 +18,7 @@ import { rut } from "@/content/home";
 type Status = { kind: "idle" } | { kind: "sending" } | { kind: "sent" } | { kind: "error"; message: string };
 
 const input =
-  "mt-2 w-full rounded-xl border border-line bg-ink px-4 py-3 text-paper placeholder:text-muted/60 transition focus:border-berry focus:outline-none";
+  "mt-2 w-full rounded-xl border border-field bg-ink px-4 py-3 text-paper placeholder:text-muted transition focus:border-berry focus:outline-none";
 
 function Chip({
   type,
@@ -38,7 +38,7 @@ function Chip({
   return (
     <label
       className={`cursor-pointer rounded-full border px-4 py-2 text-sm transition has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-signal ${
-        checked ? "border-berry bg-berry/15 text-paper" : "border-line text-paper/80 hover:border-muted"
+        checked ? "border-berry bg-berry/15 text-paper" : "border-field text-paper/85 hover:border-muted"
       }`}
     >
       <input type={type} name={name} value={value} checked={checked} onChange={onChange} className="sr-only" />
@@ -163,7 +163,7 @@ export function ContactForm({
             <label
               key={c.value}
               className={`flex cursor-pointer flex-col rounded-2xl border px-5 py-4 transition has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-signal ${
-                customer === c.value ? "border-berry bg-berry/15" : "border-line hover:border-muted"
+                customer === c.value ? "border-berry bg-berry/15" : "border-field hover:border-muted"
               }`}
             >
               <input
@@ -289,7 +289,7 @@ export function ContactForm({
                 type="file"
                 name="files"
                 multiple
-                className="mt-2 block w-full text-sm text-muted file:mr-4 file:rounded-full file:border-0 file:bg-white/[0.08] file:px-4 file:py-2 file:text-paper hover:file:bg-white/[0.12]"
+                className="mt-2 block w-full text-sm text-muted file:mr-4 file:rounded-full file:border-0 file:bg-fog/[0.08] file:px-4 file:py-2 file:text-paper hover:file:bg-fog/[0.12]"
               />
               <ErrorText id="err-files" text={errors.files} />
             </label>

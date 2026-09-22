@@ -28,8 +28,8 @@ export default function Home() {
       {/* HERO */}
       <section className="relative overflow-hidden pt-36 pb-16 sm:pt-48 sm:pb-20">
         <div aria-hidden className="bg-grid absolute inset-0" />
-        <div aria-hidden className="absolute -top-32 left-1/2 h-[560px] w-[1100px] -translate-x-1/2 rounded-full bg-grape/25 blur-[140px]" />
-        <div aria-hidden className="absolute top-40 right-[-10%] h-[380px] w-[380px] rounded-full bg-berry/25 blur-[120px]" />
+        <div aria-hidden className="glow absolute -top-32 left-1/2 h-[560px] w-[1100px] -translate-x-1/2 rounded-full bg-grape/25 blur-[140px]" />
+        <div aria-hidden className="glow absolute top-40 right-[-10%] h-[380px] w-[380px] rounded-full bg-berry/25 blur-[120px]" />
         <Container className="relative">
           <Eyebrow>BERRYiT • Teknik & digitala lösningar</Eyebrow>
           <h1 className="mt-6 max-w-5xl font-display text-5xl leading-[1.02] font-semibold tracking-tight text-balance sm:text-7xl lg:text-8xl">
@@ -76,7 +76,7 @@ export default function Home() {
               <RutHighlight className="mt-6" />
               <ul aria-hidden className="mt-7 flex flex-wrap gap-2">
                 {homeIcons.map((i) => (
-                  <li key={i} className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-white/[0.05] text-berry-2">
+                  <li key={i} className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-fog/[0.05] text-berry-2">
                     <Icon name={i} />
                   </li>
                 ))}
@@ -99,7 +99,7 @@ export default function Home() {
               <p className="mt-2 text-muted">Från Microsoft 365 och nätverk till kundportaler och kompletta plattformar.</p>
               <ul aria-hidden className="mt-7 flex flex-wrap gap-2">
                 {businessIcons.map((i) => (
-                  <li key={i} className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-white/[0.05] text-signal">
+                  <li key={i} className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-fog/[0.05] text-signal">
                     <Icon name={i} />
                   </li>
                 ))}
@@ -131,7 +131,7 @@ export default function Home() {
                 href={a.href}
                 className="group flex h-full flex-col rounded-2xl border border-line bg-ink p-6 transition hover:-translate-y-0.5 hover:border-berry/60"
               >
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-white/[0.05] text-berry-2 transition group-hover:bg-berry group-hover:text-white">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-fog/[0.05] text-berry-2 transition group-hover:bg-berry group-hover:text-white">
                   <Icon name={a.icon} />
                 </span>
                 <span className="mt-6 font-display text-xl font-semibold">{a.label}</span>
