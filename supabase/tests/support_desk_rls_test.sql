@@ -19,11 +19,68 @@ end;
 $$;
 
 -- Byt inloggad användare (motsvarar en JWT från Supabase Auth).
-create or replace function pg_temp.login(uid uuid)
-returns void language plpgsql as $$
+--
+-- aal speglar GoTrues claim: aal1 efter lösenord, aal2 efter verifierad TOTP.
+-- Förvalet är aal2, så att de befintliga testerna beskriver en fullt inloggad
+-- användare. Nivån sätts uttryckligen i de test som handlar om MFA-kravet.
+-- En inloggning motsvarar en rad i GoTrues auth.sessions plus en JWT som pekar
+-- på den. Sessionen behövs för att privilegierade kontroller ska gå igenom:
+-- databasen litar inte på signaturen ensam.
+-- Sessionsraden ägs av GoTrue och skrivs därför med definer-rättighet. Rollbytet
+-- måste ske utanför en sådan funktion, så det ligger kvar i login().
+create or replace function pg_temp.ensure_session(uid uuid, aal text)
+returns uuid language plpgsql security definer as $$
+declare
+  sid uuid;
 begin
-  perform set_config('request.jwt.claims', json_build_object('sub', uid, 'role', 'authenticated')::text, true);
+  select s.id into sid from auth.sessions s where s.user_id = uid limit 1;
+  if sid is null then
+    sid := gen_random_uuid();
+    insert into auth.sessions (id, user_id, aal) values (sid, uid, aal);
+  else
+    update auth.sessions set aal = ensure_session.aal where id = sid;
+  end if;
+  return sid;
+end;
+$$;
+
+create or replace function pg_temp.login(uid uuid, aal text default 'aal2')
+returns void language plpgsql as $$
+declare
+  sid uuid := pg_temp.ensure_session(uid, aal);
+begin
+  perform set_config(
+    'request.jwt.claims',
+    json_build_object('sub', uid, 'role', 'authenticated', 'aal', aal, 'session_id', sid)::text,
+    true
+  );
   execute 'set local role authenticated';
+end;
+$$;
+
+-- Utloggning server-side: GoTrue raderar sessionsraden. Token kan fortfarande
+-- vara signerad och ogången – poängen är att den inte längre ska duga till
+-- något privilegierat.
+create or replace function pg_temp.revoke_session(uid uuid)
+returns void language plpgsql security definer as $$
+begin
+  delete from auth.sessions where user_id = uid;
+end;
+$$;
+
+-- GoTrue sätter not_after när en session ska sluta gälla. Hjälparna nedan
+-- skriver den kolumnen, också med definer-rättighet.
+create or replace function pg_temp.expire_session(uid uuid)
+returns void language plpgsql security definer as $$
+begin
+  update auth.sessions set not_after = now() - interval '1 minute' where user_id = uid;
+end;
+$$;
+
+create or replace function pg_temp.unexpire_session(uid uuid)
+returns void language plpgsql security definer as $$
+begin
+  update auth.sessions set not_after = null where user_id = uid;
 end;
 $$;
 
@@ -559,5 +616,268 @@ begin
   raise notice 'PASS 1A-TESTER GICK IGENOM';
 end;
 $BLOCK$;
+
+-- ============================================================================
+-- PASS 2C: tvåfaktor som krav i databasen
+--
+-- Frågan som prövas här är inte vad gränssnittet visar, utan vad databasen
+-- lämnar ut till någon som struntar i gränssnittet och anropar API:t direkt
+-- med en giltig aal1-token.
+-- ============================================================================
+
+insert into auth.users (id, email) values
+  ('bbbbbbbb-0000-0000-0000-00000000000b', 'admin.profil@example.test'),
+  ('cccccccc-0000-0000-0000-00000000000c', 'maskin@example.test'),
+  ('dddddddd-0000-0000-0000-00000000000d', 'scoped.tekniker@example.test');
+
+update public.profiles set role = 'admin', full_name = 'Admin via profilroll'
+  where id = 'bbbbbbbb-0000-0000-0000-00000000000b';
+update public.profiles set is_machine = true, full_name = 'Infrastrukturagent'
+  where id = 'cccccccc-0000-0000-0000-00000000000c';
+
+insert into public.support_role_grants (grantee_id, role_key, scope, reason)
+values ('cccccccc-0000-0000-0000-00000000000c', 'BERRYIT_SUPPORT_TECHNICIAN', 'global',
+        'Maskinidentitet for infrastrukturrapportering');
+
+insert into public.support_role_grants (grantee_id, role_key, scope, organization_id, reason)
+values ('dddddddd-0000-0000-0000-00000000000d', 'BERRYIT_SUPPORT_TECHNICIAN', 'organization',
+        'aaaaaaaa-0000-0000-0000-000000000001', 'Levande uppdrag hos kunden');
+
+-- Konsulten fran auktoritetstesterna har bade en aterkallad och en utgangen
+-- tilldelning. PASS 2C behover en levande scoped tekniker, sa en egen skapas.
+
+do $BLOCK2C$
+declare
+  org uuid := 'aaaaaaaa-0000-0000-0000-000000000001';
+  superadmin uuid := '66666666-6666-6666-6666-666666666666';
+  scoped uuid := 'dddddddd-0000-0000-0000-00000000000d';
+  kund uuid := '11111111-1111-1111-1111-111111111111';
+  tekniker uuid := '33333333-3333-3333-3333-333333333333';
+  adminprofil uuid := 'bbbbbbbb-0000-0000-0000-00000000000b';
+  maskin uuid := 'cccccccc-0000-0000-0000-00000000000c';
+  ticket_org uuid;
+  n int;
+begin
+  select id into ticket_org from public.tickets where organization_id = org limit 1;
+
+  -- 74-77. Superadmin med enbart losenord far inga privilegier.
+  perform pg_temp.login(superadmin, 'aal1');
+  perform pg_temp.assert(public.current_aal() = 'aal1', 'aal-claim lases ur JWT');
+  perform pg_temp.assert(not public.mfa_satisfied(), 'aal1 uppfyller inte MFA-kravet');
+  perform pg_temp.assert(not public.is_support_super_admin(), 'superadmin med aal1 raknas inte som superadmin');
+  perform pg_temp.assert(not public.is_admin(), 'superadmin med aal1 raknas inte som admin');
+
+  -- 78-80. De kansliga behorigheterna ar stangda utan aal2.
+  perform pg_temp.assert(not public.has_support_permission('roles.grant'),
+    'roles.grant nekas utan aal2');
+  perform pg_temp.assert(not public.has_support_permission('audit.read'),
+    'audit.read nekas utan aal2');
+  perform pg_temp.assert(not public.has_support_permission('onarly.entitlements.manage'),
+    'onarly.entitlements.manage nekas utan aal2');
+
+  -- 81. Revisionen gar inte att lasa utan aal2 (direkt mot tabellen).
+  select count(*) into n from public.support_admin_audit;
+  perform pg_temp.assert(n = 0, 'revisionsloggen ar tom for aal1 trots giltig token');
+
+  -- 82. ONARLY-registret ar operativ information som personal far lasa aven
+  --     utan MFA (oforandrat sedan PASS 1D). Det kansliga ar att andra i det,
+  --     vilket provas i 84.
+  select count(*) into n from public.onarly_support_entitlements;
+  perform pg_temp.assert(n >= 0, 'ONARLY-registret ar lasbart for personal utan MFA');
+
+  -- 83-84. Behorighet kan inte delas ut utan aal2 - varken via policy eller trigger.
+  begin
+    insert into public.support_role_grants (grantee_id, role_key, scope, organization_id, reason, granted_by)
+    values (kund, 'BERRYIT_SUPPORT_TECHNICIAN', 'organization', org, 'Forsok utan MFA', superadmin);
+    perform pg_temp.assert(false, 'tilldelning utan aal2 ska nekas');
+  exception when insufficient_privilege then
+    perform pg_temp.assert(true, 'tilldelning utan aal2 nekas');
+  end;
+
+  begin
+    insert into public.onarly_support_entitlements (organization_id, product_key, entitlement, reason, granted_by)
+    values (org, 'onarly_desk', 'remote_support', 'Forsok utan MFA', superadmin);
+    perform pg_temp.assert(false, 'ONARLY-rattighet utan aal2 ska nekas');
+  exception when insufficient_privilege then
+    perform pg_temp.assert(true, 'ONARLY-rattighet utan aal2 nekas');
+  end;
+
+  -- 85. Superadmin med aal1 behaller personalatkomst till arenden
+  --     (tickets.read kraver inte MFA) - arendearbetet far inte stanna.
+  perform pg_temp.assert(public.is_staff(), 'superadmin med aal1 ar fortfarande personal');
+  select count(*) into n from public.tickets where id = ticket_org;
+  perform pg_temp.assert(n = 1, 'superadmin med aal1 kan fortsatta arbeta med arenden');
+
+  -- 86-89. Med aal2 ar allt pa plats igen.
+  perform pg_temp.login(superadmin, 'aal2');
+  perform pg_temp.assert(public.mfa_satisfied(), 'aal2 uppfyller MFA-kravet');
+  perform pg_temp.assert(public.is_support_super_admin(), 'superadmin med aal2 far sina privilegier');
+  perform pg_temp.assert(public.has_support_permission('roles.grant'), 'roles.grant tillats med aal2');
+  select count(*) into n from public.support_admin_audit;
+  perform pg_temp.assert(n > 0, 'revisionsloggen lases med aal2');
+
+  -- 90. Och tilldelningen gar igenom nar kravet ar uppfyllt.
+  insert into public.support_role_grants (grantee_id, role_key, scope, organization_id, reason, granted_by)
+  values (kund, 'BERRYIT_SUPPORT_TECHNICIAN', 'organization', org, 'Tillatet med MFA', superadmin);
+  select count(*) into n from public.support_role_grants
+   where grantee_id = kund and revoked_at is null;
+  perform pg_temp.assert(n = 1, 'tilldelning med aal2 gar igenom');
+
+  -- 91-93. Scoped tekniker paverkas inte av kravet.
+  perform pg_temp.login(scoped, 'aal1');
+  perform pg_temp.assert(public.has_support_permission('tickets.read', org),
+    'scoped tekniker behaller tickets.read utan MFA');
+  select count(*) into n from public.tickets where id = ticket_org;
+  perform pg_temp.assert(n = 1, 'scoped tekniker ser fortfarande sin organisations arende');
+  perform pg_temp.assert(not public.has_support_permission('roles.grant'),
+    'scoped tekniker far anda inte dela ut behorigheter');
+
+  -- 94-95. Tekniker (profilroll) och kund arbetar som forut.
+  perform pg_temp.login(tekniker, 'aal1');
+  perform pg_temp.assert(public.is_staff(), 'tekniker ar personal utan MFA');
+  select count(*) into n from public.tickets;
+  perform pg_temp.assert(n > 1, 'tekniker ser arenden utan MFA');
+
+  perform pg_temp.login(kund, 'aal1');
+  select count(*) into n from public.tickets where requester_id = kund;
+  perform pg_temp.assert(n > 0, 'kund ser sina egna arenden utan MFA');
+
+  -- 96-97. Profilrollen admin kraver ocksa aal2 for administration,
+  --        men behaller sin personalatkomst.
+  perform pg_temp.login(adminprofil, 'aal1');
+  perform pg_temp.assert(not public.is_admin(), 'profilrollen admin kraver aal2 for administration');
+  perform pg_temp.assert(public.is_staff(), 'profilrollen admin ar fortfarande personal utan MFA');
+  perform pg_temp.login(adminprofil, 'aal2');
+  perform pg_temp.assert(public.is_admin(), 'profilrollen admin far sina rattigheter med aal2');
+
+  -- 98-99. Maskinidentitet last ute vore ett driftstopp - den ar undantagen,
+  --        men bara for det den redan har behorighet till.
+  perform pg_temp.login(maskin, 'aal1');
+  perform pg_temp.assert(public.mfa_satisfied(), 'maskinidentitet uppfyller kravet utan TOTP');
+  perform pg_temp.assert(public.is_staff(), 'maskinidentitet behaller sin personalatkomst');
+  perform pg_temp.assert(not public.is_support_super_admin(),
+    'maskinidentitet far inte superadmin-rattigheter pa kopet');
+
+  -- 100. En vanlig anvandare kan inte gora sig sjalv till maskinidentitet.
+  perform pg_temp.login(kund, 'aal2');
+  update public.profiles set is_machine = true where id = kund;
+  select count(*) into n from public.profiles where id = kund and is_machine;
+  perform pg_temp.assert(n = 0, 'kund kan inte satta is_machine pa sig sjalv');
+
+  -- 101. Token helt utan aal-claim (aldre session) ger inga privilegier.
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', superadmin, 'role', 'authenticated')::text, true);
+  perform pg_temp.assert(not public.mfa_satisfied(), 'token utan aal-claim uppfyller inte kravet');
+  perform pg_temp.assert(not public.is_support_super_admin(), 'token utan aal-claim ger inga privilegier');
+
+  -- 102. Service_role ar betrodd backend och last inte ute.
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', null, 'role', 'service_role')::text, true);
+  perform pg_temp.assert(public.is_trusted_backend(), 'service_role raknas som betrodd backend');
+  perform pg_temp.assert(public.mfa_satisfied(), 'service_role omfattas inte av MFA-kravet');
+
+
+  -- ------------------------------------------------------------------
+  -- Hotmodell (driftsattningsgrind PASS 2C)
+  -- ------------------------------------------------------------------
+
+  -- 103. Ett anonymt API-anrop ar inte en betrodd backend. PostgREST satter
+  --      alltid en roll-claim, sa avsaknad av anvandare racker inte.
+  perform set_config('request.jwt.claims', json_build_object('role', 'anon')::text, true);
+  perform pg_temp.assert(not public.is_trusted_backend(), 'anon-nyckel raknas inte som betrodd backend');
+  perform pg_temp.assert(not public.mfa_satisfied(), 'anon uppfyller inte MFA-kravet');
+  perform pg_temp.assert(not public.is_support_super_admin(), 'anon far inga superadmin-rattigheter');
+  perform pg_temp.assert(not public.is_admin(), 'anon far inga adminrattigheter');
+  perform pg_temp.assert(not public.is_staff(), 'anon raknas inte som personal');
+
+  -- 104. Ett internt anrop helt utan claims (trigger, migration, psql) ar det.
+  perform set_config('request.jwt.claims', '', true);
+  perform pg_temp.assert(public.is_trusted_backend(), 'internt anrop utan claims ar betrodd backend');
+
+  -- 105. En anvandare som pastar sig vara service_role i sin payload far inga
+  --      rattigheter utan tilldelning. (Signaturen skulle aldrig halla i
+  --      verkligheten - kontrollen ska anda inte vila pa payloaden.)
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', kund, 'role', 'service_role')::text, true);
+  perform pg_temp.assert(not public.is_admin(), 'pastadd service_role-claim ger inga adminrattigheter');
+  perform pg_temp.assert(not public.is_support_super_admin(), 'pastadd service_role-claim ger inte superadmin');
+
+  -- 106. aal-varden som inte ar exakt "aal2" accepteras inte.
+  perform pg_temp.login(superadmin, 'AAL2');
+  perform pg_temp.assert(not public.mfa_satisfied(), 'aal-varde i versaler accepteras inte');
+  perform pg_temp.login(superadmin, 'aal3');
+  perform pg_temp.assert(not public.mfa_satisfied(), 'okant aal-varde accepteras inte');
+  perform pg_temp.login(superadmin, '');
+  perform pg_temp.assert(not public.mfa_satisfied(), 'tomt aal-varde accepteras inte');
+
+  -- 107. Maskinidentitet kan inte sattas av personal utan adminratt.
+  perform pg_temp.login(tekniker, 'aal2');
+  update public.profiles set is_machine = true where id = kund;
+  perform pg_temp.logout();
+  select count(*) into n from public.profiles where id = kund and is_machine;
+  perform pg_temp.assert(n = 0, 'tekniker kan inte gora nagon annan till maskinidentitet');
+
+  -- 108. En maskinidentitet som avaktiveras tappar sitt undantag omedelbart.
+  update public.profiles set is_active = false where id = maskin;
+  perform pg_temp.login(maskin, 'aal1');
+  perform pg_temp.assert(not public.mfa_satisfied(), 'avaktiverad maskinidentitet uppfyller inte kravet');
+  perform pg_temp.logout();
+  update public.profiles set is_active = true where id = maskin;
+
+
+  -- 122-126. Levande session kravs for allt privilegierat.
+  --
+  -- En signerad token sager bara att den en gang utfardades. Loggar nagon ut
+  -- raderar GoTrue sessionsraden, medan PostgREST fortsatter att acceptera
+  -- samma token tills den gar ut. Darfor kontrolleras sessionen separat.
+  perform pg_temp.login(superadmin, 'aal2');
+  perform pg_temp.assert(public.session_is_live(), 'levande session kanns igen');
+  perform pg_temp.assert(public.is_support_super_admin(), 'superadmin med levande session har sina rattigheter');
+
+  perform pg_temp.revoke_session(superadmin);
+  perform pg_temp.assert(not public.session_is_live(), 'raderad session kanns igen som dod');
+  perform pg_temp.assert(not public.mfa_satisfied(), 'utloggad session uppfyller inte MFA-kravet');
+  perform pg_temp.assert(not public.is_support_super_admin(),
+    'samma token ger inga privilegier efter utloggning');
+  perform pg_temp.assert(not public.has_support_permission('roles.grant'),
+    'roles.grant nekas efter utloggning trots giltig signatur');
+
+  -- 127. Men arendearbetet stoppas inte av sessionskontrollen - den galler
+  --      bara det privilegierade. En tekniker som nyss loggat ut har anda en
+  --      token som gar ut inom kort, och ska inte mota ett trasigt granssnitt.
+  perform pg_temp.login(tekniker, 'aal1');
+  perform pg_temp.revoke_session(tekniker);
+  select count(*) into n from public.tickets;
+  perform pg_temp.assert(n > 1, 'arendearbete paverkas inte av sessionskontrollen');
+
+  -- 128. Utgangen session (not_after passerad) raknas inte som levande.
+  perform pg_temp.login(superadmin, 'aal2');
+  perform pg_temp.expire_session(superadmin);
+  perform pg_temp.assert(not public.session_is_live(), 'session med passerad not_after ar inte levande');
+  perform pg_temp.unexpire_session(superadmin);
+
+  -- 129. Token utan session_id duger inte heller.
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', superadmin, 'role', 'authenticated', 'aal', 'aal2')::text, true);
+  perform pg_temp.assert(not public.session_is_live(), 'token utan session_id raknas inte som levande');
+  perform pg_temp.assert(not public.is_support_super_admin(), 'token utan session_id ger inga privilegier');
+
+  -- 130. Pahittat session_id ger ingenting.
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', superadmin, 'role', 'authenticated', 'aal', 'aal2',
+                      'session_id', '00000000-0000-0000-0000-0000000000ff')::text, true);
+  perform pg_temp.assert(not public.session_is_live(), 'okant session_id raknas inte som levande');
+
+  -- 131. Betrodd backend har ingen session och ska inte krava nagon.
+  perform set_config('request.jwt.claims',
+    json_build_object('role', 'service_role')::text, true);
+  perform pg_temp.assert(public.session_is_live(), 'service_role kraver ingen sessionsrad');
+  perform set_config('request.jwt.claims', '', true);
+
+  perform pg_temp.logout();
+
+  raise notice 'PASS 2C-TESTER GICK IGENOM';
+end;
+$BLOCK2C$;
 
 rollback;

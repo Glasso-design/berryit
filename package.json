@@ -8,7 +8,8 @@
     "start": "next start -p 3501",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "db:test": "node supabase/tests/run-local.mjs"
+    "db:test": "node supabase/tests/run-local.mjs",
+    "db:upgrade-test": "node supabase/tests/upgrade-2c.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
