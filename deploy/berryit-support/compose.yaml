@@ -1,7 +1,7 @@
 # BERRYiT Support Desk – isolerad självhostad stack på prod-node-01.
 #
-# Delar ingenting med ONARLY utom värden och Docker-daemonen:
-# eget compose-projekt, eget nätverk, egna volymer, egna secrets.
+# Data, nätverk, volymer och secrets är isolerade från ONARLY. Den valfria
+# AI-adaptern gör endast ett autentiserat server-till-server-anrop till ONARLY AI Gateway.
 #
 # Inga publika portar. Endast API-gatewayen binder 127.0.0.1 – allt annat är
 # intert i nätverket. Databasen exponeras aldrig.
@@ -111,6 +111,34 @@ services:
     volumes:
       - storage-data:/var/lib/storage
     networks: [internal]
+
+  # Aktiveras endast efter att en betrodd image har byggts utanför
+  # produktionsservern och serverhemligheterna har lagts i stack.env.
+  ai-adapter:
+    profiles: ["onarly-ai"]
+    image: ${BERRYIT_AI_ADAPTER_IMAGE:-berryit-onarly-ai-adapter:local}
+    container_name: berryit-onarly-ai-adapter
+    restart: unless-stopped
+    depends_on:
+      auth:
+        condition: service_started
+      rest:
+        condition: service_started
+    environment:
+      PORT: "8788"
+      BERRYIT_AUTH_BASE_URL: http://auth:9999
+      BERRYIT_REST_BASE_URL: http://rest:3000
+      BERRYIT_ANON_KEY: ${ANON_KEY:?saknas}
+      BERRYIT_SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY:?saknas}
+      ONARLY_AI_GATEWAY_URL: ${ONARLY_AI_GATEWAY_URL:-}
+      ONARLY_AI_GATEWAY_TOKEN: ${ONARLY_AI_GATEWAY_TOKEN:-}
+      ONARLY_AI_GATEWAY_ROUTE: ${ONARLY_AI_GATEWAY_ROUTE:-/chat}
+    networks: [internal]
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:8788/ai/v1/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 15s
+      timeout: 5s
+      retries: 10
 
   gateway:
     image: caddy:2.11-alpine

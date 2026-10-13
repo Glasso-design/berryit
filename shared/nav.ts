@@ -28,6 +28,8 @@ export type NavItem = {
   label: string;
   icon: string;
   connected: boolean;
+  /** Desktop can be connected before the corresponding web module is mounted. */
+  desktopConnected?: boolean;
   staffOnly: boolean;
   description: string;
 };
@@ -81,11 +83,12 @@ export const controlNav: NavItem[] = [
   {
     key: "ai",
     href: "/control/ai",
-    label: "AI & Bots",
+    label: "Ask ONARLY AI",
     icon: "smarthome",
     connected: false,
+    desktopConnected: true,
     staffOnly: true,
-    description: "ONARLY AI Gateway och bottar.",
+    description: "Kundisolerad supportassistent via ONARLY AI Gateway.",
   },
   {
     key: "infrastruktur",

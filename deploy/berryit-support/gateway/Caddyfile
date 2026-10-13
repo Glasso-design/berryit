@@ -13,6 +13,10 @@
 		reverse_proxy auth:9999
 	}
 
+	handle /ai/v1/* {
+		reverse_proxy ai-adapter:8788
+	}
+
 	handle /rest/v1/* {
 		uri strip_prefix /rest/v1
 		reverse_proxy rest:3000

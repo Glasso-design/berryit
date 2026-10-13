@@ -41,6 +41,7 @@ export function Shell({
         <nav aria-label="Huvudmeny" className="app-scroll flex-1 px-3 pb-4">
           {items.map((item) => {
             const aktiv = item.key === current;
+            const connected = item.desktopConnected ?? item.connected;
             return (
               <button
                 key={item.key}
@@ -53,7 +54,7 @@ export function Shell({
               >
                 <Icon name={item.icon} className="h-4 w-4 shrink-0" />
                 <span className="flex-1 truncate">{item.label}</span>
-                {!item.connected && (
+                {!connected && (
                   <span className="rounded-full border border-line px-1.5 py-0.5 font-mono text-[9px] tracking-wide text-muted uppercase">
                     Ej ansluten
                   </span>

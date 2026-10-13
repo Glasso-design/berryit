@@ -102,11 +102,11 @@ Allt annat måste vara `https://`.
 
 ## Moduler
 
-Fyra moduler är anslutna och visar riktiga rader: Dashboard, Kunder,
-Support Desk och Inställningar. Projekt, Kommunikation, AI & Bots,
-Infrastruktur, Monitoring och Integrationer saknar backend och är märkta
-"ej ansluten" redan i menyn. De visar vad som krävs — aldrig en påhittad siffra
-eller driftstatus.
+Fem moduler är anslutna i Desktop: Dashboard, Kunder, Support Desk,
+Ask ONARLY AI och Inställningar. AI-vyn använder endast BerryITs
+serveradapter under /ai/v1; gateway-token och providerhemligheter finns aldrig
+i klienten. Projekt, Kommunikation, Infrastruktur, Monitoring och Integrationer
+saknar backend och är märkta "ej ansluten" redan i menyn.
 
 ## Installation
 

@@ -15,6 +15,7 @@ export const API_PREFIX = {
   auth: "/auth/v1",
   rest: "/rest/v1",
   storage: "/storage/v1",
+  ai: "/ai/v1",
 } as const;
 
 /** Hälsokontroll som fungerar utan inloggning (GoTrue svarar med sin version). */
@@ -83,12 +84,12 @@ export const MODULE_REQUIREMENTS: Record<string, ModuleRequirement> = {
     ],
   },
   ai: {
-    title: "AI & Bots är inte ansluten ännu",
-    description: "ONARLY AI Gateway och supportbottar.",
+    title: "Ask ONARLY AI finns i Desktop",
+    description: "Desktop använder BerryITs serveradapter; webbmodulen är ännu inte monterad.",
     requirements: [
-      "Server-side anslutning till ONARLY AI Gateway med egen nyckel",
-      "Botidentitet och behörighet i support_role_grants",
-      "Loggning av AI-åtgärder i revisionen",
+      "Driftsätt services/onarly-ai-adapter bakom /ai/v1",
+      "Konfigurera gateway-token endast i serverns secret store",
+      "Montera en webbklient mot samma serverkontrakt",
     ],
   },
   infrastruktur: {

@@ -9,6 +9,7 @@ import { Kunder } from "@/views/Kunder";
 import { Login } from "@/views/Login";
 import { Mfa } from "@/views/Mfa";
 import { Modul } from "@/views/Modul";
+import { OnarlyAi } from "@/views/OnarlyAi";
 import { Setup } from "@/views/Setup";
 import { Support } from "@/views/Support";
 
@@ -55,8 +56,9 @@ export function App() {
       {vy === "dashboard" && <Dashboard onNavigate={setVy} />}
       {vy === "kunder" && <Kunder />}
       {vy === "support" && <Support focus={arende} />}
+      {vy === "ai" && <OnarlyAi onOpenTicket={oppnaArende} />}
       {vy === "installningar" && <Installningar />}
-      {!["dashboard", "kunder", "support", "installningar"].includes(vy) && <Modul nyckel={vy} />}
+      {!["dashboard", "kunder", "support", "ai", "installningar"].includes(vy) && <Modul nyckel={vy} />}
     </Shell>
   );
 }

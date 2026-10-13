@@ -1,7 +1,7 @@
 # BERRYiT Support Desk – självhostad stack (PASS 1C)
 
-Isolerad backend på `prod-node-01`. Delar värden med ONARLY men **ingenting annat**:
-eget compose-projekt, eget nätverk, egna volymer, egna secrets, egen databas.
+Isolerad backend på `prod-node-01` med eget compose-projekt, nätverk, volymer, secrets och databas.
+Den valfria AI-adaptern gör ett autentiserat server-till-server-anrop till ONARLY AI Gateway utan att dela lagring eller administrativa hemligheter med Desktop.
 
 | | |
 |---|---|
@@ -75,7 +75,7 @@ Stacken är byggd som grund för BERRYiT IT Control Center. Så här är den fö
 | Centralt kundregister | `organizations`, `profiles` med organisationstillhörighet och kontaktperson | kundkort, adresser, avtalsdata |
 | Projektregister | – | egen tabell; kopplas till `organizations` |
 | IT Support Desk | komplett datamodell, RLS, auktoritetsmodell, bilagor, historik | portal- och teknikergränssnitt (PASS 2–3) |
-| ONARLY AI Gateway | – | anropas server-side med egen nyckel; ingen koppling byggd |
+| ONARLY AI Gateway | services/onarly-ai-adapter + /ai/v1-route finns i repo | migration, image, secrets och compose-profil måste aktiveras före drift |
 | Chatt och AI-bottar | `ticket_messages` har `is_from_staff` och författare | kanal/bot-identitet, samtyckeshantering |
 | Infrastruktur och monitoring | containrar är namngivna och isolerade; `uptime-kuma` finns på värden | egna healthchecks och mätpunkter för BERRYiT |
 | GitHub/Vercel | – | läsande integrationer, egna tokens, aldrig i klienten |
@@ -84,3 +84,17 @@ Stacken är byggd som grund för BERRYiT IT Control Center. Så här är den fö
 
 Principen är att BERRYiT är **auktoritet för support**, medan varje ONARLY-produkt
 behåller sin egen åtkomstkontroll för produktdriften.
+
+
+## ONARLY AI-adapter
+
+Adaptern är en separat servergräns och delar inga providerhemligheter med
+Desktop. Bygg imagen utanför produktionsservern, sätt värdena från
+onarly-ai.env.example i den skyddade stack.env och aktivera sedan explicit:
+
+    ./migrate.sh ../../supabase/migrations
+    docker compose --profile onarly-ai up -d ai-adapter gateway
+
+Kommandona ovan är en runbook och körs inte av repositorytesterna. Se
+../../docs/onarly-ai-assistant.md för endpoint-, behörighets- och
+verifieringskontrakt.
