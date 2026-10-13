@@ -1,0 +1,40 @@
+@import "tailwindcss";
+/* Designtokens delas med webben – se shared/tokens.css. */
+@import "../../shared/tokens.css";
+
+/*
+ * Desktopspecifikt. Fönstret är en app, inte en sida: ingen dokumentscroll,
+ * ingen textmarkering i ramen och inga systemfärger som bryter temat.
+ */
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+@theme inline {
+  --font-sans:
+    "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-display:
+    "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "Cascadia Code", "Consolas", ui-monospace, monospace;
+}
+
+/* Ramens ytor ska inte kunna markeras som text när man drar i fönstret. */
+.app-chrome {
+  user-select: none;
+}
+
+/* Rullning sker inuti innehållsytan, med en diskret rullningslist. */
+.app-scroll {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}

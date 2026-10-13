@@ -1,0 +1,40 @@
+{
+  "name": "berryit-control-center",
+  "version": "0.1.0",
+  "private": true,
+  "description": "BERRYiT Control Center – Windows-desktop för IT-support och administration.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --port 3601 --strictPort",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "package": "node scripts/package.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.117.3",
+    "@tauri-apps/api": "^2.9.0",
+    "@tauri-apps/plugin-http": "^2.8.2",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4",
+    "@tauri-apps/cli": "^2.9.0",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^5.1.0",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "vite": "^7.2.0",
+    "vitest": "^3.2.4"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
+  }
+}

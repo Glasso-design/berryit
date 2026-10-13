@@ -1,6 +1,12 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "berryit", "runtimeExecutable": "npm", "runtimeArgs": ["run", "dev"], "port": 3501 }
+    { "name": "berryit", "runtimeExecutable": "npm", "runtimeArgs": ["run", "dev"], "port": 3501 },
+    {
+      "name": "berryit-desktop",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "desktop", "run", "dev"],
+      "port": 3601
+    }
   ]
 }

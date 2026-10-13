@@ -1,7 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
 import { site } from "@/content/site";
 import { siteUrl, siteUrlObject } from "@/lib/seo";
 import { themeInitScript } from "@/lib/theme";
@@ -66,18 +64,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         {/* Körs synkront vid parsning – rätt tema redan i första renderingen, ingen blinkning. */}
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body className="flex min-h-full flex-col font-sans">
-        <a
-          href="#innehall"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[60] focus:rounded-full focus:bg-berry focus:px-4 focus:py-2 focus:text-white"
-        >
-          Hoppa till innehållet
-        </a>
-        <Header />
-        <main id="innehall" className="flex-1">
-          {children}
-        </main>
-        <Footer />
+      <body className="flex min-h-full flex-col font-sans">{children}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
