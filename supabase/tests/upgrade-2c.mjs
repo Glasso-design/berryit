@@ -28,7 +28,11 @@ const migrationsDir = path.join(testsDir, "..", "migrations");
 const read = (p) => fs.readFileSync(p, "utf8");
 const alla = fs.readdirSync(migrationsDir).filter((f) => f.endsWith(".sql")).sort();
 const MFA_MIGRATION = "20261013110000_support_mfa_enforcement.sql";
-const fore = alla.filter((f) => f !== MFA_MIGRATION);
+// Före-läget är migrationerna som fanns innan MFA-kravet, inte "alla utom den".
+// Senare migrationer bygger vidare på kolumnen requires_mfa och kan därför inte
+// appliceras på en databas som saknar den – precis som i verkligheten, där
+// migrationerna körs i filordning.
+const fore = alla.filter((f) => f < MFA_MIGRATION);
 
 let pass = 0;
 let fail = 0;
@@ -53,7 +57,7 @@ for (const f of fore) {
     process.exit(1);
   }
 }
-ok(`${fore.length} migrationer applicerade`);
+ok(`${fore.length} migrationer applicerade (läget före MFA-kravet)`);
 
 // --- Data som i drift -------------------------------------------------------
 await db.exec(`

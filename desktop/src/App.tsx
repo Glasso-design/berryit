@@ -4,11 +4,14 @@ import { navItem, type NavKey } from "@berryit/shared/nav";
 import { useSession } from "@/auth/session";
 import { Shell } from "@/components/Shell";
 import { Dashboard } from "@/views/Dashboard";
+import { Infrastruktur } from "@/views/Infrastruktur";
 import { Installningar } from "@/views/Installningar";
+import { Integrationer } from "@/views/Integrationer";
 import { Kunder } from "@/views/Kunder";
 import { Login } from "@/views/Login";
 import { Mfa } from "@/views/Mfa";
 import { Modul } from "@/views/Modul";
+import { Projekt } from "@/views/Projekt";
 import { OnarlyAi } from "@/views/OnarlyAi";
 import { Setup } from "@/views/Setup";
 import { Support } from "@/views/Support";
@@ -57,8 +60,13 @@ export function App() {
       {vy === "kunder" && <Kunder />}
       {vy === "support" && <Support focus={arende} />}
       {vy === "ai" && <OnarlyAi onOpenTicket={oppnaArende} />}
+      {vy === "projekt" && <Projekt />}
+      {vy === "infrastruktur" && <Infrastruktur />}
+      {vy === "integrationer" && <Integrationer />}
       {vy === "installningar" && <Installningar />}
-      {!["dashboard", "kunder", "support", "ai", "installningar"].includes(vy) && <Modul nyckel={vy} />}
+      {!["dashboard", "kunder", "support", "ai", "projekt", "infrastruktur", "integrationer", "installningar"].includes(
+        vy,
+      ) && <Modul nyckel={vy} />}
     </Shell>
   );
 }

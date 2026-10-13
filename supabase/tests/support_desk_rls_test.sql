@@ -880,4 +880,230 @@ begin
 end;
 $BLOCK2C$;
 
+-- ============================================================================
+-- PASS 2D: systemregister och Connector Engine
+--
+-- Frågorna här är desamma som i resten av sviten: vad lamnar databasen ut till
+-- den som struntar i granssnittet? Registret vet var kundernas system kor och
+-- under vilken identitet vi ar inne i dem - det far inte lacka.
+-- ============================================================================
+
+insert into auth.users (id, email) values
+  ('eeeeeeee-0000-0000-0000-00000000000e', 'kund.c@example.com');
+
+insert into public.organizations (id, name, is_internal) values
+  ('aaaaaaaa-0000-0000-0000-000000000002', 'Kund B AB', false),
+  ('aaaaaaaa-0000-0000-0000-00000000000b', 'BERRYiT (intern)', true);
+
+update public.profiles
+   set organization_id = 'aaaaaaaa-0000-0000-0000-000000000002', full_name = 'Kund C'
+ where id = 'eeeeeeee-0000-0000-0000-00000000000e';
+
+-- Projekt, nod och tjanst i tva olika kundorganisationer plus ett internt.
+insert into public.support_projects (id, organization_id, name, created_by) values
+  ('bbbb0000-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000001',
+   'Kundportal', '33333333-3333-3333-3333-333333333333'),
+  ('bbbb0000-0000-0000-0000-000000000002', 'aaaaaaaa-0000-0000-0000-000000000002',
+   'Webbshop', '33333333-3333-3333-3333-333333333333'),
+  ('bbbb0000-0000-0000-0000-00000000000b', 'aaaaaaaa-0000-0000-0000-00000000000b',
+   'BERRYiT Control Center', '33333333-3333-3333-3333-333333333333');
+
+insert into public.infra_nodes (id, organization_id, name, hostname, node_kind) values
+  ('cccc0000-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000001', 'kund-a-vps', 'a.example.test', 'server'),
+  ('cccc0000-0000-0000-0000-000000000002', 'aaaaaaaa-0000-0000-0000-000000000002', 'kund-b-vps', 'b.example.test', 'server');
+
+insert into public.infra_services (id, organization_id, project_id, node_id, name, service_kind, url) values
+  ('dddd0000-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000001',
+   'bbbb0000-0000-0000-0000-000000000001', 'cccc0000-0000-0000-0000-000000000001',
+   'portal-web', 'web', 'https://portal.example.test'),
+  ('dddd0000-0000-0000-0000-000000000002', 'aaaaaaaa-0000-0000-0000-000000000002',
+   'bbbb0000-0000-0000-0000-000000000002', 'cccc0000-0000-0000-0000-000000000002',
+   'shop-api', 'api', 'https://shop.example.test');
+
+insert into public.connector_integrations
+  (id, organization_id, connector_key, display_name, scope_kind, service_id, config, secret_ref, is_enabled, status)
+values
+  ('ffff0000-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000001',
+   'http_health', 'Portalens halsa', 'service', 'dddd0000-0000-0000-0000-000000000001',
+   '{"url": "https://portal.example.test/health"}'::jsonb, null, true, 'connected'),
+  ('ffff0000-0000-0000-0000-000000000002', 'aaaaaaaa-0000-0000-0000-000000000002',
+   'github', 'Webbshoppens repo', 'service', 'dddd0000-0000-0000-0000-000000000002',
+   '{"repository": "kundb/webbshop"}'::jsonb, 'github_kundb', true, 'connected');
+
+insert into public.service_status_checks (organization_id, service_id, status_key, source, latency_ms) values
+  ('aaaaaaaa-0000-0000-0000-000000000001', 'dddd0000-0000-0000-0000-000000000001', 'ok', 'http_health', 120),
+  ('aaaaaaaa-0000-0000-0000-000000000002', 'dddd0000-0000-0000-0000-000000000002', 'down', 'github', null);
+
+insert into public.incidents (organization_id, service_id, title, severity) values
+  ('aaaaaaaa-0000-0000-0000-000000000002', 'dddd0000-0000-0000-0000-000000000002', 'Webbshoppen svarar inte', 'major');
+
+insert into public.connector_activity_log (organization_id, actor_kind, connector_key, action) values
+  ('aaaaaaaa-0000-0000-0000-000000000002', 'connector', 'github', 'check');
+
+do $BLOCK2D$
+declare
+  org_a uuid := 'aaaaaaaa-0000-0000-0000-000000000001';
+  org_b uuid := 'aaaaaaaa-0000-0000-0000-000000000002';
+  org_intern uuid := 'aaaaaaaa-0000-0000-0000-00000000000b';
+  kund uuid := '11111111-1111-1111-1111-111111111111';
+  kund_c uuid := 'eeeeeeee-0000-0000-0000-00000000000e';
+  tekniker uuid := '33333333-3333-3333-3333-333333333333';
+  superadmin uuid := '66666666-6666-6666-6666-666666666666';
+  scoped uuid := 'dddddddd-0000-0000-0000-00000000000d';
+  svc_a uuid := 'dddd0000-0000-0000-0000-000000000001';
+  svc_b uuid := 'dddd0000-0000-0000-0000-000000000002';
+  n int;
+begin
+  -- 134-138. Kunden ser ingenting av registret. Det finns ingen policy for
+  --          customer-rollen, alltsa ingen vag dit genom PostgREST alls.
+  --
+  -- Kund C anvands har, inte kund A: kund A fick en supporttilldelning i
+  -- MFA-testerna ovan och ar darfor inte langre en ren kund. Ett isoleringstest
+  -- som kors med fel fixtur bevisar ingenting.
+  perform pg_temp.login(kund_c, 'aal2');
+  select count(*) into n from public.infra_nodes;
+  perform pg_temp.assert(n = 0, 'kund ser inga noder');
+  select count(*) into n from public.infra_services;
+  perform pg_temp.assert(n = 0, 'kund ser inga tjanster');
+  select count(*) into n from public.connector_integrations;
+  perform pg_temp.assert(n = 0, 'kund ser inga integrationer');
+  select count(*) into n from public.service_status_checks;
+  perform pg_temp.assert(n = 0, 'kund ser ingen driftstatus');
+  select count(*) into n from public.connector_activity_log;
+  perform pg_temp.assert(n = 0, 'kund ser ingen aktivitetslogg');
+
+  -- 139. Inte heller med ett gissat id - RLS filtrerar rader, inte kolumner.
+  select count(*) into n from public.infra_services where id = svc_a;
+  perform pg_temp.assert(n = 0, 'manipulerat tjanste-id ger kunden ingenting');
+  select count(*) into n from public.incidents;
+  perform pg_temp.assert(n = 0, 'kund ser inga incidenter');
+
+  -- 140-143. Personal ser registret och kan arbeta med det.
+  perform pg_temp.login(tekniker, 'aal1');
+  select count(*) into n from public.infra_nodes;
+  perform pg_temp.assert(n = 2, 'tekniker ser bada kundernas noder');
+  select count(*) into n from public.infra_services;
+  perform pg_temp.assert(n = 2, 'tekniker ser bada kundernas tjanster');
+  select count(*) into n from public.service_status_checks;
+  perform pg_temp.assert(n = 2, 'tekniker ser driftstatus');
+  perform pg_temp.assert(public.can_view_infrastructure(org_a), 'tekniker far lasa infrastruktur utan MFA');
+
+  -- 144-145. Men inte integrationerna: de visar vilka system vi ar inne i och
+  --          under vilken identitet. Det kraver connectors.manage.
+  select count(*) into n from public.connector_integrations;
+  perform pg_temp.assert(n = 0, 'tekniker utan connectors.manage ser inga integrationer');
+  select count(*) into n from public.connector_activity_log;
+  perform pg_temp.assert(n = 0, 'tekniker utan connectors.manage ser ingen aktivitetslogg');
+
+  -- 146-148. Superadmin utan tvafaktor far lasa registret men inte roja
+  --          integrationerna - connectors.manage ar markt requires_mfa.
+  perform pg_temp.login(superadmin, 'aal1');
+  select count(*) into n from public.infra_services;
+  perform pg_temp.assert(n = 2, 'superadmin med aal1 kan lasa registret');
+  perform pg_temp.assert(not public.can_manage_connectors(org_a), 'connectors.manage kraver aal2');
+  select count(*) into n from public.connector_integrations;
+  perform pg_temp.assert(n = 0, 'integrationerna ar stangda utan aal2');
+
+  -- 149-150. Med aal2 oppnas de.
+  perform pg_temp.login(superadmin, 'aal2');
+  perform pg_temp.assert(public.can_manage_connectors(org_a), 'connectors.manage tillats med aal2');
+  select count(*) into n from public.connector_integrations;
+  perform pg_temp.assert(n = 2, 'superadmin med aal2 ser integrationerna');
+
+  -- 151. Lasläge gar inte att slå av fran en klient.
+  begin
+    update public.connector_integrations
+       set access_mode = 'read_write'
+     where id = 'ffff0000-0000-0000-0000-000000000001';
+    perform pg_temp.assert(false, 'access_mode skulle inte ga att andra');
+  exception when check_violation or insufficient_privilege then
+    perform pg_temp.assert(true, 'access_mode kan inte andras fran read_only');
+  end;
+
+  -- 152. Och en ny integration kan inte skapas i skrivlage.
+  begin
+    insert into public.connector_integrations
+      (organization_id, connector_key, display_name, access_mode)
+    values (org_a, 'http_health', 'Skrivande', 'read_write');
+    perform pg_temp.assert(false, 'skrivande integration skulle nekas');
+  exception when check_violation or insufficient_privilege then
+    perform pg_temp.assert(true, 'skrivande integration kan inte skapas');
+  end;
+
+  -- 153. En hemlighet som klistras in i secret_ref avvisas - det ska vara ett
+  --      namn, inte ett varde.
+  begin
+    insert into public.connector_integrations
+      (organization_id, connector_key, display_name, secret_ref)
+    values (org_a, 'github', 'Fel nyckel', 'ghp_0123456789abcdefghijklmnop');
+    perform pg_temp.assert(false, 'en token i secret_ref skulle nekas');
+  exception when check_violation then
+    perform pg_temp.assert(true, 'en token i secret_ref avvisas');
+  end;
+
+  -- 154. En post kan inte flyttas till en annan kund i efterhand.
+  begin
+    update public.infra_services set organization_id = org_b where id = svc_a;
+    perform pg_temp.assert(false, 'tjansten skulle inte ga att flytta till annan kund');
+  exception when insufficient_privilege or foreign_key_violation or unique_violation then
+    perform pg_temp.assert(true, 'tjansten kan inte flyttas till en annan organisation');
+  end;
+
+  -- 155. En tjanst kan inte hangas under ett projekt i en annan organisation.
+  begin
+    insert into public.infra_services (organization_id, project_id, name)
+    values (org_a, 'bbbb0000-0000-0000-0000-000000000002', 'stulen-tjanst');
+    perform pg_temp.assert(false, 'tjanst under annans projekt skulle nekas');
+  exception when foreign_key_violation then
+    perform pg_temp.assert(true, 'tjanst kan inte hangas under en annan kunds projekt');
+  end;
+
+  -- 156-157. Matpunkter och aktivitetslogg ar ofranderliga.
+  begin
+    update public.service_status_checks set status_key = 'ok' where organization_id = org_b;
+    perform pg_temp.assert(false, 'matpunkt skulle inte ga att skriva om');
+  exception when insufficient_privilege then
+    perform pg_temp.assert(true, 'matpunkter kan inte skrivas om');
+  end;
+  begin
+    delete from public.connector_activity_log where organization_id = org_b;
+    perform pg_temp.assert(false, 'aktivitetsrad skulle inte ga att radera');
+  exception when insufficient_privilege then
+    perform pg_temp.assert(true, 'aktivitetsloggen kan inte raderas');
+  end;
+
+  -- 158-161. Scoped tekniker ser bara sin egen kunds del av registret.
+  --          (Tilldelningen ligger pa org_a.)
+  perform pg_temp.login(scoped, 'aal1');
+  perform pg_temp.assert(public.can_view_infrastructure(org_a), 'scoped tekniker far lasa sin kunds register');
+  perform pg_temp.assert(not public.can_view_infrastructure(org_b), 'scoped tekniker far inte lasa annan kunds register');
+  select count(*) into n from public.infra_services;
+  perform pg_temp.assert(n = 1, 'scoped tekniker ser bara sin kunds tjanst');
+  select count(*) into n from public.infra_services where id = svc_b;
+  perform pg_temp.assert(n = 0, 'gissat id hos annan kund ger ingenting');
+  select count(*) into n from public.incidents;
+  perform pg_temp.assert(n = 0, 'scoped tekniker ser inte annan kunds incidenter');
+
+  -- 162. Kund A har en organisationsbunden supporttilldelning sedan tidigare
+  --      test. Den ger insyn i den egna organisationen - och ingen annans.
+  perform pg_temp.login(kund, 'aal2');
+  select count(*) into n from public.infra_services where organization_id = org_b;
+  perform pg_temp.assert(n = 0, 'tilldelning i en organisation ger ingen insyn i en annan');
+
+  -- 163. Internt och externt gar att skilja at, och skillnaden ligger pa
+  --      organisationen sa att den inte kan glida isar per projekt.
+  perform pg_temp.login(tekniker, 'aal1');
+  select count(*) into n from public.support_projects p
+    join public.organizations o on o.id = p.organization_id
+   where o.is_internal;
+  perform pg_temp.assert(n = 1, 'interna projekt gar att skilja fran kundprojekt');
+  select count(*) into n from public.organizations where is_internal and id = org_intern;
+  perform pg_temp.assert(n = 1, 'den interna organisationen ar markt som intern');
+
+  perform pg_temp.logout();
+
+  raise notice 'PASS 2D-TESTER GICK IGENOM';
+end;
+$BLOCK2D$;
+
 rollback;
