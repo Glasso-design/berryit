@@ -1,0 +1,144 @@
+# BERRYiT Support Desk – isolerad självhostad stack på prod-node-01.
+#
+# Delar ingenting med ONARLY utom värden och Docker-daemonen:
+# eget compose-projekt, eget nätverk, egna volymer, egna secrets.
+#
+# Inga publika portar. Endast API-gatewayen binder 127.0.0.1 – allt annat är
+# intert i nätverket. Databasen exponeras aldrig.
+#
+# Images är färdigbyggda och hämtas från registry (inga builds på VPS:en).
+
+name: berryit-support
+
+services:
+  db:
+    image: supabase/postgres:17.6.1.136
+    container_name: berryit-support-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?saknas}
+      POSTGRES_DB: postgres
+      JWT_SECRET: ${JWT_SECRET:?saknas}
+      JWT_EXP: "3600"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      # Enskilda filer i imagens egen init-katalog – att montera hela
+      # /docker-entrypoint-initdb.d döljer imagens skript som skapar rollerna.
+      - ./db/init/00-berryit-roles.sql:/docker-entrypoint-initdb.d/init-scripts/99-berryit-roles.sql:ro
+      - ./db/init/99-berryit-jwt.sql:/docker-entrypoint-initdb.d/init-scripts/99-berryit-jwt.sql:ro
+    networks: [internal]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    stop_grace_period: 30s
+
+  auth:
+    image: supabase/gotrue:v2.196.0
+    container_name: berryit-support-auth
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      PORT: "9999"
+      API_EXTERNAL_URL: ${PUBLIC_BASE_URL:-http://localhost:8700}/auth/v1
+      GOTRUE_SITE_URL: ${PUBLIC_BASE_URL:-http://localhost:8700}
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:${POSTGRES_PASSWORD}@db:5432/postgres
+      GOTRUE_JWT_SECRET: ${JWT_SECRET}
+      GOTRUE_JWT_EXP: "3600"
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      # Portalen är inbjudningsbaserad: konton skapas av BERRYiT, inte publikt.
+      GOTRUE_DISABLE_SIGNUP: "true"
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
+      GOTRUE_MAILER_AUTOCONFIRM: "true"
+      GOTRUE_LOG_LEVEL: info
+      # MFA (TOTP) för administratörer.
+      GOTRUE_MFA_ENABLED: "true"
+      GOTRUE_MFA_TOTP_ENROLL_ENABLED: "true"
+      GOTRUE_MFA_TOTP_VERIFY_ENABLED: "true"
+      GOTRUE_MFA_MAX_ENROLLED_FACTORS: "10"
+    networks: [internal]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:9999/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  rest:
+    image: postgrest/postgrest:v14.12
+    container_name: berryit-support-rest
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGRST_DB_URI: postgres://authenticator:${POSTGRES_PASSWORD}@db:5432/postgres
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      PGRST_DB_USE_LEGACY_GUCS: "false"
+      PGRST_APP_SETTINGS_JWT_SECRET: ${JWT_SECRET}
+      PGRST_APP_SETTINGS_JWT_EXP: "3600"
+    networks: [internal]
+
+  storage:
+    image: supabase/storage-api:v1.60.4
+    container_name: berryit-support-storage
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      rest:
+        condition: service_started
+    environment:
+      ANON_KEY: ${ANON_KEY:?saknas}
+      SERVICE_KEY: ${SERVICE_ROLE_KEY:?saknas}
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      DATABASE_URL: postgres://supabase_storage_admin:${POSTGRES_PASSWORD}@db:5432/postgres
+      POSTGREST_URL: http://rest:3000
+      FILE_SIZE_LIMIT: "26214400"
+      STORAGE_BACKEND: file
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      TENANT_ID: berryit-support
+      REGION: local
+      GLOBAL_S3_BUCKET: berryit-support
+      ENABLE_IMAGE_TRANSFORMATION: "false"
+    volumes:
+      - storage-data:/var/lib/storage
+    networks: [internal]
+
+  gateway:
+    image: caddy:2.11-alpine
+    container_name: berryit-support-gateway
+    restart: unless-stopped
+    depends_on:
+      auth:
+        condition: service_started
+      rest:
+        condition: service_started
+      storage:
+        condition: service_started
+    volumes:
+      - ./gateway/Caddyfile:/etc/caddy/Caddyfile:ro
+      - gateway-data:/data
+    # Endast localhost på värden. Ingen publik port, ingen ändring av ONARLY:s Caddy.
+    ports:
+      - "127.0.0.1:${GATEWAY_PORT:-8700}:8080"
+    networks: [internal]
+
+networks:
+  internal:
+    name: berryit-support-net
+
+volumes:
+  db-data:
+    name: berryit-support-db-data
+  storage-data:
+    name: berryit-support-storage-data
+  gateway-data:
+    name: berryit-support-gateway-data

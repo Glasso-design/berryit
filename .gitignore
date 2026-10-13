@@ -40,3 +40,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# deploy: genereras på servern, får aldrig checkas in
+deploy/*/secrets/
+deploy/*/backups/

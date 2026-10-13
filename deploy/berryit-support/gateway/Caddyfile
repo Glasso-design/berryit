@@ -1,0 +1,33 @@
+# Intern API-gateway för BERRYiT Support Desk.
+# Lyssnar bara på containerns 8080, som i sin tur binds till 127.0.0.1 på värden.
+# ONARLY:s Caddy (portarna 80/443) berörs inte.
+
+{
+	admin off
+	auto_https off
+}
+
+:8080 {
+	handle /auth/v1/* {
+		uri strip_prefix /auth/v1
+		reverse_proxy auth:9999
+	}
+
+	handle /rest/v1/* {
+		uri strip_prefix /rest/v1
+		reverse_proxy rest:3000
+	}
+
+	handle /storage/v1/* {
+		uri strip_prefix /storage/v1
+		reverse_proxy storage:5000
+	}
+
+	handle /health {
+		respond "berryit-support gateway ok" 200
+	}
+
+	handle {
+		respond "not found" 404
+	}
+}
