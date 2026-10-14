@@ -9,7 +9,9 @@ set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 backup_dir="${BACKUP_DIR:-$here/backups}"
 dump="${1:-$(ls -1t "$backup_dir"/berryit-support-db-*.dump 2>/dev/null | head -1)}"
-test_db="berryit_restore_test_$(date -u +%H%M%S)"
+run_id="$(python3 -c 'import uuid; print(uuid.uuid4().hex)')"
+test_db="berryit_restore_test_$run_id"
+owner_marker="berryit_restore_test:$run_id"
 
 [ -n "$dump" ] && [ -f "$dump" ] || { echo "hittar ingen dumpfil" >&2; exit 1; }
 echo "testar återställning av $(basename "$dump") till databasen $test_db"
@@ -19,11 +21,20 @@ psql_admin() { docker exec -i berryit-support-db psql -v ON_ERROR_STOP=1 -U "$db
 psql_test() { docker exec -i berryit-support-db psql -v ON_ERROR_STOP=1 -U "$db_user" -d "$test_db" "$@"; }
 
 cleanup() {
-  psql_admin -q -c "drop database if exists \"$test_db\" with (force)" >/dev/null 2>&1 || true
+  local actual_owner
+  actual_owner=$(psql_admin -tA -c "select shobj_description(oid, 'pg_database') from pg_database where datname = '$test_db'") || return 1
+  [ "$actual_owner" = "$owner_marker" ] || {
+    echo "Databasens ägarskap kunde inte verifieras; ingen cleanup" >&2
+    return 1
+  }
+  psql_admin -q -c "drop database \"$test_db\" with (force)" >/dev/null
 }
-trap cleanup EXIT
 
 psql_admin -q -c "create database \"$test_db\""
+psql_admin -q -c "comment on database \"$test_db\" is '$owner_marker'"
+# Trap installeras först efter lyckad skapning och ägarmärkning. En kollision
+# eller ett fel före dess får aldrig radera en redan existerande databas.
+trap cleanup EXIT
 docker exec -i berryit-support-db pg_restore -U "$db_user" -d "$test_db" --no-owner --clean --if-exists < "$dump" >/dev/null 2>&1 || true
 
 tables=$(psql_test -tAc "select count(*) from pg_tables where schemaname = 'public'")

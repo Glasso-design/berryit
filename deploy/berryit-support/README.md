@@ -32,7 +32,7 @@ Images byggs aldrig på servern; de hämtas färdiga från registry.
 ./stack.sh up                   # hämtar images och startar
 ./stack.sh ps | logs | resources
 ./migrate.sh ../../supabase/migrations
-./security-gate.sh              # 21 kontroller mot körande tjänster
+./security-gate.sh              # endast separat isolerad och märkt teststack
 ./backup.sh                     # databas + filstorage
 ./restore-test.sh               # återställer till tillfällig databas och verifierar
 ./stack.sh down                 # stoppar, behåller volymer
@@ -55,10 +55,19 @@ Superanvändaren i `supabase/postgres` är **`supabase_admin`** (rollen `postgre
 
 ## Backup
 
+`security-gate.sh` kräver `BERRYIT_TEST_ENV=isolated`, ett separat
+`BERRYIT_TEST_PROJECT`, `BERRYIT_TEST_STACK_ID` (UUID), en separat nyckelfil och
+en testgateway på annan port än 8700. Testdatabasen måste ha motsvarande
+`berryit.test_environment=isolated` och `berryit.test_stack_id` som
+databasinställningar. Skriptet avbryter innan någon testdata skapas om
+teststacken inte kan verifieras. Cleanup sker endast efter godkända kontroller
+och för ID:n skapade i samma körning; vid fel lämnas data kvar i teststacken.
+Det befintliga projektet `berryit-support` på `prod-node-01` nekas alltid.
+
 `backup.sh` gör `pg_dump -Fc` av databasen och en tar av storage-volymen till
 `./backups` (0600, 30 dagars gallring). `restore-test.sh` återställer senaste
 dumpen till en tillfällig databas, kontrollerar tabeller, policies och RLS, och
-släpper databasen efteråt.
+släpper endast den databas som samma körning skapat och ägarmärkt.
 
 **Offsite-backup är BLOCKED.** Destinationen är inte beslutad, så backupen finns
 bara på samma värd som databasen. Stacken är därför **inte produktionsklar**.

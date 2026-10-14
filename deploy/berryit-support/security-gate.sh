@@ -3,14 +3,20 @@
 # Verifierar det som ren SQL inte kan bevisa: JWT-validering, RLS via API,
 # kundisolering, signed URLs och MFA.
 #
-#   ./security-gate.sh
+#   BERRYIT_TEST_ENV=isolated BERRYIT_TEST_PROJECT=berryit-support-test-... \
+#   BERRYIT_TEST_STACK_ID=<uuid> BERRYIT_TEST_GATEWAY_PORT=<port> \
+#   BERRYIT_TEST_SECRETS_FILE=<separat fil> ./security-gate.sh
 #
-# Använder endast syntetiska konton (@example.test) och städar upp efter sig.
-set -uo pipefail
+# Får bara köras mot en separat markerad teststack. Inga exit traps raderar data.
+set -euo pipefail
 
 here="$(cd "$(dirname "$0")" && pwd)"
-set -a; . "$here/secrets/stack.env"; set +a
-base="http://127.0.0.1:${GATEWAY_PORT:-8700}"
+. "$here/security-gate-safety.sh"
+sql() { docker exec -i "$BERRYIT_TEST_PROJECT-db" psql -tA -U "${PGUSER:-supabase_admin}" -d postgres -c "$1"; }
+sg_require_isolated_target || exit 1
+set -a; . "$BERRYIT_TEST_SECRETS_FILE"; set +a
+[[ -n "${SERVICE_ROLE_KEY:-}" && -n "${ANON_KEY:-}" ]] || { echo 'Testnycklar saknas' >&2; exit 1; }
+base="http://127.0.0.1:$BERRYIT_TEST_GATEWAY_PORT"
 pass=0; fail=0
 ok()   { echo "  PASS  $1"; pass=$((pass+1)); }
 bad()  { echo "  FAIL  $1 ${2:-}"; fail=$((fail+1)); }
@@ -26,38 +32,33 @@ print(v if isinstance(v, str) else json.dumps(v))
 " "$1"; }
 
 admin() { curl -s -H "apikey: $SERVICE_ROLE_KEY" -H "Authorization: Bearer $SERVICE_ROLE_KEY" "$@"; }
-sql()   { docker exec -i berryit-support-db psql -tA -U "${PGUSER:-supabase_admin}" -d postgres -c "$1"; }
 
-stamp=$(date +%s)
-mail_a="kund.a.$stamp@example.test"
-mail_b="kund.b.$stamp@example.test"
-pw="Syntetiskt-Test-$stamp!"
-
-cleanup() {
-  for m in "$mail_a" "$mail_b"; do
-    id=$(sql "select id from auth.users where email = '$m'" | head -1)
-    [ -n "$id" ] && admin -X DELETE "$base/auth/v1/admin/users/$id" >/dev/null
-  done
-  sql "delete from public.tickets where subject like 'E2E-test%'" >/dev/null
-}
-trap cleanup EXIT
+run_id=$(python3 -c 'import uuid; print(uuid.uuid4())')
+sg_uuid "$run_id" || { echo 'Kunde inte skapa körnings-ID' >&2; exit 1; }
+mail_a="kund.a.$run_id@example.test"
+mail_b="kund.b.$run_id@example.test"
+run_subject="E2E-test $run_id"
+pw="Syntetiskt-Test-$run_id!"
+uid_a=''; uid_b=''; tid=''
 
 echo "1. Auth (GoTrue)"
 create_a=$(admin -X POST "$base/auth/v1/admin/users" -H "Content-Type: application/json" \
   -d "{\"email\":\"$mail_a\",\"password\":\"$pw\",\"email_confirm\":true}")
 uid_a=$(printf '%s' "$create_a" | json "['id']")
-[ -n "$uid_a" ] && ok "användare skapas via admin-API" || bad "kunde inte skapa användare" "$create_a"
+sg_uuid "$uid_a" || { bad "kunde inte skapa första användaren"; exit 1; }
+ok "användare skapas via admin-API"
 
 create_b=$(admin -X POST "$base/auth/v1/admin/users" -H "Content-Type: application/json" \
   -d "{\"email\":\"$mail_b\",\"password\":\"$pw\",\"email_confirm\":true}")
 uid_b=$(printf '%s' "$create_b" | json "['id']")
+sg_uuid "$uid_b" || { bad "kunde inte skapa andra användaren"; exit 1; }
 
 prof=$(sql "select count(*) from public.profiles where id = '$uid_a' and role = 'customer'")
 [ "$prof" = "1" ] && ok "profil skapas automatiskt med rollen customer" || bad "ingen profil skapades"
 
 signup=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$base/auth/v1/signup" \
   -H "apikey: $ANON_KEY" -H "Content-Type: application/json" \
-  -d "{\"email\":\"oinbjuden.$stamp@example.test\",\"password\":\"$pw\"}")
+  -d "{\"email\":\"oinbjuden.$run_id@example.test\",\"password\":\"$pw\"}")
 [ "$signup" != "200" ] && ok "publik självregistrering är avstängd (HTTP $signup)" || bad "signup tillåts trots DISABLE_SIGNUP"
 
 tok_a=$(curl -s -X POST "$base/auth/v1/token?grant_type=password" -H "apikey: $ANON_KEY" \
@@ -74,10 +75,11 @@ empty=$(as_user "$tok_a" "$base/rest/v1/tickets?select=id")
 
 created=$(as_user "$tok_a" -X POST "$base/rest/v1/tickets" -H "Content-Type: application/json" \
   -H "Prefer: return=representation" \
-  -d "{\"requester_id\":\"$uid_a\",\"subject\":\"E2E-test ärende\",\"description\":\"Syntetiskt testärende via API.\",\"category_key\":\"dator\"}")
+  -d "{\"requester_id\":\"$uid_a\",\"subject\":\"$run_subject\",\"description\":\"Syntetiskt testärende via API.\",\"category_key\":\"dator\"}")
 tid=$(printf '%s' "$created" | json "[0]['id']")
 ref=$(printf '%s' "$created" | json "[0]['reference']")
-[ -n "$tid" ] && ok "kund kan skapa ärende via API (id $ref)" || bad "kunde inte skapa ärende" "$created"
+sg_uuid "$tid" || { bad "kunde inte skapa ärende"; exit 1; }
+ok "kund kan skapa ärende via API (id $ref)"
 
 mine=$(as_user "$tok_a" "$base/rest/v1/tickets?select=id" | grep -c "$tid")
 [ "$mine" = "1" ] && ok "kund ser sitt eget ärende" || bad "ser inte sitt eget ärende"
@@ -148,4 +150,8 @@ secret=$(printf '%s' "$factor" | json "['totp']['secret']")
 
 echo
 echo "$pass godkända, $fail underkända"
-exit $([ "$fail" -eq 0 ] && echo 0 || echo 1)
+if [ "$fail" -ne 0 ]; then
+  echo "Testfel: ingen automatisk cleanup. Körnings-ID: $run_id" >&2
+  exit 1
+fi
+sg_cleanup_owned_fixture || { echo "Cleanup avbruten. Körnings-ID: $run_id" >&2; exit 1; }

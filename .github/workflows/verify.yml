@@ -19,6 +19,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run db:safety-test
+      - run: bash deploy/berryit-support/security-gate-safety.test.sh
       - run: npm run db:test
       - run: npm run db:upgrade-test
       - run: node --test services/connector-engine/engine.test.mjs services/connector-engine/monitoring.test.mjs services/communications/email-adapter.test.mjs services/onarly-ai-adapter/server.test.mjs
