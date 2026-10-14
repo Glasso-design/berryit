@@ -107,6 +107,7 @@ export const controlNav: NavItem[] = [
     label: "Monitoring",
     icon: "wifi",
     connected: false,
+    desktopConnected: true,
     staffOnly: true,
     description: "Hälsa och larm.",
   },

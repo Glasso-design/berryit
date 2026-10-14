@@ -1106,4 +1106,264 @@ begin
 end;
 $BLOCK2D$;
 
+-- ============================================================================
+-- PASS 2E: Infrastructure Monitoring
+--
+-- Samma fraga som i resten av sviten: vad lamnar databasen ut, och vad slapper
+-- den in? Overvakningen vet hur kundernas servrar mar och under vilken identitet
+-- vi mater dem. Den far varken lacka eller ga att forfalska.
+-- ============================================================================
+
+insert into public.monitoring_agents (id, organization_id, node_id, display_name, secret_ref, is_enabled)
+values ('a9e70000-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000001',
+        'cccc0000-0000-0000-0000-000000000001', 'Agent kund-a-vps', 'monitoring_agent_kund_a', true);
+
+insert into public.monitoring_thresholds (id, organization_id, metric_key, scope_kind, node_id,
+                                          warning_value, critical_value, consecutive_breaches, recovery_samples)
+values ('a9e70000-0000-0000-0000-000000000002', 'aaaaaaaa-0000-0000-0000-000000000001',
+        'cpu_percent', 'node', 'cccc0000-0000-0000-0000-000000000001', 80, 95, 3, 3);
+
+insert into public.monitoring_samples (organization_id, node_id, metric_key, value, source) values
+  ('aaaaaaaa-0000-0000-0000-000000000001', 'cccc0000-0000-0000-0000-000000000001', 'cpu_percent', 42, 'agent'),
+  ('aaaaaaaa-0000-0000-0000-000000000002', 'cccc0000-0000-0000-0000-000000000002', 'cpu_percent', 97, 'agent');
+
+insert into public.incidents (id, organization_id, node_id, title, severity, status, incident_key, group_key, detected_by)
+values ('a9e70000-0000-0000-0000-000000000003', 'aaaaaaaa-0000-0000-0000-000000000002',
+        'cccc0000-0000-0000-0000-000000000002', 'kund-b-vps: cpu_percent kritiskt', 'critical', 'open',
+        'metric_cpu_percent:cccc0000-0000-0000-0000-000000000002:-:cpu_percent',
+        'node:cccc0000-0000-0000-0000-000000000002', 'monitoring');
+
+insert into public.incident_events (organization_id, incident_id, event_type, actor_kind)
+values ('aaaaaaaa-0000-0000-0000-000000000002', 'a9e70000-0000-0000-0000-000000000003', 'opened', 'monitoring');
+
+do $BLOCK2E$
+declare
+  org_a uuid := 'aaaaaaaa-0000-0000-0000-000000000001';
+  org_b uuid := 'aaaaaaaa-0000-0000-0000-000000000002';
+  nod_a uuid := 'cccc0000-0000-0000-0000-000000000001';
+  nod_b uuid := 'cccc0000-0000-0000-0000-000000000002';
+  kund_c uuid := 'eeeeeeee-0000-0000-0000-00000000000e';
+  tekniker uuid := '33333333-3333-3333-3333-333333333333';
+  superadmin uuid := '66666666-6666-6666-6666-666666666666';
+  scoped uuid := 'dddddddd-0000-0000-0000-00000000000d';
+  incident_b uuid := 'a9e70000-0000-0000-0000-000000000003';
+  n int;
+begin
+  -- 167-170. Kunden ser ingenting av overvakningen.
+  perform pg_temp.login(kund_c, 'aal2');
+  select count(*) into n from public.monitoring_samples;
+  perform pg_temp.assert(n = 0, 'kund ser inga matvarden');
+  select count(*) into n from public.monitoring_thresholds;
+  perform pg_temp.assert(n = 0, 'kund ser inga troskelvarden');
+  select count(*) into n from public.monitoring_agents;
+  perform pg_temp.assert(n = 0, 'kund ser inga agenter');
+  select count(*) into n from public.incident_events;
+  perform pg_temp.assert(n = 0, 'kund ser ingen incidenthistorik');
+
+  -- 171. Manipulerat id hjalper inte.
+  select count(*) into n from public.monitoring_samples where node_id = nod_a;
+  perform pg_temp.assert(n = 0, 'manipulerat nod-id ger kunden inga matvarden');
+  select count(*) into n from public.incidents where id = incident_b;
+  perform pg_temp.assert(n = 0, 'kund kommer inte at en incident via gissat id');
+
+  -- 172-174. Personal ser matvarden men inte agenterna: en agent ar en vag in
+  --          i en kunds server och kraver connectors.manage.
+  perform pg_temp.login(tekniker, 'aal1');
+  select count(*) into n from public.monitoring_samples;
+  perform pg_temp.assert(n = 2, 'tekniker ser matvarden');
+  select count(*) into n from public.monitoring_thresholds;
+  perform pg_temp.assert(n = 1, 'tekniker ser troskelvarden');
+  select count(*) into n from public.monitoring_agents;
+  perform pg_temp.assert(n = 0, 'tekniker utan connectors.manage ser inga agenter');
+
+  -- 175. En klient kan inte hitta pa driftdata. Det finns ingen insert-policy.
+  begin
+    insert into public.monitoring_samples (organization_id, node_id, metric_key, value, source)
+    values (org_a, nod_a, 'cpu_percent', 5, 'forfalskad');
+    perform pg_temp.assert(false, 'klienten skulle inte kunna skriva matvarden');
+  exception when insufficient_privilege then
+    perform pg_temp.assert(true, 'klienten kan inte skriva matvarden');
+  end;
+
+  -- 176. Och inte heller skriva om dem.
+  begin
+    update public.monitoring_samples set value = 1 where organization_id = org_a;
+    perform pg_temp.assert(false, 'matvarden skulle inte ga att andra');
+  exception when insufficient_privilege then
+    perform pg_temp.assert(true, 'matvarden ar oforanderliga');
+  end;
+
+  -- 177-178. Scoped tekniker ser bara sin kunds del.
+  perform pg_temp.login(scoped, 'aal1');
+  select count(*) into n from public.monitoring_samples;
+  perform pg_temp.assert(n = 1, 'scoped tekniker ser bara sin kunds matvarden');
+  select count(*) into n from public.incident_events;
+  perform pg_temp.assert(n = 0, 'scoped tekniker ser inte annan kunds incidenthistorik');
+
+  -- 179-181. Troskelvarden ar konfiguration och kraver tvafaktor.
+  perform pg_temp.login(superadmin, 'aal1');
+  begin
+    insert into public.monitoring_thresholds (organization_id, metric_key, scope_kind, warning_value)
+    values (org_a, 'memory_used_percent', 'organization', 80);
+    perform pg_temp.assert(false, 'troskel utan aal2 skulle nekas');
+  exception when insufficient_privilege then
+    perform pg_temp.assert(true, 'troskel kan inte skapas utan aal2');
+  end;
+
+  perform pg_temp.login(superadmin, 'aal2');
+  insert into public.monitoring_thresholds (organization_id, metric_key, scope_kind, warning_value, critical_value)
+  values (org_a, 'memory_used_percent', 'organization', 80, 90);
+  select count(*) into n from public.monitoring_thresholds where organization_id = org_a;
+  perform pg_temp.assert(n = 2, 'troskel kan skapas med aal2');
+
+  -- 182-184. Felaktiga troskelvarden avvisas.
+  begin
+    insert into public.monitoring_thresholds (organization_id, metric_key, scope_kind, warning_value, critical_value)
+    values (org_a, 'cpu_percent', 'organization', 95, 80);
+    perform pg_temp.assert(false, 'critical under warning skulle nekas for ett hogt-ar-daligt matt');
+  exception when check_violation then
+    perform pg_temp.assert(true, 'critical kan inte ligga under warning for cpu_percent');
+  end;
+
+  begin
+    insert into public.monitoring_thresholds (organization_id, metric_key, scope_kind, warning_value)
+    values (org_a, 'cpu_percent', 'organization', 140);
+    perform pg_temp.assert(false, 'omojligt troskelvarde skulle nekas');
+  exception when check_violation then
+    perform pg_temp.assert(true, 'troskelvarde utanfor matvardets intervall avvisas');
+  end;
+
+  begin
+    insert into public.monitoring_thresholds (organization_id, metric_key, scope_kind, consecutive_breaches)
+    values (org_a, 'disk_used_percent', 'organization', 0);
+    perform pg_temp.assert(false, 'noll brott i rad skulle nekas');
+  exception when check_violation then
+    perform pg_temp.assert(true, 'consecutive_breaches maste vara minst 1');
+  end;
+
+  -- 185. Bara en troskel per matvarde och mal - annars vet ingen vad som galler.
+  begin
+    insert into public.monitoring_thresholds (organization_id, metric_key, scope_kind, warning_value)
+    values (org_a, 'memory_used_percent', 'organization', 70);
+    perform pg_temp.assert(false, 'dubbel troskel skulle nekas');
+  exception when unique_violation then
+    perform pg_temp.assert(true, 'samma matvarde kan inte ha tva troskelvarden i samma scope');
+  end;
+
+  -- 186. En incident kan inte stangas utan skal - och saknad data ar inget skal.
+  begin
+    update public.incidents set status = 'resolved', resolved_at = now()
+     where id = incident_b;
+    perform pg_temp.assert(false, 'stangning utan skal skulle nekas');
+  exception when check_violation then
+    perform pg_temp.assert(true, 'en incident kan inte stangas utan angivet skal');
+  end;
+
+  begin
+    update public.incidents set status = 'resolved', resolved_at = now(), resolved_reason = 'missing_data'
+     where id = incident_b;
+    perform pg_temp.assert(false, 'saknad data skulle inte duga som skal');
+  exception when check_violation then
+    perform pg_temp.assert(true, 'saknad data ar inte ett giltigt skal att stanga en incident');
+  end;
+
+  -- 187. Med ett riktigt skal gar det.
+  update public.incidents set status = 'resolved', resolved_at = now(), resolved_reason = 'recovered'
+   where id = incident_b;
+  select count(*) into n from public.incidents where id = incident_b and status = 'resolved';
+  perform pg_temp.assert(n = 1, 'en incident kan stangas med ett giltigt skal');
+
+  -- 188. Dubbletter: tva oppna incidenter med samma identitet gar inte.
+  -- created_by kravs av policyn fran PASS 2D: den som skapar en incident i
+  -- granssnittet skriver sitt eget id.
+  insert into public.incidents (organization_id, node_id, title, severity, status, incident_key, detected_by, created_by)
+  values (org_a, nod_a, 'Dubblett 1', 'major', 'open', 'metric_cpu_percent:nod-a:-:cpu_percent', 'monitoring', superadmin);
+  begin
+    insert into public.incidents (organization_id, node_id, title, severity, status, incident_key, detected_by, created_by)
+    values (org_a, nod_a, 'Dubblett 2', 'major', 'open', 'metric_cpu_percent:nod-a:-:cpu_percent', 'monitoring', superadmin);
+    perform pg_temp.assert(false, 'dubbel oppen incident skulle nekas');
+  exception when unique_violation then
+    perform pg_temp.assert(true, 'samma incident kan inte vara oppen tva ganger');
+  end;
+
+  -- 189. Men nar den forsta ar stangd far samma fel intraffa igen.
+  update public.incidents set status = 'resolved', resolved_at = now(), resolved_reason = 'recovered'
+   where incident_key = 'metric_cpu_percent:nod-a:-:cpu_percent' and status <> 'resolved';
+  insert into public.incidents (organization_id, node_id, title, severity, status, incident_key, detected_by, created_by)
+  values (org_a, nod_a, 'Samma fel igen', 'major', 'open', 'metric_cpu_percent:nod-a:-:cpu_percent', 'monitoring', superadmin);
+  -- Tva rader med samma nyckel: den stangda och den nya. Dubbletten som nekades
+  -- blev aldrig en rad.
+  select count(*) into n from public.incidents where incident_key = 'metric_cpu_percent:nod-a:-:cpu_percent';
+  perform pg_temp.assert(n = 2, 'ett atergangande fel kan oppnas pa nytt nar det forra ar stangt');
+  select count(*) into n from public.incidents
+   where incident_key = 'metric_cpu_percent:nod-a:-:cpu_percent' and status <> 'resolved';
+  perform pg_temp.assert(n = 1, 'bara en av dem ar oppen');
+
+  -- 190. Incidenthistoriken gar inte att skriva om.
+  begin
+    update public.incident_events set event_type = 'note' where organization_id = org_b;
+    perform pg_temp.assert(false, 'incidenthistorik skulle inte ga att andra');
+  exception when insufficient_privilege then
+    perform pg_temp.assert(true, 'incidenthistoriken ar oforanderlig');
+  end;
+
+  -- 191-192. Agenten: en nyckel i secret_ref avvisas, och en skrivande agent
+  --          kan inte registreras.
+  begin
+    insert into public.monitoring_agents (organization_id, node_id, display_name, secret_ref)
+    values (org_b, nod_b, 'Fel nyckel', 'ghp_0123456789abcdefghijklmnop');
+    perform pg_temp.assert(false, 'en token i secret_ref skulle nekas');
+  exception when check_violation then
+    perform pg_temp.assert(true, 'en token i secret_ref avvisas');
+  end;
+
+  begin
+    insert into public.monitoring_agents (organization_id, node_id, display_name, capabilities)
+    values (org_b, nod_b, 'Skrivande agent', '{"read": true, "write": true}'::jsonb);
+    perform pg_temp.assert(false, 'skrivande agent skulle nekas');
+  exception when check_violation or insufficient_privilege then
+    perform pg_temp.assert(true, 'en skrivande agent kan inte registreras');
+  end;
+
+  -- 193. En agent per nod. Tva insamlare pa samma maskin ger dubbla matvarden.
+  begin
+    insert into public.monitoring_agents (organization_id, node_id, display_name)
+    values (org_a, nod_a, 'Andra agenten');
+    perform pg_temp.assert(false, 'tva agenter pa samma nod skulle nekas');
+  exception when unique_violation then
+    perform pg_temp.assert(true, 'bara en agent per nod');
+  end;
+
+  -- 194. Omojliga matvarden avvisas aven om de kommer fran service_role.
+  perform pg_temp.logout();
+  begin
+    insert into public.monitoring_samples (organization_id, node_id, metric_key, value, source)
+    values (org_a, nod_a, 'cpu_percent', 400, 'agent');
+    perform pg_temp.assert(false, 'cpu 400 % skulle nekas');
+  exception when check_violation then
+    perform pg_temp.assert(true, 'ett omojligt matvarde avvisas aven server-side');
+  end;
+
+  -- 195. Framtida matvarden avvisas - en felstalld klocka ska synas direkt.
+  begin
+    insert into public.monitoring_samples (organization_id, node_id, metric_key, value, source, collected_at)
+    values (org_a, nod_a, 'cpu_percent', 10, 'agent', now() + interval '2 hours');
+    perform pg_temp.assert(false, 'framtida matvarde skulle nekas');
+  exception when check_violation then
+    perform pg_temp.assert(true, 'matvarden kan inte tidsstamplas i framtiden');
+  end;
+
+  -- 196. Ett matvarde utan mal hor ingenstans hemma.
+  begin
+    insert into public.monitoring_samples (organization_id, metric_key, value, source)
+    values (org_a, 'cpu_percent', 10, 'agent');
+    perform pg_temp.assert(false, 'matvarde utan nod eller tjanst skulle nekas');
+  exception when check_violation then
+    perform pg_temp.assert(true, 'ett matvarde maste hora till en nod eller en tjanst');
+  end;
+
+  raise notice 'PASS 2E-TESTER GICK IGENOM';
+end;
+$BLOCK2E$;
+
 rollback;

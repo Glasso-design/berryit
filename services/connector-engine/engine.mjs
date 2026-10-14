@@ -17,6 +17,7 @@
  */
 import { ConnectorError, assertValidAdapter, errorResult } from "./contract.mjs";
 import { ADAPTERS } from "./adapters.mjs";
+import { containerMetrics, validateAgentReport } from "./agent-contract.mjs";
 
 export class ConnectorEngine {
   /**
@@ -186,5 +187,100 @@ export function createRestStore({ baseUrl, serviceRoleKey, fetchImpl = fetch }) 
     async recordActivity(rad) {
       await anrop("/connector_activity_log", { method: "POST", body: JSON.stringify(rad) });
     },
+
+    /* ----------------------------------------------- Infrastructure Monitoring */
+
+    async recordSamples(rader) {
+      if (!rader?.length) return;
+      await anrop("/monitoring_samples", { method: "POST", body: JSON.stringify(rader) });
+    },
+    async listThresholds(organizationId) {
+      return (
+        (await anrop(
+          `/monitoring_thresholds?organization_id=eq.${organizationId}&is_enabled=eq.true&select=*`,
+        )) ?? []
+      );
+    },
+    async listAgent(agentId) {
+      const rader = await anrop(`/monitoring_agents?id=eq.${agentId}&select=*`);
+      return rader?.[0] ?? null;
+    },
+    async touchAgent(agentId, patch) {
+      await anrop(`/monitoring_agents?id=eq.${agentId}`, { method: "PATCH", body: JSON.stringify(patch) });
+    },
+    async listOpenIncidents(organizationId) {
+      return (
+        (await anrop(
+          `/incidents?organization_id=eq.${organizationId}&status=neq.resolved&select=*`,
+        )) ?? []
+      );
+    },
+    async openIncident(rad) {
+      const skapad = await anrop("/incidents", {
+        method: "POST",
+        headers: { Prefer: "return=representation" },
+        body: JSON.stringify(rad),
+      });
+      return Array.isArray(skapad) ? skapad[0] : skapad;
+    },
+    async touchIncident(id, patch) {
+      await anrop(`/incidents?id=eq.${id}`, { method: "PATCH", body: JSON.stringify(patch) });
+    },
+    async resolveIncident(id, patch) {
+      await anrop(`/incidents?id=eq.${id}`, { method: "PATCH", body: JSON.stringify(patch) });
+    },
+    async recordIncidentEvent(rad) {
+      await anrop("/incident_events", { method: "POST", body: JSON.stringify(rad) });
+    },
+    async recentSamples(organizationId, { nodeId = null, serviceId = null, limit = 50 } = {}) {
+      const mal = nodeId ? `node_id=eq.${nodeId}` : `service_id=eq.${serviceId}`;
+      return (
+        (await anrop(
+          `/monitoring_samples?organization_id=eq.${organizationId}&${mal}` +
+            `&select=*&order=collected_at.desc&limit=${limit}`,
+        )) ?? []
+      );
+    },
   };
+}
+
+/**
+ * Tar emot en rapport från den läsande agenten.
+ *
+ * Rapporten valideras innan ett enda värde sparas (se agent-contract.mjs). En
+ * avvisad rapport sparar ingenting och noteras på agenten – resultatet blir att
+ * mätvärden saknas, vilket övervakningen i sin tur öppnar en egen incident för.
+ * Det är med flit: en förfalskad rapport ska inte kunna tysta ett larm.
+ */
+export async function ingestAgentReport({ store, agentId, report, now = Date.now() }) {
+  const agent = await store.listAgent(agentId);
+  try {
+    const validerad = validateAgentReport(report, agent, now);
+
+    // Containersiffrorna räknas här ur listan i stället för att tas på agentens
+    // ord – två källor för samma siffra är en källa för mycket.
+    const harledda = containerMetrics(report.containers);
+    for (const [metric_key, value] of Object.entries(harledda)) {
+      validerad.samples.push({
+        organization_id: validerad.organization_id,
+        node_id: validerad.node_id,
+        service_id: null,
+        metric_key,
+        value,
+        collected_at: validerad.collected_at,
+        source: "agent",
+        agent_id: validerad.agent_id,
+        detail: {},
+      });
+    }
+
+    await store.recordSamples(validerad.samples);
+    await store.touchAgent(agent.id, { last_seen_at: validerad.collected_at, last_error: null });
+    return { accepted: true, samples: validerad.samples.length, containers: validerad.containers.length };
+  } catch (fel) {
+    if (agent) {
+      await store.touchAgent(agent.id, { last_error: `${fel.code ?? "INTERNAL"}: ${fel.message}` });
+    }
+    return { accepted: false, code: fel.code ?? "INTERNAL", message: fel.message };
+  }
 }

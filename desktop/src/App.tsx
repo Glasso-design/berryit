@@ -11,6 +11,7 @@ import { Kunder } from "@/views/Kunder";
 import { Login } from "@/views/Login";
 import { Mfa } from "@/views/Mfa";
 import { Modul } from "@/views/Modul";
+import { Monitoring } from "@/views/Monitoring";
 import { Projekt } from "@/views/Projekt";
 import { OnarlyAi } from "@/views/OnarlyAi";
 import { Setup } from "@/views/Setup";
@@ -34,6 +35,15 @@ export function App() {
     if (!access) return;
     if (navItem(vy).staffOnly && !access.isStaff) setVy("dashboard");
   }, [access, vy]);
+
+  // En ny inloggning börjar på översikten. App-komponenten lever kvar genom en
+  // utloggning, så utan det här hamnar nästa användare i den förra användarens
+  // vy – vilket är fel även när behörigheten råkar räcka.
+  const inloggadSom = access?.userId ?? null;
+  useEffect(() => {
+    setVy("dashboard");
+    setArende(null);
+  }, [inloggadSom]);
 
   if (status === "laddar") {
     return <div className="grid h-full place-items-center bg-ink text-muted">Startar…</div>;
@@ -63,8 +73,9 @@ export function App() {
       {vy === "projekt" && <Projekt />}
       {vy === "infrastruktur" && <Infrastruktur />}
       {vy === "integrationer" && <Integrationer />}
+      {vy === "monitoring" && <Monitoring />}
       {vy === "installningar" && <Installningar />}
-      {!["dashboard", "kunder", "support", "ai", "projekt", "infrastruktur", "integrationer", "installningar"].includes(
+      {!["dashboard", "kunder", "support", "ai", "projekt", "infrastruktur", "integrationer", "monitoring", "installningar"].includes(
         vy,
       ) && <Modul nyckel={vy} />}
     </Shell>
