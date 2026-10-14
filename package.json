@@ -4,12 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3501",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start -p 3501",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "db:test": "node supabase/tests/run-local.mjs",
-    "db:upgrade-test": "node supabase/tests/upgrade-2c.mjs"
+    "db:test": "node supabase/tests/run-local.mjs --environment=isolated-pglite",
+    "db:upgrade-test": "node supabase/tests/upgrade-2c.mjs --environment=isolated-pglite",
+    "db:safety-test": "node --test supabase/tests/isolated-environment.test.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

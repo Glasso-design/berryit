@@ -22,6 +22,9 @@ import { pgcrypto } from "@electric-sql/pglite/contrib/pgcrypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { assertIsolatedPgliteEnvironment } from "./isolated-environment.mjs";
+
+assertIsolatedPgliteEnvironment(process.argv.slice(2), process.env);
 
 const testsDir = path.dirname(fileURLToPath(import.meta.url));
 const migrationsDir = path.join(testsDir, "..", "migrations");

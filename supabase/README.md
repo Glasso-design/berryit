@@ -96,8 +96,13 @@ Ingenting av detta är utfört – det kräver ägarens Supabase-projekt.
 
 ## PGlite kontra riktig Supabase
 
-`npm run db:test` kör riktig PostgreSQL (PGlite = Postgres i WASM), men hela
-Supabase-plattformen finns inte. Skillnader att känna till:
+`npm run db:test` kör riktig PostgreSQL (PGlite = Postgres i WASM) i en ny
+isolerad minnesdatabas. Kommandot kräver explicit testmiljö, vägrar extern
+databaskonfiguration och har ingen cleanup-funktion. Negativa skyddstester körs
+med `npm run db:safety-test`. De äldre filerna `seed-users.mjs` och `seed.mjs`
+finns inte i repositoryt eller dess Git-historik; deras tidigare säkerhet kan
+inte verifieras här. PGlite omfattar inte hela Supabase-plattformen.
+Skillnader att känna till:
 
 | Område | Lokalt (PGlite) | Supabase |
 |---|---|---|
