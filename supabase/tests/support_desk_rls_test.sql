@@ -1366,4 +1366,350 @@ begin
 end;
 $BLOCK2E$;
 
+-- ============================================================================
+-- PASS 2F: Communications
+--
+-- En konversation innehaller kundens egna ord. Fragan ar som alltid: vad lamnar
+-- databasen ut till den som struntar i granssnittet, och vad slapper den in?
+-- ============================================================================
+
+-- Den lasta e-poststrukturen: supportadressen och infoadressen ligger hos
+-- samma leverantorskonto (alias), vilket ar det svara fallet - hamtningen far
+-- inte ske tva ganger och svaren maste ga ut fran ratt adress.
+insert into public.comm_mailboxes (id, organization_id, address, display_name, purpose,
+                                   provider_account_key, can_send_from, secret_ref, is_enabled, status)
+values ('c0bb0000-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-00000000000b',
+        'support@berryit.se', 'BERRYiT Support', 'support',
+        'konto-berryit', true, 'mailbox_support_berryit', false, 'not_configured'),
+       ('c0bb0000-0000-0000-0000-000000000002', 'aaaaaaaa-0000-0000-0000-00000000000b',
+        'info@berryit.se', 'BERRYiT Information', 'info',
+        'konto-berryit', false, 'mailbox_info_berryit', false, 'not_configured');
+
+-- Kundkonversation hos kund A, kundkonversation hos kund B, och en internchatt.
+insert into public.comm_conversations (id, organization_id, channel_key, subject, status, is_internal)
+values
+  ('c0aa0000-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000001',
+   'chat_customer', 'Skrivaren i receptionen', 'open', false),
+  ('c0aa0000-0000-0000-0000-000000000002', 'aaaaaaaa-0000-0000-0000-000000000002',
+   'email', 'Webbshoppen svarar inte', 'open', false),
+  ('c0aa0000-0000-0000-0000-00000000000b', 'aaaaaaaa-0000-0000-0000-000000000001',
+   'chat_internal', 'Teamets trad om kund A', 'open', true);
+
+-- Kund A ar deltagare i sin egen konversation.
+-- Deltagaren ar Kollega (4444): en ren kund i organisationen. Kund A fick en
+-- supporttilldelning i MFA-testerna och ar darfor inte langre en ren kund - en
+-- isoleringsfixtur som sjalv har behorighet bevisar ingenting.
+insert into public.comm_participants (organization_id, conversation_id, profile_id, participant_role)
+values ('aaaaaaaa-0000-0000-0000-000000000001', 'c0aa0000-0000-0000-0000-000000000001',
+        '44444444-4444-4444-4444-444444444444', 'customer');
+
+insert into public.comm_messages (organization_id, conversation_id, author_address, direction, body_text, external_message_id)
+values
+  ('aaaaaaaa-0000-0000-0000-000000000001', 'c0aa0000-0000-0000-0000-000000000001',
+   'kund@example.com', 'inbound', 'Skrivaren svarar inte.', null),
+  ('aaaaaaaa-0000-0000-0000-000000000002', 'c0aa0000-0000-0000-0000-000000000002',
+   'kundb@example.com', 'inbound', 'Webbshoppen ar nere.', 'b1@example.test');
+
+insert into public.comm_messages (organization_id, conversation_id, author_id, direction, body_text)
+values ('aaaaaaaa-0000-0000-0000-000000000001', 'c0aa0000-0000-0000-0000-00000000000b',
+        '33333333-3333-3333-3333-333333333333', 'internal', 'Kunden har en gammal faktura.');
+
+do $BLOCK2F$
+declare
+  org_a uuid := 'aaaaaaaa-0000-0000-0000-000000000001';
+  org_b uuid := 'aaaaaaaa-0000-0000-0000-000000000002';
+  konv_a uuid := 'c0aa0000-0000-0000-0000-000000000001';
+  konv_b uuid := 'c0aa0000-0000-0000-0000-000000000002';
+  konv_intern uuid := 'c0aa0000-0000-0000-0000-00000000000b';
+  kund uuid := '44444444-4444-4444-4444-444444444444';
+  kontakt uuid := '55555555-5555-5555-5555-555555555555';
+  kund_c uuid := 'eeeeeeee-0000-0000-0000-00000000000e';
+  tekniker uuid := '33333333-3333-3333-3333-333333333333';
+  superadmin uuid := '66666666-6666-6666-6666-666666666666';
+  scoped uuid := 'dddddddd-0000-0000-0000-00000000000d';
+  n int;
+begin
+  -- 199-202. Kunden ser sin egen konversation och ingen annans.
+  perform pg_temp.login(kund, 'aal2');
+  select count(*) into n from public.comm_conversations where id = konv_a;
+  perform pg_temp.assert(n = 1, 'kund ser sin egen konversation');
+  select count(*) into n from public.comm_conversations where id = konv_b;
+  perform pg_temp.assert(n = 0, 'kund ser inte en annan kunds konversation');
+  select count(*) into n from public.comm_messages where conversation_id = konv_b;
+  perform pg_temp.assert(n = 0, 'kund ser inte en annan kunds meddelanden');
+  select count(*) into n from public.comm_conversations;
+  perform pg_temp.assert(n = 1, 'kund ser exakt en konversation totalt');
+
+  -- 203-204. Internchatten ar aldrig synlig for kund, aven i den egna
+  --          organisationen.
+  select count(*) into n from public.comm_conversations where id = konv_intern;
+  perform pg_temp.assert(n = 0, 'kund ser inte internchatten i sin egen organisation');
+  select count(*) into n from public.comm_messages where conversation_id = konv_intern;
+  perform pg_temp.assert(n = 0, 'kund ser inte interna meddelanden');
+
+  -- 204b. Organisationens kontaktperson ser hela organisationens
+  --       kundkonversationer - men inte internchatten.
+  perform pg_temp.login(kontakt, 'aal2');
+  select count(*) into n from public.comm_conversations where id = konv_a;
+  perform pg_temp.assert(n = 1, 'kontaktpersonen ser organisationens kundkonversation');
+  select count(*) into n from public.comm_conversations where id = konv_intern;
+  perform pg_temp.assert(n = 0, 'kontaktpersonen ser inte internchatten');
+  perform pg_temp.login(kund, 'aal2');
+
+  -- 205. Manipulerat konversations-id hjalper inte.
+  select count(*) into n from public.comm_messages where organization_id = org_b;
+  perform pg_temp.assert(n = 0, 'gissad organisation ger kunden ingenting');
+
+  -- 206. Kunden kan inte skriva i nagon annans konversation.
+  begin
+    insert into public.comm_messages (organization_id, conversation_id, author_id, direction, body_text, delivery_status)
+    values (org_b, konv_b, kund, 'outbound', 'Jag laser med.', 'queued');
+    perform pg_temp.assert(false, 'kund skulle inte kunna skriva i annans konversation');
+  exception when insufficient_privilege then
+    perform pg_temp.assert(true, 'kund kan inte skriva i en annan kunds konversation');
+  end;
+
+  -- 207. Kunden kan svara i sin egen. Leveransstatus maste anges av klienten:
+  --      kolumnens forval ar 'received', vilket hor till inkommande post och
+  --      darfor nekas av policyn.
+  insert into public.comm_messages (organization_id, conversation_id, author_id, direction, body_text, delivery_status)
+  values (org_a, konv_a, kund, 'outbound', 'Nu fungerar den igen.', 'queued');
+  select count(*) into n from public.comm_messages where conversation_id = konv_a;
+  perform pg_temp.assert(n = 2, 'kund kan svara i sin egen konversation');
+
+  -- 208-210. En klient kan inte hitta pa inkommande post eller leveransstatus.
+  begin
+    insert into public.comm_messages (organization_id, conversation_id, author_id, direction, body_text, delivery_status)
+    values (org_a, konv_a, kund, 'inbound', 'Forfalskat inkommande.', 'queued');
+    perform pg_temp.assert(false, 'inkommande riktning skulle nekas fran klient');
+  exception when insufficient_privilege then
+    perform pg_temp.assert(true, 'en klient kan inte skapa inkommande meddelanden');
+  end;
+
+  begin
+    insert into public.comm_messages (organization_id, conversation_id, author_id, direction, body_text, delivery_status)
+    values (org_a, konv_a, kund, 'outbound', 'Pastar sig levererat.', 'delivered');
+    perform pg_temp.assert(false, 'pastadd leveransstatus skulle nekas');
+  exception when insufficient_privilege then
+    perform pg_temp.assert(true, 'en klient kan inte pasta att nagot levererats');
+  end;
+
+  begin
+    insert into public.comm_messages (organization_id, conversation_id, author_id, direction, body_text, external_message_id, delivery_status)
+    values (org_a, konv_a, kund, 'outbound', 'Latsas vara ett mejl.', 'falskt@example.test', 'queued');
+    perform pg_temp.assert(false, 'pahittat Message-ID skulle nekas');
+  exception when insufficient_privilege then
+    perform pg_temp.assert(true, 'en klient kan inte sno at sig ett Message-ID');
+  end;
+
+  -- 211. Och inte skriva i nagon annans namn.
+  begin
+    insert into public.comm_messages (organization_id, conversation_id, author_id, direction, body_text, delivery_status)
+    values (org_a, konv_a, tekniker, 'outbound', 'Skrivet i teknikerns namn.', 'queued');
+    perform pg_temp.assert(false, 'meddelande i annans namn skulle nekas');
+  exception when insufficient_privilege then
+    perform pg_temp.assert(true, 'en klient kan inte skriva i nagon annans namn');
+  end;
+
+  -- 212. Lasmarkeringen galler bara en sjalv.
+  begin
+    update public.comm_participants set last_read_at = now()
+     where conversation_id = konv_a and profile_id <> kund;
+    get diagnostics n = row_count;
+    perform pg_temp.assert(n = 0, 'ingen kan markera som last at nagon annan');
+  exception when insufficient_privilege then
+    perform pg_temp.assert(true, 'lasmarkering at annan nekas');
+  end;
+
+  -- 213-215. Personal ser allt inom sitt scope, aven internchatten.
+  perform pg_temp.login(tekniker, 'aal1');
+  select count(*) into n from public.comm_conversations;
+  perform pg_temp.assert(n = 3, 'personal ser alla tre konversationer');
+  select count(*) into n from public.comm_messages where conversation_id = konv_intern;
+  perform pg_temp.assert(n = 1, 'personal ser internchatten');
+  select count(*) into n from public.comm_mailboxes;
+  perform pg_temp.assert(n = 0, 'personal utan connectors.manage ser inga brevlador');
+
+  -- 216-217. Brevladorna kraver tvafaktor, precis som ovriga anslutningar.
+  perform pg_temp.login(superadmin, 'aal1');
+  select count(*) into n from public.comm_mailboxes;
+  perform pg_temp.assert(n = 0, 'brevladorna ar stangda utan aal2');
+  perform pg_temp.login(superadmin, 'aal2');
+  select count(*) into n from public.comm_mailboxes;
+  perform pg_temp.assert(n = 2, 'superadmin med aal2 ser brevladorna');
+
+  -- 218. En hemlighet i secret_ref avvisas.
+  begin
+    insert into public.comm_mailboxes (organization_id, address, secret_ref)
+    values (org_a, 'fel@example.test', 'ghp_0123456789abcdefghijklmnop');
+    perform pg_temp.assert(false, 'en token i secret_ref skulle nekas');
+  exception when check_violation then
+    perform pg_temp.assert(true, 'en token i secret_ref avvisas');
+  end;
+
+  -- 219. Dubblettskydd: samma Message-ID tva ganger gar inte.
+  perform pg_temp.logout();
+  begin
+    insert into public.comm_messages (organization_id, conversation_id, author_address, direction, body_text, external_message_id)
+    values (org_b, konv_b, 'kundb@example.com', 'inbound', 'Samma mejl igen.', 'b1@example.test');
+    perform pg_temp.assert(false, 'samma Message-ID skulle nekas');
+  exception when unique_violation then
+    perform pg_temp.assert(true, 'samma Message-ID kan inte hamtas in tva ganger');
+  end;
+
+  -- 220. En e-posttrad ar en konversation, inte flera.
+  begin
+    insert into public.comm_conversations (organization_id, channel_key, subject, external_thread_key)
+    values (org_b, 'email', 'Dubbel trad', 'tradnyckel-1');
+    insert into public.comm_conversations (organization_id, channel_key, subject, external_thread_key)
+    values (org_b, 'email', 'Dubbel trad igen', 'tradnyckel-1');
+    perform pg_temp.assert(false, 'tva konversationer med samma tradnyckel skulle nekas');
+  exception when unique_violation then
+    perform pg_temp.assert(true, 'en e-posttrad blir en konversation');
+  end;
+
+  -- 221. Ett meddelande kan inte flyttas till en annan kunds konversation.
+  begin
+    update public.comm_messages set conversation_id = konv_b where conversation_id = konv_a;
+    perform pg_temp.assert(false, 'flytt mellan konversationer skulle nekas');
+  exception when insufficient_privilege or foreign_key_violation then
+    perform pg_temp.assert(true, 'ett meddelande kan inte flyttas till en annan konversation');
+  end;
+
+  -- 222. Och inte skrivas om i efterhand.
+  begin
+    update public.comm_messages set body_text = 'Omskriven historik' where conversation_id = konv_a;
+    perform pg_temp.assert(false, 'omskrivning skulle nekas');
+  exception when insufficient_privilege then
+    perform pg_temp.assert(true, 'ett meddelande kan inte skrivas om i efterhand');
+  end;
+
+  -- 223. Inte heller raderas.
+  begin
+    delete from public.comm_messages where conversation_id = konv_a;
+    perform pg_temp.assert(false, 'radering skulle nekas');
+  exception when insufficient_privilege then
+    perform pg_temp.assert(true, 'ett meddelande kan inte raderas');
+  end;
+
+  -- 224. En konversation byter aldrig organisation.
+  begin
+    update public.comm_conversations set organization_id = org_b where id = konv_a;
+    perform pg_temp.assert(false, 'byte av organisation skulle nekas');
+  exception when insufficient_privilege or unique_violation or foreign_key_violation then
+    perform pg_temp.assert(true, 'en konversation kan inte flyttas till en annan kund');
+  end;
+
+  -- 225. En deltagare maste ha en identitet, inte bada och inte ingen.
+  begin
+    insert into public.comm_participants (organization_id, conversation_id, profile_id, external_address, participant_role)
+    values (org_a, konv_a, kund, 'kund@example.com', 'customer');
+    perform pg_temp.assert(false, 'deltagare med bada identiteterna skulle nekas');
+  exception when check_violation then
+    perform pg_temp.assert(true, 'en deltagare har antingen ett konto eller en adress');
+  end;
+
+  -- 226. En internchatt kan inte markeras som kundkanal.
+  begin
+    insert into public.comm_conversations (organization_id, channel_key, subject, is_internal)
+    values (org_a, 'chat_customer', 'Smugglad internchatt', true);
+    perform pg_temp.assert(false, 'intern flagga pa kundkanal skulle nekas');
+  exception when check_violation then
+    perform pg_temp.assert(true, 'internchatt och kundkanal kan inte blandas ihop');
+  end;
+
+  -- 227-229. Scoped tekniker ser bara sin kunds konversationer.
+  perform pg_temp.login(scoped, 'aal1');
+  select count(*) into n from public.comm_conversations where organization_id = org_a;
+  perform pg_temp.assert(n = 2, 'scoped tekniker ser sin kunds konversationer');
+  select count(*) into n from public.comm_conversations where organization_id = org_b;
+  perform pg_temp.assert(n = 0, 'scoped tekniker ser inte annan kunds konversationer');
+  select count(*) into n from public.comm_messages where conversation_id = konv_b;
+  perform pg_temp.assert(n = 0, 'scoped tekniker ser inte annan kunds meddelanden');
+
+  -- 230. En kund i en annan organisation ser ingenting.
+  perform pg_temp.login(kund_c, 'aal2');
+  select count(*) into n from public.comm_conversations;
+  perform pg_temp.assert(n = 0, 'kund utan deltagarskap ser inga konversationer');
+
+  -- 231. Interna bilagor nar aldrig kunden.
+  perform pg_temp.logout();
+  insert into public.comm_attachments (organization_id, conversation_id, storage_path, file_name, mime_type, size_bytes, visibility)
+  values (org_a, konv_a, 'conversations/' || konv_a || '/intern.pdf', 'intern.pdf', 'application/pdf', 1024, 'internal');
+  perform pg_temp.login(kund, 'aal2');
+  select count(*) into n from public.comm_attachments;
+  perform pg_temp.assert(n = 0, 'kund ser inte en intern bilaga i sin egen konversation');
+  perform pg_temp.login(tekniker, 'aal1');
+  select count(*) into n from public.comm_attachments;
+  perform pg_temp.assert(n = 1, 'personal ser den interna bilagan');
+
+  -- 235-236. Den lasta strukturen star i databasen, inte i koden: support ar
+  --          adressen som knyts till arenden, info ar den som far kategorier.
+  select count(*) into n from public.comm_mailbox_purposes
+   where key = 'support' and default_address = 'support@berryit.se'
+     and auto_link_tickets and not allows_intent_categories;
+  perform pg_temp.assert(n = 1, 'supportrollen pekar pa support@berryit.se och knyts till arenden');
+  select count(*) into n from public.comm_mailbox_purposes
+   where key = 'info' and default_address = 'info@berryit.se'
+     and allows_intent_categories and not auto_link_tickets;
+  perform pg_temp.assert(n = 1, 'inforollen pekar pa info@berryit.se och far kategoriseras');
+
+  -- 237. Rollerna ar en uppslagstabell, inte fritext.
+  perform pg_temp.logout();
+  begin
+    insert into public.comm_mailboxes (organization_id, address, purpose, secret_ref)
+    values (org_a, 'pahittad@berryit.se', 'marknad', 'mailbox_pahittad');
+    perform pg_temp.assert(false, 'en okand roll skulle nekas');
+  exception when foreign_key_violation then
+    perform pg_temp.assert(true, 'en brevlada kan inte fa en roll som inte finns');
+  end;
+
+  -- 238-239. Tva adresser far dela leverantorskonto (alias), men en adress
+  --          finns bara en gang per organisation.
+  select count(*) into n from public.comm_mailboxes
+   where organization_id = 'aaaaaaaa-0000-0000-0000-00000000000b'
+     and provider_account_key = 'konto-berryit';
+  perform pg_temp.assert(n = 2, 'support och info kan ligga pa samma leverantorskonto');
+  begin
+    insert into public.comm_mailboxes (organization_id, address, purpose, secret_ref)
+    values ('aaaaaaaa-0000-0000-0000-00000000000b', 'support@berryit.se', 'support', 'mailbox_dubblett');
+    perform pg_temp.assert(false, 'samma adress tva ganger skulle nekas');
+  exception when unique_violation then
+    perform pg_temp.assert(true, 'samma adress kan inte laggas upp tva ganger');
+  end;
+
+  -- 240. Sandratt ar inget forval. En adress far skicka forst nar nagon
+  --      bekraftat att leverantoren tillater det.
+  select count(*) into n from public.comm_mailboxes
+   where address = 'info@berryit.se' and not can_send_from;
+  perform pg_temp.assert(n = 1, 'en adress har inte sandratt forran den fatt den');
+
+  -- 241-242. Avsikten ar ett slutet varde, satt av den som laser posten.
+  begin
+    insert into public.comm_conversations (organization_id, channel_key, subject, intent)
+    values (org_b, 'email', 'Pahittad avsikt', 'reklamation');
+    perform pg_temp.assert(false, 'en okand avsikt skulle nekas');
+  exception when check_violation then
+    perform pg_temp.assert(true, 'en konversation kan inte fa en avsikt utanfor listan');
+  end;
+  insert into public.comm_conversations (organization_id, channel_key, subject, intent)
+  values (org_b, 'email', 'Begaran om offert', 'quote');
+  select count(*) into n from public.comm_conversations
+   where organization_id = org_b and intent = 'quote';
+  perform pg_temp.assert(n = 1, 'en infokonversation kan markeras som offertforfragan');
+
+  -- 243. Rollerna ar inte hemliga, men de ar inte heller oppna for varlden.
+  perform pg_temp.login(kund, 'aal2');
+  select count(*) into n from public.comm_mailbox_purposes;
+  perform pg_temp.assert(n = 3, 'en inloggad anvandare kan lasa rollerna');
+  perform pg_temp.login(kund, 'aal2');
+  select count(*) into n from public.comm_mailboxes;
+  perform pg_temp.assert(n = 0, 'kunden ser fortfarande inga brevlador');
+
+  perform pg_temp.logout();
+
+  raise notice 'PASS 2F-TESTER GICK IGENOM';
+end;
+$BLOCK2F$;
+
 rollback;

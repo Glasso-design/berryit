@@ -7,6 +7,7 @@ import { Dashboard } from "@/views/Dashboard";
 import { Infrastruktur } from "@/views/Infrastruktur";
 import { Installningar } from "@/views/Installningar";
 import { Integrationer } from "@/views/Integrationer";
+import { Kommunikation } from "@/views/Kommunikation";
 import { Kunder } from "@/views/Kunder";
 import { Login } from "@/views/Login";
 import { Mfa } from "@/views/Mfa";
@@ -74,8 +75,9 @@ export function App() {
       {vy === "infrastruktur" && <Infrastruktur />}
       {vy === "integrationer" && <Integrationer />}
       {vy === "monitoring" && <Monitoring />}
+      {vy === "kommunikation" && <Kommunikation />}
       {vy === "installningar" && <Installningar />}
-      {!["dashboard", "kunder", "support", "ai", "projekt", "infrastruktur", "integrationer", "monitoring", "installningar"].includes(
+      {!["dashboard", "kunder", "support", "ai", "projekt", "infrastruktur", "integrationer", "monitoring", "kommunikation", "installningar"].includes(
         vy,
       ) && <Modul nyckel={vy} />}
     </Shell>

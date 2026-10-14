@@ -78,6 +78,7 @@ export const controlNav: NavItem[] = [
     label: "Kommunikation",
     icon: "phone",
     connected: false,
+    desktopConnected: true,
     staffOnly: true,
     description: "Chattar och externa kanaler.",
   },
