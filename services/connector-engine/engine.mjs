@@ -140,6 +140,7 @@ export class ConnectorEngine {
  * frågor och de ska inte blandas ihop i gränssnittet.
  */
 export function statusForIntegration(resultat) {
+  if (resultat.connector === "onarly_desk") return "not_configured";
   if (!resultat.error) return "connected";
   if (resultat.error.code === "NOT_CONFIGURED" || resultat.error.code === "MISSING_SECRET") return "not_configured";
   return "error";

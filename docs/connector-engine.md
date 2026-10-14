@@ -62,7 +62,7 @@ registret  →  adapter läser systemet  →  mätpunkt + aktivitetsrad tillbaka
 | `github` | senaste commit per repo | egen fine-grained token med enbart läsrätt |
 | `vercel` | senaste deployment | egen token med read-scope på projektet |
 | `onarly_ai` | hälsa via BERRYiT:s egen AI-adapter | ingen – adaptern håller gateway-token själv |
-| `onarly_desk` | tillgänglighet | egen läsidentitet mot DESK |
+| `onarly_desk` | inget serverbaserat sessions-API; okänd faktisk status | ingen token eller HTTP-kontroll |
 | `http_health` | HTTP-status och svarstid | ingen, anonymt GET |
 
 ### Läsläge, på tre ställen

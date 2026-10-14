@@ -112,7 +112,7 @@ test("ingen adapter skickar något annat än GET", async () => {
     httpHealthAdapter.check(ctx({ config: { url: "https://h.test" }, fetchImpl: fetchSpion })),
   ];
   await Promise.all(anrop.map((p) => p.catch(() => null)));
-  assert.ok(metoder.length >= 5, "alla adaptrar som använder HTTP ska ha anropat");
+  assert.ok(metoder.length >= 4, "alla adaptrar som använder HTTP ska ha anropat");
   assert.deepEqual([...new Set(metoder)], ["GET"]);
 });
 
@@ -276,11 +276,15 @@ test("onarly_ai: går via vår egen adapter och ser aldrig gateway-token", async
   assert.equal(Object.keys(anropad.headers).length, 0, "ingen Authorization skickas från motorn");
 });
 
-test("onarly_desk: okänt svar blir okänt", async () => {
+test("onarly_desk: saknar sessions-API och gör inget HTTP-anrop", async () => {
+  let anrop = 0;
   const r = await onarlyDeskAdapter.check(
-    ctx({ config: { base_url: "https://desk.example.test" }, secretRef: "d", secrets: { d: "x" }, fetchImpl: async () => svar(200, {}) }),
+    ctx({ fetchImpl: async () => { anrop++; throw new Error("DESK får inte anropas"); } }),
   );
   assert.equal(r.status, "unknown");
+  assert.equal(r.detail.session_api, false);
+  assert.equal(anrop, 0);
+  assert.equal(statusForIntegration(r), "not_configured");
 });
 
 /* ---------------------------------------------------------------- motorn */

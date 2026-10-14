@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { LIMIT, SELECT, TABLE } from "@berryit/shared/api";
 import type { TicketRow } from "@berryit/shared/domain";
 import { useSession } from "@/auth/session";
+import { DeskPanel } from "./DeskPanel";
 
 /**
  * Ärendelista. RLS avgör urvalet: kunden ser sina egna ärenden, personal ser
@@ -10,6 +11,8 @@ import { useSession } from "@/auth/session";
 export function Support({ focus }: { focus: string | null }) {
   const { supabase, access } = useSession();
   const [rows, setRows] = useState<TicketRow[] | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selected = rows?.find((row) => row.id === selectedId) ?? null;
 
   useEffect(() => {
     if (!supabase) return;
@@ -20,7 +23,11 @@ export function Support({ focus }: { focus: string | null }) {
       .order("updated_at", { ascending: false })
       .limit(LIMIT.ticketList)
       .then(({ data }) => {
-        if (!avbruten) setRows((data ?? []) as TicketRow[]);
+        if (!avbruten) {
+          const tickets = (data ?? []) as TicketRow[];
+          setRows(tickets);
+          if (focus) setSelectedId(tickets.find((ticket) => ticket.reference === focus)?.id ?? null);
+        }
       });
     return () => {
       avbruten = true;
@@ -45,8 +52,7 @@ export function Support({ focus }: { focus: string | null }) {
 
       {focus && (
         <p className="rounded-xl border border-line bg-ink-2 px-4 py-3 text-sm text-muted">
-          Söker fram <span className="font-mono text-berry-2">{focus}</span>. Ärendevyn med
-          konversation, interna anteckningar och bilagor är inte byggd ännu.
+          Söker fram <span className="font-mono text-berry-2">{focus}</span>. Välj ärendet för ONARLY DESK-historik.
         </p>
       )}
 
@@ -75,7 +81,7 @@ export function Support({ focus }: { focus: string | null }) {
                   focus && t.reference === focus ? "bg-berry/10" : ""
                 }`}
               >
-                <td className="py-2.5 pr-4 font-mono text-xs text-berry-2">{t.reference}</td>
+                <td className="py-2.5 pr-4 font-mono text-xs text-berry-2"><button type="button" className="underline" onClick={() => setSelectedId(t.id)}>{t.reference}</button></td>
                 <td className="max-w-80 truncate py-2.5 pr-4">{t.subject}</td>
                 <td className="py-2.5 pr-4 text-muted">{t.status_key}</td>
                 <td className="py-2.5 pr-4 text-muted">{t.priority_key}</td>
@@ -85,6 +91,8 @@ export function Support({ focus }: { focus: string | null }) {
           </tbody>
         </table>
       )}
+
+      {selected && <DeskPanel key={selected.id} ticket={selected} />}
 
       <p className="text-sm text-muted">
         Ärendevy med konversation, interna anteckningar och bilagor byggs i en senare pass.

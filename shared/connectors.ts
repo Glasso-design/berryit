@@ -128,15 +128,12 @@ export const CONNECTORS: Record<ConnectorKey, ConnectorDefinition> = {
   onarly_desk: {
     key: "onarly_desk",
     label: "ONARLY DESK",
-    description: "Fjärrsupportens tillgänglighet och rättighetsläge.",
+    description: "Manuell fjärrsupporthistorik. Faktisk anslutningsstatus kan inte läsas via server-API.",
     capabilities: READ_ONLY,
     scopes: ["organization"],
-    requirements: [
-      { key: "base_url", label: "DESK:s status-URL", secret: false },
-      { key: "token", label: "Läsbehörig token", secret: true },
-    ],
+    requirements: [],
     identity:
-      "Egen läsidentitet mot DESK. Rättigheter per kund styrs av onarly_support_entitlements i BERRYiT, inte av connectorn.",
+      "Inget server-API eller token används. Framtida verifierad adapter kräver ett dokumenterat API-kontrakt och separat aktivering.",
   },
   http_health: {
     key: "http_health",

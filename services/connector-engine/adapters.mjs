@@ -201,33 +201,15 @@ export const onarlyDeskAdapter = {
   key: "onarly_desk",
   label: "ONARLY DESK",
   capabilities: READ_ONLY,
-  async check(ctx) {
-    const start = nu();
-    const bas = String(requireConfig(ctx.config, "base_url", "onarly_desk")).replace(/\/+$/, "");
-    const token = requireSecret(ctx.secrets, ctx.secretRef, "onarly_desk");
-
-    const svar = await fetchWithTimeout(
-      ctx.fetchImpl,
-      `${bas}/status`,
-      { headers: { Authorization: `Bearer ${token}` } },
-      ctx.timeoutMs,
-    );
-    if (!svar.ok) throw httpError(svar.status, "onarly_desk");
-
-    const kropp = await svar.json().catch(() => ({}));
-    const online = kropp?.online ?? kropp?.ok ?? null;
-
+  async check() {
+    // ONARLY DESK/RustDesk exposes no verified server-side session API here.
+    // Never infer connectivity from a guessed endpoint or a manual record.
     return makeResult({
       connector: "onarly_desk",
-      status: online === true ? "ok" : online === false ? "down" : "unknown",
-      latencyMs: nu() - start,
-      summary:
-        online === true
-          ? "DESK svarar"
-          : online === false
-            ? "DESK rapporterar att tjänsten är nere"
-            : "DESK svarade utan tydligt statusvärde",
-      detail: { online, version: kropp?.version ?? null },
+      status: "unknown",
+      latencyMs: null,
+      summary: "DESK saknar serverbaserat sessions-API; faktisk anslutningsstatus är okänd",
+      detail: { session_api: false, actual_connection_status: "unknown" },
     });
   },
 };

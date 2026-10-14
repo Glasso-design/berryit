@@ -30,6 +30,10 @@ export const TABLE = {
   ticketCategories: "ticket_categories",
   ticketMessages: "ticket_messages",
   supportRoleGrants: "support_role_grants",
+  deskEntitlements: "onarly_support_entitlements",
+  deskDevices: "onarly_desk_devices",
+  deskSessions: "onarly_desk_sessions",
+  deskSessionEvents: "onarly_desk_session_events",
 } as const;
 
 /** Kolumnval. Håll dem minimala – RLS filtrerar rader, vi filtrerar fält. */
@@ -37,7 +41,7 @@ export const SELECT = {
   profile: "id, role, full_name, email, organization_id, is_org_admin",
   grants: "role_key, scope, organization_id, revoked_at, expires_at",
   organization: "id, name, org_no",
-  ticketRow: "id, reference, subject, status_key, priority_key, updated_at",
+  ticketRow: "id, reference, subject, status_key, priority_key, updated_at, organization_id, assignee_id",
   ticketSearch: "id, reference, subject, status_key",
 } as const;
 

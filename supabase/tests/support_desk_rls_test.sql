@@ -1712,4 +1712,190 @@ begin
 end;
 $BLOCK2F$;
 
+-- PASS 2G: isolated manual DESK flow. The whole file runs in disposable PGlite
+-- (or inside this transaction when used with psql); no existing account is deleted.
+insert into public.organizations(id, name) values
+  ('aaaaaaaa-0000-0000-0000-0000000000c1', 'DESK test customer'),
+  ('aaaaaaaa-0000-0000-0000-0000000000c2', 'Other DESK test customer');
+update public.profiles set organization_id = 'aaaaaaaa-0000-0000-0000-0000000000c1'
+ where id = '22222222-2222-2222-2222-222222222222';
+insert into public.tickets(id, requester_id, organization_id, subject, description, category_key)
+values ('b0000000-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222',
+        'aaaaaaaa-0000-0000-0000-0000000000c1', 'DESK fixture', 'Manual support', 'dator'),
+       ('b0000000-0000-0000-0000-000000000002', '22222222-2222-2222-2222-222222222222',
+        'aaaaaaaa-0000-0000-0000-0000000000c2', 'Other DESK fixture', 'Isolation check', 'dator');
+
+do $BLOCK2G$
+declare
+  org_a uuid := 'aaaaaaaa-0000-0000-0000-0000000000c1';
+  org_b uuid := 'aaaaaaaa-0000-0000-0000-0000000000c2';
+  ticket_a uuid := 'b0000000-0000-0000-0000-000000000001';
+  ticket_b uuid := 'b0000000-0000-0000-0000-000000000002';
+  superadmin uuid := '66666666-6666-6666-6666-666666666666';
+  tech uuid := '33333333-3333-3333-3333-333333333333';
+  external_user uuid := '77777777-7777-7777-7777-777777777777';
+  device_a uuid;
+  session_a uuid;
+  grant_id uuid;
+  n int;
+begin
+  perform pg_temp.login(tech);
+  perform pg_temp.assert(not public.has_active_desk_entitlement(org_a), 'DESK: saknad rättighet ger nej');
+  begin
+    insert into public.onarly_desk_devices(organization_id, label, rustdesk_id, registered_by)
+      values(org_a, 'Blocked', '123456789', tech);
+    perform pg_temp.assert(false, 'DESK: enhet utan rättighet skulle nekas');
+  exception when insufficient_privilege or check_violation then
+    perform pg_temp.assert(true, 'DESK: enhet utan rättighet nekas');
+  end;
+
+  perform pg_temp.login(superadmin, 'aal2');
+  insert into public.onarly_support_entitlements(organization_id, product_key, entitlement, reason, granted_by)
+    values(org_a, 'onarly_desk', 'remote_support', 'Test fixture', superadmin);
+  perform pg_temp.login(tech);
+  insert into public.onarly_desk_devices(organization_id, label, rustdesk_id, registered_by)
+    values(org_a, 'Office PC', '123456789', tech) returning id into device_a;
+  perform pg_temp.assert(device_a is not null, 'DESK: tekniker registrerar kundkopplad enhet');
+  begin
+    insert into public.onarly_desk_sessions(organization_id, ticket_id, device_id, technician_id)
+      values(org_b, ticket_b, device_a, tech);
+    perform pg_temp.assert(false, 'DESK: manipulerat enhets-ID skulle nekas');
+  exception when insufficient_privilege or foreign_key_violation then
+    perform pg_temp.assert(true, 'DESK: enhet från annan kund nekas');
+  end;
+  begin
+    insert into public.onarly_desk_sessions(organization_id, ticket_id, device_id, technician_id)
+      values(org_a, ticket_b, device_a, tech);
+    perform pg_temp.assert(false, 'DESK: manipulerat ärende-ID skulle nekas');
+  exception when insufficient_privilege then
+    perform pg_temp.assert(true, 'DESK: ärende från annan kund nekas');
+  end;
+  insert into public.onarly_desk_sessions(organization_id, ticket_id, device_id, technician_id)
+    values(org_a, ticket_a, device_a, tech) returning id into session_a;
+  begin
+    update public.onarly_desk_sessions set started_at = now() where id = session_a;
+    perform pg_temp.assert(false, 'DESK: start utan samtycke skulle nekas');
+  exception when insufficient_privilege or check_violation then
+    perform pg_temp.assert(true, 'DESK: start utan registrerat samtycke nekas');
+  end;
+  update public.onarly_desk_sessions set consent_method = 'phone', consent_note = 'Customer confirmed by phone',
+    consent_recorded_at = now() where id = session_a;
+  update public.onarly_desk_sessions set started_at = now() where id = session_a;
+  update public.onarly_desk_sessions set ended_at = now() where id = session_a;
+  begin
+    update public.onarly_desk_sessions set consent_note = 'Rewritten consent' where id = session_a;
+    perform pg_temp.assert(false, 'DESK: samtycke skulle inte kunna skrivas om');
+  exception when insufficient_privilege then
+    perform pg_temp.assert(true, 'DESK: samtyckesuppgift är oföränderlig');
+  end;
+  begin
+    update public.onarly_desk_sessions set actual_connection_status = 'connected' where id = session_a;
+    perform pg_temp.assert(false, 'DESK: faktisk status skulle inte kunna påstås');
+  exception when check_violation or insufficient_privilege then
+    perform pg_temp.assert(true, 'DESK: faktisk anslutningsstatus kan inte förfalskas');
+  end;
+  select count(*) into n from public.onarly_desk_session_events where session_id = session_a;
+  perform pg_temp.assert(n = 4, 'DESK: begäran, samtycke, manuell start och slut i historik');
+  perform pg_temp.login('11111111-1111-1111-1111-111111111111');
+  select count(*) into n from public.onarly_desk_sessions where id = session_a;
+  perform pg_temp.assert(n = 0, 'DESK: annan kund ser inte sessionen via ID');
+  select count(*) into n from public.onarly_desk_session_events where session_id = session_a;
+  perform pg_temp.assert(n = 0, 'DESK: annan kund ser inte sessionshistoriken');
+  perform pg_temp.login('22222222-2222-2222-2222-222222222222');
+  select count(*) into n from public.onarly_desk_sessions where id = session_a;
+  perform pg_temp.assert(n = 1, 'DESK: ärendets kund ser manuellt registrerad session');
+  begin
+    insert into public.onarly_desk_sessions(organization_id, ticket_id, device_id, technician_id)
+      values(org_a, ticket_a, device_a, '22222222-2222-2222-2222-222222222222');
+    perform pg_temp.assert(false, 'DESK: kund skulle inte kunna begära teknikersession');
+  exception when insufficient_privilege then
+    perform pg_temp.assert(true, 'DESK: kund kan inte registrera teknikersession');
+  end;
+  perform pg_temp.login(superadmin, 'aal2');
+  select count(*) into n from public.support_admin_audit where target_id = session_a::text and action like 'onarly_desk.%';
+  perform pg_temp.assert(n = 4, 'DESK: fyra audit-händelser med aktör');
+  select count(*) into n from public.support_admin_audit
+    where target_id = device_a::text and action = 'onarly_desk.device_registered';
+  perform pg_temp.assert(n = 1, 'DESK: enhetsregistrering skrivs i audit');
+
+  insert into public.support_role_grants(grantee_id, role_key, scope, organization_id, reason,
+    granted_by, expires_at, is_external_consultant, consultant_company, commissioning_organization_id)
+    values(external_user, 'BERRYIT_SUPPORT_TECHNICIAN', 'organization', org_a,
+      'External DESK assignment', superadmin, now() + interval '1 day', true, 'Partner AB', org_b)
+    returning id into grant_id;
+  perform pg_temp.login(external_user);
+  select count(*) into n from public.onarly_desk_sessions where id = session_a;
+  perform pg_temp.assert(n = 1, 'DESK: extern tekniker ser uppdragsgivarens ärende');
+  select count(*) into n from public.tickets where id = ticket_b;
+  perform pg_temp.assert(n = 0, 'DESK: extern tekniker ser inte annan kund');
+  perform pg_temp.assert(not public.is_support_super_admin(), 'DESK: extern tekniker är inte global admin');
+
+  perform pg_temp.login(superadmin, 'aal2');
+  begin
+    insert into public.support_role_grants(grantee_id, role_key, scope, reason, granted_by,
+      expires_at, is_external_consultant, consultant_company, commissioning_organization_id)
+      values(external_user, 'BERRYIT_SUPPORT_SUPER_ADMIN', 'global', 'Forbidden consultant elevation',
+        superadmin, now() + interval '1 day', true, 'Partner AB', org_a);
+    perform pg_temp.assert(false, 'DESK: extern konsult skulle inte kunna få global admin');
+  exception when check_violation or insufficient_privilege then
+    perform pg_temp.assert(true, 'DESK: extern konsult kan inte få global admin genom integrationen');
+  end;
+  insert into public.support_role_grants(grantee_id, role_key, scope, organization_id, reason,
+    granted_by, granted_at, expires_at, is_external_consultant, consultant_company, commissioning_organization_id)
+    values(external_user, 'BERRYIT_SUPPORT_TECHNICIAN', 'organization', org_b,
+      'Expired assignment', superadmin, now() - interval '2 days', now() - interval '1 day',
+      true, 'Partner AB', org_b);
+  perform pg_temp.login(external_user);
+  perform pg_temp.assert(not public.has_support_permission('tickets.read', org_b), 'DESK: utgången extern grant ger ingen åtkomst');
+
+  perform pg_temp.login(superadmin, 'aal2');
+  update public.support_role_grants set revoked_at = now(), revoked_by = superadmin,
+    revoke_reason = 'Assignment ended' where id = grant_id;
+  perform pg_temp.login(external_user);
+  select count(*) into n from public.onarly_desk_sessions where id = session_a;
+  perform pg_temp.assert(n = 0, 'DESK: återkallad konsult ser inte sessioner');
+  begin
+    insert into public.onarly_desk_sessions(organization_id, ticket_id, device_id, technician_id)
+      values(org_a, ticket_a, device_a, external_user);
+    perform pg_temp.assert(false, 'DESK: återkallad konsult skulle inte kunna registrera session');
+  exception when insufficient_privilege then
+    perform pg_temp.assert(true, 'DESK: återkallad konsult kan inte registrera ny session');
+  end;
+  begin
+    insert into public.onarly_desk_devices(organization_id, label, rustdesk_id, registered_by)
+      values(org_a, 'Blocked device', '987654321', external_user);
+    perform pg_temp.assert(false, 'DESK: återkallad konsult skulle inte kunna registrera enhet');
+  exception when insufficient_privilege then
+    perform pg_temp.assert(true, 'DESK: återkallad konsult kan inte registrera ny enhet');
+  end;
+
+  perform pg_temp.login(superadmin, 'aal2');
+  insert into public.onarly_support_entitlements(organization_id, product_key, entitlement,
+    reason, granted_by, granted_at, expires_at)
+    values(org_b, 'onarly_desk', 'remote_support', 'Expired fixture', superadmin,
+      now() - interval '2 days', now() - interval '1 day');
+  perform pg_temp.assert(not public.has_active_desk_entitlement(org_b), 'DESK: utgången kundrättighet ger nej');
+
+  update public.onarly_support_entitlements set revoked_at = now(), revoked_by = superadmin,
+    revoke_reason = 'Test entitlement ended' where organization_id = org_a and product_key = 'onarly_desk' and revoked_at is null;
+  perform pg_temp.login(tech);
+  perform pg_temp.assert(not public.has_active_desk_entitlement(org_a), 'DESK: återkallad rättighet ger nej');
+  begin
+    insert into public.onarly_desk_devices(organization_id, label, rustdesk_id, registered_by)
+      values(org_a, 'Expired entitlement device', '987654321', tech);
+    perform pg_temp.assert(false, 'DESK: enhet efter rättighetsåterkallelse skulle nekas');
+  exception when insufficient_privilege or check_violation then
+    perform pg_temp.assert(true, 'DESK: ny enhet efter rättighetsåterkallelse nekas');
+  end;
+  begin
+    insert into public.onarly_desk_sessions(organization_id, ticket_id, device_id, technician_id)
+      values(org_a, ticket_a, device_a, tech);
+    perform pg_temp.assert(false, 'DESK: ny session efter återkallelse skulle nekas');
+  exception when insufficient_privilege or check_violation then
+    perform pg_temp.assert(true, 'DESK: ny session efter rättighetsåterkallelse nekas');
+  end;
+  perform pg_temp.logout();
+end;
+$BLOCK2G$;
+
 rollback;

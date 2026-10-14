@@ -60,6 +60,8 @@ export type TicketRow = {
   status_key: string;
   priority_key: string;
   updated_at: string;
+  organization_id: string | null;
+  assignee_id: string | null;
 };
 
 /** Autentiseringsnivå: aal1 = lösenord, aal2 = lösenord + MFA. */
