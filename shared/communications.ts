@@ -260,7 +260,8 @@ export function mergeMessages(
     tillagda.push(m);
   }
 
-  const alla = [...befintliga, ...tillagda].sort((a, b) => a.created_at.localeCompare(b.created_at));
+  const alla = [...befintliga, ...tillagda].sort((a, b) =>
+    a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id));
   const senaste = alla.length > 0 ? alla[alla.length - 1].created_at : cursor.since;
 
   return { messages: alla, cursor: { since: senaste, seen }, added: tillagda.length };

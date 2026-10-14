@@ -16,6 +16,14 @@ Turbopack för produktionsbyggen. `npm run build` använder därför explicit We
 Ingen produktdesign eller applikationskod ändrades för detta. CI kör samma kommando
 med Node.js 24 på Ubuntu; CI-resultatet måste följas upp på GitHub efter push.
 
+Security & CI Repair Gate 2026-10-14: `npm run typecheck` kör nu automatiskt
+`next typegen` genom `pretypecheck`. Det skapar `next-env.d.ts` och route-typer
+innan `tsc --noEmit`, även i en ren checkout. Genererade filer ska fortsatt
+vara ignorerade av Git. Typkontroll och Webpack-produktionsbygge har verifierats
+efter att `.next`, `next-env.d.ts` och TypeScripts inkrementella cache tagits bort.
+Webpack är fortsatt den explicita produktionsvägen; ingen Turbopack-återtestning
+eller ändring av design, typsnitt eller paketversion har gjorts i reparationspasset.
+
 Google Fonts hämtas under byggtiden av Next.js. Om nätåtkomsten till Google Fonts
 saknas avbryts även Webpack-bygget; det ska rapporteras som ej verifierat i den
 miljön. En fullständig produktionsbuild har verifierats lokalt med nätåtkomst.

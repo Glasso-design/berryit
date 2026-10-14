@@ -19,7 +19,7 @@ Språk: svenska (`lang="sv"`). Package manager: npm.
 ```bash
 npm install          # eller: npm ci
 npm run dev          # http://localhost:3501
-npm run typecheck    # tsc --noEmit
+npm run typecheck    # pretypecheck: next typegen, därefter tsc --noEmit
 npm run lint         # eslint
 npm run build        # production build via dokumenterat Next.js --webpack
 npm start            # kör production build på 3501
@@ -27,7 +27,10 @@ npm start            # kör production build på 3501
 
 Byggväg och PASS 2G-diagnostik: [docs/pass-2g-build-verification.md](docs/pass-2g-build-verification.md).
 Support Desk-databastesterna körs isolerat med `npm run db:test`, `npm run db:upgrade-test`
-och `npm run db:safety-test`. CI kör dessutom tjänste- och desktopregressioner.
+och `npm run db:safety-test`. `npm run db:repair-test` verifierar säkerhetsreparationen,
+inklusive uppgradering med befintliga syntetiska deltagare och Storage-policyer.
+CI kör dessutom tjänste- och desktopregressioner.
+Lokal säkerhets- och CI-rapport: [2026-10-14](docs/security-ci-repair-2026-10-14.md).
 
 ## Miljövariabler
 

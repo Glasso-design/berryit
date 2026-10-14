@@ -110,13 +110,25 @@ Skillnader att känna till:
 | Roller | `anon`, `authenticated`, `service_role` skapas av bootstrap | Finns redan, med plattformens rättigheter |
 | JWT | Simuleras med `set_config('request.jwt.claims', …)` + `set role` | PostgREST sätter claims från en verifierad JWT |
 | API | Inget – policies testas direkt mot SQL | PostgREST/supabase-js ovanpå samma policies |
-| `storage`-schemat | Saknas, storage-migrationen hoppar över sig själv | Buckets och `storage.objects` finns; policyn aktiveras |
+| `storage`-schemat | Syntetisk katalog i `local_storage_bootstrap.sql` för `db:test` och `db:repair-test`; riktiga RLS-policyer appliceras | Fullständig Storage-katalog och HTTP-tjänst |
 | Realtime/Edge Functions | Saknas | Finns (används inte i denna pass) |
 | Tillägg | `pgcrypto` laddas explicit | Förinstallerat |
 
 Konsekvens: RLS-logiken, triggers, constraints och index är verifierade. Det som
-**inte** kan verifieras förrän projektet finns är storage-policies i praktiken,
-signed URL-flödet, GoTrue-inställningar och PostgREST-exponeringen.
+**inte** verifieras av PGlite är Storage HTTP/signed URL-flödet,
+GoTrue-inställningar och PostgREST-exponeringen. SQL/RLS för objekt testas nu
+även med manipulerade sökvägar och extra permissiva plattformspolicyer.
+
+## Säkerhetsreparation 2026-10-14
+
+Den framåtriktade migrationen `20261014190857_security_ci_repair.sql` härdar
+Communications, `active_support_grants(uuid)` och Storage. Historiska migrationer
+ändras inte. `npm run db:repair-test` kör uppgradering från tidigare schema med
+syntetiska befintliga deltagare och kontrollerar att inga deltagare raderas.
+Communications-bilagor registreras av klienten före objektuppladdning; meddelande,
+konversation och sökväg måste matcha. Befintliga felkopplade poster blir
+otillgängliga, inte raderade. Betrodda importörer använder fortsatt service_role.
+Se [verifiering och kvarstående driftfrågor](../docs/security-ci-repair-2026-10-14.md).
 
 ## Inte implementerat (medvetet, ingen attrapp)
 

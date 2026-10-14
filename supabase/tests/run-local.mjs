@@ -31,6 +31,9 @@ const migrationFiles = fs.readdirSync(migrationsDir).filter((f) => f.endsWith(".
 async function freshDatabase() {
   const db = await PGlite.create({ extensions: { pgcrypto } });
   await db.exec(read(path.join(testsDir, "local_bootstrap.sql")));
+  // Platform roles must exist before the synthetic Storage grants are applied.
+  await db.exec(read(path.join(migrationsDir, migrationFiles[0])));
+  await db.exec(read(path.join(testsDir, "local_storage_bootstrap.sql")));
   return db;
 }
 
@@ -51,6 +54,7 @@ const step = async (db, label, sql) => {
 console.log("\nFas 1 – migrationer från tom databas");
 const migrateDb = await freshDatabase();
 for (const file of migrationFiles) {
+  if (file === migrationFiles[0]) continue;
   if (!(await step(migrateDb, file, read(path.join(migrationsDir, file))))) break;
 }
 if (!failures) {
@@ -88,7 +92,7 @@ await migrateDb.close();
 // --- Fas 2: säkerhetstester --------------------------------------------------
 console.log("\nFas 2 – säkerhetstester");
 const testDb = await freshDatabase();
-for (const file of migrationFiles) await testDb.exec(read(path.join(migrationsDir, file)));
+for (const file of migrationFiles.slice(1)) await testDb.exec(read(path.join(migrationsDir, file)));
 
 // Spegla varje godkänd kontroll i en tabell så att de kan redovisas. Filen i
 // repot är oförändrad; ersättningarna gäller bara denna körning (psql visar

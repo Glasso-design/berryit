@@ -56,18 +56,42 @@ export async function loadMessages(
   conversationId: string,
   since: string | null = null,
 ): Promise<ConversationMessage[]> {
-  let fraga = supabase
-    .from(COMM_TABLE.messages)
-    .select(COMM_SELECT.message)
-    .eq("conversation_id", conversationId)
-    .order("created_at", { ascending: true })
-    .limit(COMM_LIMIT.messages);
-
-  if (since) fraga = fraga.gt("created_at", since);
-
-  const { data, error } = await fraga;
-  if (error) throw new Error(error.message);
-  return (data ?? []) as ConversationMessage[];
+  // Keep PostgreSQL's full sub-millisecond precision in the PostgREST cursor.
+  // Only a restricted timestamp/UUID grammar may enter an .or expression.
+  const timestamp = (value: string) =>
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})$/.test(value)
+    && Number.isFinite(Date.parse(value));
+  const uuid = (value: string) => /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(value);
+  if (since && !timestamp(since)) throw new Error("Ogiltig synkmarkör. Försök ladda konversationen igen.");
+  const messages: ConversationMessage[] = [];
+  let after: ConversationMessage | undefined;
+  const positions = new Set<string>();
+  for (;;) {
+    let fraga = supabase.from(COMM_TABLE.messages).select(COMM_SELECT.message)
+      .eq("conversation_id", conversationId)
+      .order("created_at", { ascending: true }).order("id", { ascending: true })
+      .limit(COMM_LIMIT.messages);
+    // Inclusive across polls: a newly inserted ID at the same timestamp may
+    // sort BEFORE a previously seen ID. mergeMessages deduplicates the overlap.
+    if (since) fraga = fraga.gte("created_at", since);
+    if (after) fraga = fraga.or(
+      `created_at.gt."${after.created_at}",and(created_at.eq."${after.created_at}",id.gt.${after.id})`,
+    );
+    const { data, error } = await fraga;
+    if (error) throw new Error(error.message);
+    const page = (data ?? []) as ConversationMessage[];
+    if (!page.length) return messages;
+    const last = page[page.length - 1];
+    const position = `${last.created_at}/${last.id}`;
+    if (!timestamp(last.created_at) || !uuid(last.id) || positions.has(position)) {
+      throw new Error("Ofullständig meddelandehämtning. Försök ladda konversationen igen.");
+    }
+    positions.add(position);
+    messages.push(...page);
+    // Ask for the next page even after a short page: the API may have a lower
+    // configured maximum than the requested limit. Only an empty page is final.
+    after = last;
+  }
 }
 
 /** Markerar konversationen som läst för den inloggade. */

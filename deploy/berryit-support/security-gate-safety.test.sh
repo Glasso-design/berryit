@@ -120,19 +120,29 @@ set_fixture 22222222-2222-4222-8222-222222222222 33333333-3333-4333-8333-3333333
 grep -Fq "t.id = '$tid'" "$calls"
 if grep -Fq "$first_tid" "$calls"; then exit 1; fi
 
-# Integration check: the entry point refuses a production-classified run
-# before sourcing keys or touching Docker/API. The restore trap is not armed
-# when CREATE DATABASE fails because a name already exists.
-: > "$calls"
-if BERRYIT_TEST_ENV=production bash "$here/security-gate.sh" >/dev/null 2>&1; then exit 1; fi
-expect_no_delete
-export -f docker
-if BERRYIT_TEST_ENV=isolated BERRYIT_TEST_PROJECT="$BERRYIT_TEST_PROJECT" \
-   BERRYIT_TEST_STACK_ID="$BERRYIT_TEST_STACK_ID" \
-   BERRYIT_TEST_GATEWAY_PORT="$BERRYIT_TEST_GATEWAY_PORT" \
-   BERRYIT_TEST_SECRETS_FILE="$test_keys" \
-   bash "$here/security-gate.sh" >/dev/null 2>&1; then exit 1; fi
-expect_no_delete
+# Never execute the live-stack entry point in this suite, even on a rejection
+# path. Exercise the sourced guard above with mocks; verify its entry ordering
+# structurally here. Fail on any change to the executable prelude, so a write
+# inserted before the guard cannot silently escape the negative tests.
+node - "$here/security-gate.sh" <<'JS'
+const assert = require('node:assert/strict');
+const source = require('node:fs').readFileSync(process.argv[2], 'utf8');
+const lines = source.split(/\r?\n/).map(line => line.trim()).filter(line => line && !line.startsWith('#'));
+const expected = [
+    'set -euo pipefail',
+    'here="$(cd "$(dirname "$0")" && pwd)"',
+    '. "$here/security-gate-safety.sh"',
+    'sql() { docker exec -i "$BERRYIT_TEST_PROJECT-db" psql -tA -U "${PGUSER:-supabase_admin}" -d postgres -c "$1"; }',
+    'sg_require_isolated_target || exit 1',
+];
+assert.deepEqual(lines.slice(0, expected.length), expected, 'Gate must reject unknown targets before any effects');
+assert.equal(lines[expected.length], 'set -a; . "$BERRYIT_TEST_SECRETS_FILE"; set +a');
+assert.ok(!source.includes('trap '), 'The gate must never register an exit cleanup');
+assert.ok(!source.toLowerCase().includes('subject like'), 'Broad cleanup is forbidden');
+JS
+
+# The restore trap is not armed when CREATE DATABASE fails. Docker is a shell
+# mock here; no database, dump, restore or real container is accessed.
 docker() {
   printf 'docker %s\n' "$*" >> "$calls"
   [[ "$*" == *'create database'* ]] && return 1
