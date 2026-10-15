@@ -18,11 +18,14 @@ export type AppConfig = {
   backendUrl: string;
   /** Publik anon-nyckel. Ger ingen åtkomst i sig – RLS avgör allt. */
   anonKey: string;
+  /** Next.js Control Center origin, used only for server-side customer registration. */
+  controlUrl?: string;
 };
 
 export const BUILD_DEFAULTS: Partial<AppConfig> = {
   backendUrl: import.meta.env.BERRYIT_PUBLIC_BACKEND_URL ?? "",
   anonKey: import.meta.env.BERRYIT_PUBLIC_ANON_KEY ?? "",
+  controlUrl: import.meta.env.BERRYIT_PUBLIC_CONTROL_URL ?? "",
 };
 
 export class ConfigError extends Error {}
@@ -44,7 +47,15 @@ export function validateConfig(input: Partial<AppConfig>): AppConfig {
   if (!anonKey) throw new ConfigError("Anon-nyckel saknas.");
   assertNoServiceRoleKey(anonKey);
 
-  return { backendUrl: url.data, anonKey };
+  let controlUrl: string | undefined;
+  if (input.controlUrl?.trim()) {
+    const parsed = backendUrlSchema.safeParse(input.controlUrl);
+    if (!parsed.success) throw new ConfigError("Control Center-URL måste vara en säker http(s)-adress.");
+    const origin = new URL(parsed.data);
+    if (origin.username || origin.password || origin.search || origin.hash || origin.pathname !== "/") throw new ConfigError("Ange bara Control Center-serverns origin, utan inloggningsuppgifter eller sökväg.");
+    controlUrl = origin.origin;
+  }
+  return { backendUrl: url.data, anonKey, ...(controlUrl ? {controlUrl} : {}) };
 }
 
 export function isConfigured(input: Partial<AppConfig> | null | undefined): boolean {

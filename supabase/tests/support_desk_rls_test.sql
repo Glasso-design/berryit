@@ -1719,10 +1719,15 @@ insert into public.organizations(id, name) values
   ('aaaaaaaa-0000-0000-0000-0000000000c2', 'Other DESK test customer');
 update public.profiles set organization_id = 'aaaaaaaa-0000-0000-0000-0000000000c1'
  where id = '22222222-2222-2222-2222-222222222222';
+-- Keep the isolation fixture valid under the manual customer/organisation
+-- binding: the other organisation has its OWN customer profile.
+insert into auth.users(id,email) values ('eeeeeeee-0000-4000-8000-0000000000c2','desk-other@example.test');
+update public.profiles set organization_id='aaaaaaaa-0000-0000-0000-0000000000c2'
+  where id='eeeeeeee-0000-4000-8000-0000000000c2';
 insert into public.tickets(id, requester_id, organization_id, subject, description, category_key)
 values ('b0000000-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222',
         'aaaaaaaa-0000-0000-0000-0000000000c1', 'DESK fixture', 'Manual support', 'dator'),
-       ('b0000000-0000-0000-0000-000000000002', '22222222-2222-2222-2222-222222222222',
+       ('b0000000-0000-0000-0000-000000000002', 'eeeeeeee-0000-4000-8000-0000000000c2',
         'aaaaaaaa-0000-0000-0000-0000000000c2', 'Other DESK fixture', 'Isolation check', 'dator');
 
 do $BLOCK2G$

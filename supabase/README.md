@@ -130,6 +130,22 @@ konversation och sökväg måste matcha. Befintliga felkopplade poster blir
 otillgängliga, inte raderade. Betrodda importörer använder fortsatt service_role.
 Se [verifiering och kvarstående driftfrågor](../docs/security-ci-repair-2026-10-14.md).
 
+## Lokalt manuellt supportflöde, 2026-10-15
+
+`20261014235633_complete_support_workflow.sql` utökar befintliga profiler och
+tickets för manuell kundregistrering, tilldelning, återöppningsorsak och säkra
+ärendebilagor. Privatkund har fortsatt `organization_id IS NULL`; ingen separat
+kundmodell behövs för det manuella flödet. Privatkunders ONARLY DESK-rättighet
+kräver fortfarande ett separat framtida databasbeslut.
+
+`npm run test:support-workflow` kör den gemensamma UI-resan med isolerad PGlite
+och syntetisk Auth/Storage-transport. Installera först webbens och Desktops
+beroenden samt `npx playwright install chromium`. Inga serveradresser accepteras.
+Testet verifierar SQL/RLS och klientbeteende, inte GoTrue eller Storage HTTP.
+Se [arbetsrapport och verifieringsgränser](../docs/complete-support-workflow-v1.md).
+Nedan kvarstår äldre miljöuppgifter som historiskt underlag; aktuellt driftläge
+har inte kontrollerats eller ändrats i detta uppdrag.
+
 ## Inte implementerat (medvetet, ingen attrapp)
 
 - Köer och eskaleringsmotor (registret finns, regelverket är inte byggt)

@@ -17,6 +17,7 @@ export function Installningar() {
   const [info, setInfo] = useState<AppInfo | null>(null);
   const [backendUrl, setBackendUrl] = useState(config?.backendUrl ?? "");
   const [anonKey, setAnonKey] = useState(config?.anonKey ?? "");
+  const [controlUrl,setControlUrl]=useState(config?.controlUrl??"");
   const [status, setStatus] = useState<string | null>(null);
   const [fel, setFel] = useState<string | null>(null);
 
@@ -36,7 +37,7 @@ export function Installningar() {
     setFel(null);
     setStatus(null);
     try {
-      const giltig = validateConfig({ backendUrl, anonKey });
+      const giltig = validateConfig({ backendUrl, anonKey,controlUrl });
       await saveConfig(giltig);
       setConfig(giltig);
       setStatus("Anslutningen sparad.");
@@ -118,6 +119,7 @@ export function Installningar() {
             className="mt-2 w-full rounded-xl border border-field bg-ink px-4 py-2.5 font-mono text-xs text-paper focus:border-berry focus:outline-none"
           />
         </label>
+        <label className="mt-4 block text-sm">Control Center-URL (för kundregistrering)<input type="url" value={controlUrl} onChange={event=>setControlUrl(event.target.value)} className="mt-2 w-full rounded-xl border border-field bg-ink px-4 py-2.5 text-paper"/></label>
         <div className="mt-5 flex gap-3">
           <button
             type="button"

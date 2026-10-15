@@ -16,6 +16,8 @@ pub struct AppConfig {
     pub backend_url: String,
     #[serde(default)]
     pub anon_key: String,
+    #[serde(default)]
+    pub control_url: String,
 }
 
 #[derive(Debug, thiserror::Error, Serialize)]
@@ -52,4 +54,22 @@ pub fn save(app: &AppHandle, config: AppConfig) -> Result<AppConfig, ConfigError
         serde_json::to_string_pretty(&config).map_err(|e| ConfigError::Parse(e.to_string()))?;
     std::fs::write(&file, raw).map_err(|e| ConfigError::Io(e.to_string()))?;
     Ok(config)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::AppConfig;
+
+    #[test]
+    fn existing_installation_config_survives_control_url_addition() {
+        let config: AppConfig = serde_json::from_str(
+            r#"{"backend_url":"https://backend.example.test","anon_key":"public-anon"}"#,
+        ).unwrap();
+        assert!(config.control_url.is_empty());
+        assert_eq!(config.backend_url, "https://backend.example.test");
+        let updated = AppConfig { control_url: "https://control.example.test".into(), ..config };
+        let restored: AppConfig = serde_json::from_str(&serde_json::to_string(&updated).unwrap()).unwrap();
+        assert_eq!(restored.control_url, updated.control_url);
+        assert_eq!(restored.anon_key, "public-anon");
+    }
 }

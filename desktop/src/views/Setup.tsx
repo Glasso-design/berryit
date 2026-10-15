@@ -15,6 +15,7 @@ export function Setup() {
   const { setConfig, error } = useSession();
   const [backendUrl, setBackendUrl] = useState("");
   const [anonKey, setAnonKey] = useState("");
+  const [controlUrl,setControlUrl]=useState("");
   const [fel, setFel] = useState<string | null>(null);
   const [pagar, setPagar] = useState(false);
 
@@ -23,7 +24,7 @@ export function Setup() {
     setFel(null);
     let giltig;
     try {
-      giltig = validateConfig({ backendUrl, anonKey });
+      giltig = validateConfig({ backendUrl, anonKey,controlUrl });
     } catch (e2) {
       setFel(e2 instanceof ConfigError ? e2.message : String(e2));
       return;
@@ -74,6 +75,7 @@ export function Setup() {
             />
           </label>
 
+          <label className="block text-sm">Control Center-URL (för kundregistrering)<input value={controlUrl} onChange={event=>setControlUrl(event.target.value)} type="url" className="mt-2 w-full rounded-xl border border-field bg-ink px-4 py-3 text-paper"/></label>
           {fel && (
             <p
               role="alert"

@@ -91,7 +91,21 @@ Under utveckling läses förval från `.env.development.local`:
 ```
 BERRYIT_PUBLIC_BACKEND_URL=http://127.0.0.1:8700
 BERRYIT_PUBLIC_ANON_KEY=<anon-nyckel>
+BERRYIT_PUBLIC_CONTROL_URL=https://control.example.test
 ```
+
+Control Center-URL är valfri för befintligt ärendearbete men krävs för manuell
+kundregistrering från Desktop. Samma värde kan anges i Setup/Inställningar.
+Endast origin godtas, utan sökväg, query eller inloggningsuppgifter. Kunden
+registreras av servern med inloggningen spärrad; ingen e-post skickas.
+Separat aktivering kräver behörig administratör i Auth och uppdatering av
+profilens `login_activation_pending`. Kundregistrering kräver levande MFA2.
+Webbläsarvarianten av Desktop behöver uttrycklig origin i serverns
+`CONTROL_ALLOWED_ORIGINS`; native använder Bearer över befintlig HTTP-plugin.
+Serverns service-role-nyckel får aldrig läggas i Desktop-konfigurationen.
+
+Den isolerade helresan beskrivs i
+[`docs/complete-support-workflow-v1.md`](../docs/complete-support-workflow-v1.md).
 
 Endast `BERRYIT_PUBLIC_*` når bundlen (`envPrefix` i `vite.config.ts`), så en
 hemlighet kan inte följa med av misstag. Filen laddas bara i utvecklingsläge —
