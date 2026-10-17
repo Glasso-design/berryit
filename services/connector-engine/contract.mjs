@@ -26,6 +26,7 @@ export const ERROR_CODES = [
   "TIMEOUT",
   "UNREACHABLE",
   "BAD_RESPONSE",
+  "BAD_CONFIG",
   "WRITE_REFUSED",
   "INTERNAL",
 ];
@@ -117,7 +118,7 @@ export function makeResult({
 /** Ett fel blir ett resultat, inte ett kastat undantag. Motorn ska aldrig stanna. */
 export function errorResult(connector, error, latencyMs = null) {
   const fel = error instanceof ConnectorError ? error : new ConnectorError("INTERNAL", String(error?.message ?? error));
-  const status = fel.code === "NOT_CONFIGURED" || fel.code === "MISSING_SECRET" ? "unknown" : "down";
+  const status = ["NOT_CONFIGURED", "MISSING_SECRET", "BAD_CONFIG"].includes(fel.code) ? "unknown" : "down";
   return makeResult({
     connector,
     status,

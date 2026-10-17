@@ -23,14 +23,29 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run db:safety-test
       - run: bash deploy/berryit-support/security-gate-safety.test.sh
+      - run: bash deploy/berryit-support/upgrade-safety.test.sh
       - run: npm run db:test
+      - run: npm run db:access-test
+      - run: node supabase/tests/onarly_ai_assistant_test.mjs
       - run: npm run db:upgrade-test
+      - run: npm run db:master-upgrade-test
+      - run: node --test supabase/tests/http-preflight.test.mjs supabase/tests/upgrade-plan.test.mjs
       - run: npm run db:repair-test
       - run: npm run test:support-workflow
-      - run: node --test services/connector-engine/engine.test.mjs services/connector-engine/monitoring.test.mjs services/communications/email-adapter.test.mjs services/onarly-ai-adapter/server.test.mjs
+      - run: npm run test:project-access
+      - run: npm run test:ai-diagnostics
+      - run: node --test services/connector-engine/engine.test.mjs services/connector-engine/monitoring.test.mjs services/connector-engine/pilot.test.mjs services/communications/email-adapter.test.mjs services/onarly-ai-adapter/server.test.mjs
+      - run: node --test services/connector-engine/repository-access.test.mjs
+      - run: node --test services/connector-engine/project-discovery.test.mjs
+      - run: node --test services/onarly-ai-adapter/diagnostics.test.mjs services/onarly-ai-adapter/diagnostic-http.test.mjs
       - run: npm run lint
       # pretypecheck generates next-env.d.ts and route types in a clean checkout.
       - run: npm run typecheck
       - run: npm run build
       - run: npm test --prefix desktop
       - run: npm run build --prefix desktop
+        env:
+          BERRYIT_PUBLIC_BACKEND_URL: http://127.0.0.1:8700
+          BERRYIT_PUBLIC_ANON_KEY: sb_publishable_synthetic_connection_test_only
+          BERRYIT_PUBLIC_CONTROL_URL: ""
+      - run: npm run test:desktop-connection

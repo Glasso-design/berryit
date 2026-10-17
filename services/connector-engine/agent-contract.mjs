@@ -74,6 +74,9 @@ export function validateAgentReport(report, agent, now = Date.now()) {
     throw new AgentReportError("WRITE_REFUSED", "En skrivande agent får inte rapportera");
   }
   if (!report || typeof report !== "object") throw new AgentReportError("BAD_REPORT", "Rapporten saknas");
+  if (report.containers !== undefined && (!Array.isArray(report.containers) || report.containers.length > 200)) {
+    throw new AgentReportError("BAD_CONTAINERS", "Containerinventeringen måste vara en fullständig lista med högst 200 poster");
+  }
 
   // Agenten får bara rapportera för sin egen nod och sin egen organisation.
   // Det här är spärren mot en agent som försöker skriva i en annan kunds data.
@@ -100,6 +103,7 @@ export function validateAgentReport(report, agent, now = Date.now()) {
 
   const samples = [];
   for (const [key, raw] of Object.entries(inkommande)) {
+    if (key.startsWith("containers_") && !Array.isArray(report.containers)) throw new AgentReportError("BAD_CONTAINERS", "Containersiffror kräver en faktisk inventering");
     if (!ALLOWED_METRICS.includes(key)) {
       throw new AgentReportError("UNKNOWN_METRIC", `Mätvärdet ${key} ingår inte i agentkontraktet`);
     }
@@ -158,7 +162,7 @@ export function containerMetrics(containers) {
   const lista = normalizeContainers(containers);
   return {
     containers_running: lista.filter((c) => c.state === "running").length,
-    containers_unhealthy: lista.filter((c) => c.health === "unhealthy").length,
+    containers_unhealthy: lista.filter((c) => c.state === "running" && c.health === "unhealthy").length,
   };
 }
 
@@ -170,5 +174,5 @@ export const AGENT_REQUIREMENTS = [
   { key: "node", label: "En registrerad nod i systemregistret", secret: false },
   { key: "agent", label: "En registrerad agent för just den noden", secret: false },
   { key: "token", label: "Agentens egen nyckel i serverns secret store", secret: true },
-  { key: "socket", label: "Läsrätt på Docker-socketen, monterad read-only i agenten", secret: false },
+  { key: "socket", label: "Serverlokal collector med API-begränsad Docker-läsning; en :ro-mount räcker inte som behörighetsspärr", secret: false },
 ];

@@ -5,7 +5,7 @@ const uuid=z.uuid();
 const actions=z.discriminatedUnion("action",[
   z.object({action:z.literal("overview"),args:z.object({}).strict()}),
   z.object({action:z.literal("detail"),args:z.object({id:uuid}).strict()}),
-  z.object({action:z.literal("create"),args:z.object({input:ticketDraftSchema.extend({customerId:uuid})}).strict()}),
+  z.object({action:z.literal("create"),args:z.object({input:ticketDraftSchema.extend({customerId:uuid,projectId:uuid.nullable().optional()})}).strict()}),
   z.object({action:z.literal("message"),args:z.object({id:uuid,body:z.string().max(20000),staff:z.boolean()}).strict()}),
   z.object({action:z.literal("note"),args:z.object({id:uuid,body:z.string().max(20000)}).strict()}),
   z.object({action:z.literal("update"),args:z.object({id:uuid,changes:z.object({status_key:z.string().optional(),assignee_id:uuid.nullable().optional()}).strict()}).strict()}),

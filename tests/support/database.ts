@@ -22,6 +22,10 @@ export async function isolatedDatabase(beforeWorkflow?:(db:PGlite)=>Promise<void
   await db.query('insert into public.organizations(id,name) values($1,$2),($3,$4)',[ids.orgA,'Synthetic A',ids.orgB,'Synthetic B']);
   await db.query("update public.profiles set role='admin' where id=$1",[ids.admin]);
   await db.query("update public.profiles set role='technician' where id=$1",[ids.tech]);
+  // Profiles created after the access migration never acquire staff authority
+  // implicitly. Give this legacy workflow fixture its explicit old scopes.
+  for(const [user,role] of [[ids.admin,'BERRYIT_SUPPORT_ADMIN'],[ids.tech,'BERRYIT_SUPPORT_TECHNICIAN']])
+    await db.query("insert into public.support_role_grants(grantee_id,role_key,scope,reason) values($1,$2,'global','Explicit isolated legacy workflow fixture')",[user,role]);
   await db.query('update public.profiles set organization_id=$1 where id=$2',[ids.orgA,ids.customerA]);
   await db.query('update public.profiles set organization_id=$1 where id=$2',[ids.orgB,ids.customerB]);
   await db.exec("insert into auth.sessions(id,user_id,aal) select id,id,'aal2' from auth.users");
@@ -36,7 +40,7 @@ export async function isolatedDatabase(beforeWorkflow?:(db:PGlite)=>Promise<void
   }
   function sdk(user:string,aal='aal2'){
     class Query {
-      table:string;columns='*';values:Record<string,unknown>|null=null;verb='select';filters:[string,string,unknown][]=[];ordering:string[]=[];max:number|undefined;one=false;required=false;returning=false;
+      table:string;columns='*';values:Record<string,unknown>|null=null;verb='select';filters:[string,string,unknown][]=[];ordering:string[]=[];max:number|undefined;offset=0;one=false;required=false;returning=false;
       constructor(table:string){this.table=table;}
       select(columns='*'){this.columns=columns;this.returning=true;return this;}
       insert(values:Record<string,unknown>){this.verb='insert';this.values=values;return this;}
@@ -45,6 +49,7 @@ export async function isolatedDatabase(beforeWorkflow?:(db:PGlite)=>Promise<void
       gt(key:string,value:unknown){this.filters.push([key,'>',value]);return this;}
       order(key:string){this.ordering.push(identifier(key));return this;}
       limit(n:number){this.max=n;return this;}
+      range(from:number,to:number){this.offset=from;this.max=to-from+1;return this;}
       maybeSingle(){this.one=true;return this;}
       single(){this.one=true;this.required=true;return this;}
       async then(resolve:(value:unknown)=>unknown){
@@ -59,6 +64,7 @@ export async function isolatedDatabase(beforeWorkflow?:(db:PGlite)=>Promise<void
           if(this.filters.length)sql+=' where '+this.filters.map(([key,op,value])=>identifier(key)+op+bind(value)).join(' and ');
           if(this.ordering.length)sql+=' order by '+this.ordering.join(',');
           if(this.max!==undefined)sql+=' limit '+Number(this.max);
+          if(this.offset)sql+=' offset '+Number(this.offset);
           if(this.verb!=='select'&&this.returning)sql+=' returning '+cols;
           // JSON conversion preserves PostgreSQL timestamp precision.
           const rows=await as(user,this.verb==='select'||this.returning?`with result as (${sql}) select to_jsonb(result) data from result`:sql,params,aal);

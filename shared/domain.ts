@@ -45,6 +45,7 @@ export type SupportGrant = {
   role_key: string;
   scope: "global" | "organization";
   organization_id: string | null;
+  project_id?: string | null;
 };
 
 /** Rå rad från support_role_grants, innan utgångna poster filtrerats bort. */
@@ -55,6 +56,7 @@ export type RawSupportGrant = SupportGrant & {
 
 export type TicketRow = {
   id: string;
+  project_id?: string | null;
   reference: string;
   subject: string;
   status_key: string;
@@ -74,6 +76,9 @@ export type AccessContext = {
   grants: SupportGrant[];
   isStaff: boolean;
   isSuperAdmin: boolean;
+  permissions?: string[];
+  roles?: string[];
+  requiresMfa?: boolean;
   currentLevel: AssuranceLevel | string | null;
   nextLevel: AssuranceLevel | string | null;
 };
@@ -86,18 +91,7 @@ export function activeGrants(rows: RawSupportGrant[] | null | undefined, now = D
     .map((g) => ({ role_key: g.role_key, scope: g.scope, organization_id: g.organization_id }));
 }
 
-export function isSuperAdmin(profile: Profile | null, grants: SupportGrant[]): boolean {
-  return (
-    profile?.role === "admin" ||
-    grants.some((g) => g.role_key === SUPER_ADMIN_ROLE_KEY && g.scope === "global")
-  );
-}
-
-export function isStaff(profile: Profile | null, grants: SupportGrant[]): boolean {
-  return isSuperAdmin(profile, grants) || profile?.role === "technician" || grants.length > 0;
-}
-
-/** Bygger behörighetskontexten från redan hämtade rader. */
+/** Presenter serverns auktoritativa svar; profil/grant-flaggor ger inga förmågor. */
 export function buildAccessContext(input: {
   userId: string;
   email: string | null;
@@ -106,6 +100,7 @@ export function buildAccessContext(input: {
   currentLevel: string | null;
   nextLevel: string | null;
   now?: number;
+  authority?: {isStaff:boolean;isSuperAdmin:boolean;permissions:string[];roles:string[];requiresMfa:boolean} | null;
 }): AccessContext {
   const grants = activeGrants(input.grants, input.now);
   return {
@@ -113,8 +108,11 @@ export function buildAccessContext(input: {
     email: input.email ?? input.profile?.email ?? null,
     profile: input.profile,
     grants,
-    isStaff: isStaff(input.profile, grants),
-    isSuperAdmin: isSuperAdmin(input.profile, grants),
+    isStaff: input.authority?.isStaff === true,
+    isSuperAdmin: input.authority?.isSuperAdmin === true,
+    permissions: input.authority?.permissions ?? [],
+    roles: input.authority?.roles ?? [],
+    requiresMfa: input.authority?.requiresMfa === true,
     currentLevel: input.currentLevel,
     nextLevel: input.nextLevel,
   };
@@ -122,7 +120,7 @@ export function buildAccessContext(input: {
 
 /** Super Admin måste nå aal2 innan någon administrativ vy får visas. */
 export function needsMfa(ctx: AccessContext): boolean {
-  return ctx.isSuperAdmin && ctx.currentLevel !== "aal2";
+  return (ctx.requiresMfa === true || ctx.isSuperAdmin) && ctx.currentLevel !== "aal2";
 }
 
 export function displayName(ctx: AccessContext): string {
@@ -131,7 +129,7 @@ export function displayName(ctx: AccessContext): string {
 
 export function roleLabel(ctx: AccessContext): string {
   if (ctx.isSuperAdmin) return "Super Admin";
-  if (ctx.profile?.role === "technician" || ctx.grants.length > 0) return "Tekniker";
+  if (ctx.roles?.length) return ctx.roles.join(", ");
   if (ctx.profile?.is_org_admin) return "Kundkontakt";
   return "Kund";
 }

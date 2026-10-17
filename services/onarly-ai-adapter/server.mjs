@@ -1,5 +1,6 @@
 import { createServer } from "node:http";
 import { randomUUID } from "node:crypto";
+import { DiagnosticPreviews, diagnosticPrompt, diagnosticResponse, diagnosticContextHash } from './diagnostics.mjs';
 
 export const AI_PATH = "/ai/v1";
 const MAX_BODY_BYTES = 32_768;
@@ -90,6 +91,7 @@ async function boundedJson(response, max = MAX_GATEWAY_RESPONSE_BYTES) {
 }
 
 
+/** @param {{authBaseUrl?:string,restBaseUrl?:string,anonKey?:string,serviceRoleKey?:string,fetchImpl?:typeof fetch}} [options] */
 export function createPostgrestBoundary({
   authBaseUrl,
   restBaseUrl,
@@ -168,18 +170,21 @@ export function createPostgrestBoundary({
     },
 
     async context(identity, gatewayAvailable) {
-      const [organizations, projects, services] = await Promise.all([
+      const [organizations, projects, services, targets] = await Promise.all([
         call("/organizations?select=id,name&order=name", identity.token),
         call("/support_projects?select=id,organization_id,name,description,repository_url&order=name", identity.token),
         call("/ticket_categories?select=key,label&is_active=eq.true&order=sort_order", identity.token),
+        call('/rpc/ai_diagnostic_targets',identity.token,{method:'POST',body:'{}'}),
       ]);
       return {
-        organizations,
-        projects,
+        organizations: [...new Map([...targets.projects.map(p=>({id:p.organization_id,name:'Projektorganisation '+p.organization_id})),...organizations].map(o=>[o.id,o])).values()],
+        projects: [...new Map([...targets.projects.map(p=>({...p,description:'',repository_url:null})),...projects].map(p=>[p.id,p])).values()],
+        incidents: targets.incidents,
         services,
         gateway: {
           available: gatewayAvailable,
-          reason: gatewayAvailable ? null : "ONARLY AI Gateway saknar serverkonfiguration.",
+          reason: gatewayAvailable ? 'Serverkonfigurerad; ingen verifierad gatewaykontakt ännu.' : "ONARLY AI Gateway saknar serverkonfiguration.",
+          verified: false,
         },
       };
     },
@@ -187,14 +192,14 @@ export function createPostgrestBoundary({
     async conversations(identity, organizationId = null) {
       const filter = organizationId ? `&organization_id=eq.${encode(organizationId)}` : "";
       return call(
-        `/ai_conversations?select=id,organization_id,project_id,service_key,created_by,title,created_at,updated_at${filter}&order=updated_at.desc&limit=100`,
+        `/ai_conversations?select=id,organization_id,project_id,incident_id,service_key,created_by,title,created_at,updated_at${filter}&order=updated_at.desc&limit=100`,
         identity.token,
       );
     },
 
     async conversation(identity, conversationId) {
       const rows = await call(
-        `/ai_conversations?select=id,organization_id,project_id,service_key,created_by,title,created_at,updated_at&id=eq.${encode(conversationId)}&limit=1`,
+        `/ai_conversations?select=id,organization_id,project_id,incident_id,service_key,created_by,title,created_at,updated_at&id=eq.${encode(conversationId)}&limit=1`,
         identity.token,
       );
       const row = first(rows);
@@ -206,6 +211,7 @@ export function createPostgrestBoundary({
       const rows = await userInsert("ai_conversations", identity.token, {
         organization_id: input.organizationId,
         project_id: input.projectId,
+        incident_id: input.incidentId ?? null,
         service_key: input.serviceKey,
         created_by: identity.userId,
         title: input.title,
@@ -245,11 +251,21 @@ export function createPostgrestBoundary({
           identity.token,
         ),
         call(
-          `/tickets?select=id,reference,subject,description,status_key,priority_key,updated_at&organization_id=eq.${encode(conversation.organization_id)}${conversation.service_key ? `&category_key=eq.${encode(conversation.service_key)}` : ""}&order=updated_at.desc&limit=8`,
+          `/tickets?select=id,reference,subject,description,status_key,priority_key,updated_at&organization_id=eq.${encode(conversation.organization_id)}${projectFilter}${conversation.service_key ? `&category_key=eq.${encode(conversation.service_key)}` : ""}&order=updated_at.desc&limit=8`,
           identity.token,
         ),
       ]);
       return { knowledge, tickets };
+    },
+
+    async diagnosticContext(identity,conversation){
+      return call('/rpc/ai_diagnostic_context',identity.token,{method:'POST',body:JSON.stringify({p_conversation:conversation.id})});
+    },
+
+    async auditDiagnostic(conversation,identity,requestId,context){
+      await serviceInsert('ai_audit_events',{organization_id:conversation.organization_id,conversation_id:conversation.id,
+        actor_id:identity.userId,action:'ai.diagnostics.approved',request_id:requestId,
+        metadata:{project_id:conversation.project_id,incident_id:conversation.incident_id,source_ids:context.facts.map(f=>f.id),context_sha256:diagnosticContextHash(context),explicit_approval:true}});
     },
 
     async addAssistantMessage(conversation, response, requestId, provider, model) {
@@ -305,6 +321,7 @@ export function createPostgrestBoundary({
       const rows = await userInsert("tickets", identity.token, {
         organization_id: conversation.organization_id,
         requester_id: identity.userId,
+        project_id: conversation.project_id,
         subject,
         description,
         category_key: conversation.service_key ?? "ovrigt",
@@ -314,6 +331,7 @@ export function createPostgrestBoundary({
         external_channel: "onarly-ai",
         external_metadata: {
           ai_conversation_id: conversation.id,
+          incident_id: conversation.incident_id ?? null,
           created_by_explicit_user_action: true,
         },
       });
@@ -382,6 +400,7 @@ function gatewayBase(value) {
   return null;
 }
 
+/** @param {{baseUrl?:string,serverToken?:string,route?:string,fetchImpl?:typeof fetch,timeoutMs?:number}} [options] */
 export function createOnarlyGateway({
   baseUrl,
   serverToken,
@@ -489,7 +508,7 @@ function parseJsonText(text) {
 const clipped = (value, max = 8_000) =>
   typeof value === "string" ? value.trim().slice(0, max) : "";
 
-export function normalizeAssistantResponse(rawText, context) {
+export function normalizeAssistantResponse(rawText, context, { observationsOnly = false } = {}) {
   const allowedSources = new Map(
     sourceRecords(context).map((source) => [
       source.id,
@@ -525,7 +544,7 @@ export function normalizeAssistantResponse(rawText, context) {
   const facts = [];
   const hypotheses = [];
 
-  for (const fact of Array.isArray(parsed.verifiedFacts) ? parsed.verifiedFacts : []) {
+  for (const fact of !observationsOnly && Array.isArray(parsed.verifiedFacts) ? parsed.verifiedFacts : []) {
     const ids = Array.isArray(fact?.sourceIds)
       ? [...new Set(fact.sourceIds.filter((id) => typeof id === "string" && sourceIds.has(id)))]
       : [];
@@ -551,7 +570,7 @@ export function normalizeAssistantResponse(rawText, context) {
   const missing = (Array.isArray(parsed.missingInformation) ? parsed.missingInformation : [])
     .map((item) => clipped(item, 1_000))
     .filter(Boolean);
-  if (!facts.length && !missing.length) {
+  if (!facts.length && !missing.length && !observationsOnly) {
     missing.push("Underlaget innehåller inga källbelagda fakta. Samla relevanta loggar eller dokumentation.");
   }
 
@@ -583,11 +602,13 @@ export class WindowLimiter {
   }
 }
 
+/** @param {{boundary:ReturnType<typeof createPostgrestBoundary>,gateway:ReturnType<typeof createOnarlyGateway>,limiter?:WindowLimiter,logger?:(event:object)=>void,previews?:DiagnosticPreviews}} options */
 export function createAiHandler({
   boundary,
   gateway,
   limiter = new WindowLimiter(),
   logger = () => {},
+  previews = new DiagnosticPreviews(),
 } = {}) {
   return async (req, res) => {
     const requestId = randomUUID();
@@ -617,6 +638,7 @@ export function createAiHandler({
         const input = {
           organizationId: requiredUuid(body.organizationId),
           projectId: optionalUuid(body.projectId),
+          incidentId: optionalUuid(body.incidentId),
           serviceKey:
             body.serviceKey === null || body.serviceKey === undefined || body.serviceKey === ""
               ? null
@@ -624,6 +646,30 @@ export function createAiHandler({
           title: safeText(body.title, 2, 160),
         };
         return reply(res, 201, { conversation: await boundary.createConversation(identity, input) });
+      }
+
+      const diagnosticMatch=route.match(/^\/conversations\/([^/]+)\/diagnostics$/);
+      if(req.method==='POST'&&diagnosticMatch){
+        if(!limiter.take(identity.userId))fail(429,'RATE_LIMITED');
+        const body=await readBody(req);
+        conversation=await boundary.conversation(identity,requiredUuid(diagnosticMatch[1]));
+        // Always reauthorize and reload using the caller's JWT. A stale or
+        // revoked scope never reaches Gateway, even with an existing preview.
+        const context=await boundary.diagnosticContext(identity,conversation);
+        if(body.mode==='preview')return reply(res,200,previews.prepare(identity.userId,conversation.id,context));
+        if(body.mode!=='analyze')fail(400,'INVALID_INPUT');
+        if(body.approvedForAi!==true)fail(400,'CONSENT_REQUIRED');
+        if(!gateway.enabled)fail(503,'GATEWAY_DISABLED');
+        if(!previews.consume(body.previewId,identity.userId,conversation.id,context))fail(409,'CONTEXT_CHANGED');
+        await boundary.auditDiagnostic(conversation,identity,requestId,context);
+        await boundary.addUserMessage(identity,conversation,'Sök felet i godkänt projekt-/incidentunderlag.');
+        const controller=new AbortController();req.once('aborted',()=>controller.abort());
+        const result=await gateway.complete(diagnosticPrompt(context),controller.signal);
+        // Use the existing response contract and persistence, never a second AI system.
+        const response=diagnosticResponse(normalizeAssistantResponse(result.text,{knowledge:[],tickets:[]},{observationsOnly:true}),context);
+        await boundary.conversation(identity,conversation.id); // scope revoked during provider call
+        const message=await boundary.addAssistantMessage(conversation,response,requestId,result.provider,result.model);
+        return reply(res,201,{message,response});
       }
 
       const messagesMatch = route.match(/^\/conversations\/([^/]+)\/messages$/);
@@ -638,6 +684,7 @@ export function createAiHandler({
         if (body.approvedForAi !== true) fail(400, "CONSENT_REQUIRED");
         const text = safeText(body.text, 2, 8_000);
         conversation = await boundary.conversation(identity, requiredUuid(messagesMatch[1]));
+        if(conversation.incident_id)fail(400,'DIAGNOSTIC_PREVIEW_REQUIRED');
         await boundary.addUserMessage(identity, conversation, text);
         const context = await boundary.sourceContext(identity, conversation);
         const controller = new AbortController();

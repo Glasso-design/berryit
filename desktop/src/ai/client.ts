@@ -4,6 +4,7 @@ import type {
   AiMessage,
   AiStructuredResponse,
   AiTicketResult,
+  AiDiagnosticPreview,
 } from "@berryit/shared/ai";
 import { aiErrorMessage, isAiStructuredResponse } from "@berryit/shared/ai";
 import { backendFetch } from "@/auth/client";
@@ -69,6 +70,7 @@ export function createAiClient(config: AppConfig, session: SessionLike) {
     createConversation: async (input: {
       organizationId: string;
       projectId: string | null;
+      incidentId?: string | null;
       serviceKey: string | null;
       title: string;
     }): Promise<AiConversation> => {
@@ -89,6 +91,14 @@ export function createAiClient(config: AppConfig, session: SessionLike) {
           ? message.structured_response
           : null,
       }));
+    },
+
+    previewDiagnostics:(conversationId:string)=>request<AiDiagnosticPreview>(`/conversations/${encodeURIComponent(conversationId)}/diagnostics`,
+      {method:'POST',body:JSON.stringify({mode:'preview'})}),
+    analyzeDiagnostics:async(conversationId:string,previewId:string,approvedForAi:boolean):Promise<AiStructuredResponse>=>{
+      const body=await request<{response:unknown}>(`/conversations/${encodeURIComponent(conversationId)}/diagnostics`,
+        {method:'POST',body:JSON.stringify({mode:'analyze',previewId,approvedForAi})});
+      if(!isAiStructuredResponse(body.response))throw new AiClientError('GATEWAY_RESPONSE_INVALID');return body.response;
     },
 
     ask: async (

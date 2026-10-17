@@ -11,9 +11,15 @@
     "typecheck": "tsc --noEmit",
     "db:test": "node supabase/tests/run-local.mjs --environment=isolated-pglite",
     "db:upgrade-test": "node supabase/tests/upgrade-2c.mjs --environment=isolated-pglite",
+    "db:master-upgrade-test": "node supabase/tests/master-upgrade.test.mjs --environment=isolated-pglite",
+    "db:http-preflight": "node supabase/tests/http-preflight.mjs --environment=isolated-local-supabase",
     "db:safety-test": "node --test supabase/tests/isolated-environment.test.mjs",
     "db:repair-test": "node supabase/tests/security-repair.test.mjs --environment=isolated-pglite",
-    "test:support-workflow": "node tests/support/run.mjs --environment=isolated-pglite"
+    "db:access-test": "node supabase/tests/project-access.test.mjs --environment=isolated-pglite",
+    "test:project-access": "node tests/access/run.mjs --environment=isolated-pglite",
+    "test:ai-diagnostics": "node tests/ai/run.mjs --environment=isolated-pglite",
+    "test:support-workflow": "node tests/support/run.mjs --environment=isolated-pglite",
+    "test:desktop-connection": "playwright test --config=tests/desktop/playwright.config.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

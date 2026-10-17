@@ -6,15 +6,13 @@ import { describe, expect, it } from "vitest";
 import {
   activeGrants,
   buildAccessContext,
-  isStaff,
-  isSuperAdmin,
   needsMfa,
   roleLabel,
   SUPER_ADMIN_ROLE_KEY,
   TICKET_REFERENCE_PATTERN,
 } from "@berryit/shared/domain";
 import type { Profile } from "@berryit/shared/domain";
-import { controlNav, navFor, navItem } from "@berryit/shared/nav";
+import { controlNav, navFor, navItem,navForAccess } from "@berryit/shared/nav";
 import { MODULE_REQUIREMENTS, ticketSearchFilter } from "@berryit/shared/api";
 import { backendUrlSchema, looksLikeServiceRoleKey, totpCodeSchema } from "@berryit/shared/schemas";
 
@@ -30,27 +28,12 @@ const tekniker: Profile = { ...kund, id: "2", role: "technician", organization_i
 const admin: Profile = { ...kund, id: "3", role: "admin", organization_id: null };
 
 describe("behörigheter", () => {
-  it("kund är varken personal eller super admin", () => {
-    expect(isStaff(kund, [])).toBe(false);
-    expect(isSuperAdmin(kund, [])).toBe(false);
+  for(const profile of [kund,tekniker,admin])it('ignorerar klientens profilroll '+profile.role,()=>{
+    const ctx=buildAccessContext({userId:profile.id,email:null,profile,grants:[{role_key:SUPER_ADMIN_ROLE_KEY,scope:'global',organization_id:null}],currentLevel:'aal2',nextLevel:null});
+    expect(ctx.isStaff).toBe(false);expect(ctx.isSuperAdmin).toBe(false);expect(ctx.permissions).toEqual([]);
   });
-
-  it("tekniker är personal", () => {
-    expect(isStaff(tekniker, [])).toBe(true);
-    expect(isSuperAdmin(tekniker, [])).toBe(false);
-  });
-
-  it("global super admin-tilldelning ger super admin", () => {
-    const grants = [{ role_key: SUPER_ADMIN_ROLE_KEY, scope: "global" as const, organization_id: null }];
-    expect(isSuperAdmin(kund, grants)).toBe(true);
-  });
-
-  it("samma roll begränsad till en organisation ger inte global super admin", () => {
-    const grants = [
-      { role_key: SUPER_ADMIN_ROLE_KEY, scope: "organization" as const, organization_id: "org-1" },
-    ];
-    expect(isSuperAdmin(kund, grants)).toBe(false);
-    expect(isStaff(kund, grants)).toBe(true);
+  it('visar bara utvecklarens projektmeny från serverns permissions',()=>{
+    expect(navForAccess({isStaff:true,permissions:['projects.read','repositories.read']}).map(n=>n.key)).toEqual(['dashboard','projekt','support','installningar']);
   });
 
   it("återkallade och utgångna tilldelningar räknas inte", () => {
@@ -74,6 +57,7 @@ describe("MFA-krav", () => {
       grants: [],
       currentLevel: level,
       nextLevel: null,
+      authority:{isStaff:true,isSuperAdmin:false,permissions:[],roles:[],requiresMfa:profile.id===admin.id},
     });
 
   it("super admin utan aal2 måste göra MFA", () => {
@@ -102,8 +86,8 @@ describe("rolletikett", () => {
     });
 
   it("namnger rollerna", () => {
-    expect(roleLabel(ctx(admin))).toBe("Super Admin");
-    expect(roleLabel(ctx(tekniker))).toBe("Tekniker");
+    expect(roleLabel(ctx(admin))).toBe("Kund");
+    expect(roleLabel(ctx(tekniker))).toBe("Kund");
     expect(roleLabel(ctx({ ...kund, is_org_admin: true }))).toBe("Kundkontakt");
     expect(roleLabel(ctx(kund))).toBe("Kund");
   });

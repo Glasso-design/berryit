@@ -109,6 +109,9 @@ insert into public.organizations (id, name) values
 update public.profiles set full_name = 'Kund A' where id = '11111111-1111-1111-1111-111111111111';
 update public.profiles set full_name = 'Kund B' where id = '22222222-2222-2222-2222-222222222222';
 update public.profiles set role = 'technician', full_name = 'Tekniker' where id = '33333333-3333-3333-3333-333333333333';
+-- Explicit legacy fixture authority; profile.role alone is intentionally inert.
+insert into public.support_role_grants(grantee_id,role_key,scope,reason)
+values('33333333-3333-3333-3333-333333333333','BERRYIT_SUPPORT_TECHNICIAN','global','Explicit isolated legacy fixture');
 update public.profiles set organization_id = 'aaaaaaaa-0000-0000-0000-000000000001', full_name = 'Kollega'
   where id = '44444444-4444-4444-4444-444444444444';
 update public.profiles set organization_id = 'aaaaaaaa-0000-0000-0000-000000000001', is_org_admin = true, full_name = 'Kontaktperson'
@@ -227,7 +230,13 @@ begin
   perform pg_temp.assert(n = 0, 'kund kan inte ändra status');
 
   perform pg_temp.login('33333333-3333-3333-3333-333333333333');
-  update public.tickets set status_key = 'pagar', assignee_id = '33333333-3333-3333-3333-333333333333' where id = ticket_a;
+  begin
+    update public.tickets set assignee_id = '33333333-3333-3333-3333-333333333333' where id = ticket_a;
+    perform pg_temp.assert(false, 'IT SUPPORT saknar separat tickets.reassign');
+  exception when insufficient_privilege then
+    perform pg_temp.assert(true, 'IT SUPPORT kan inte kringgå tickets.reassign');
+  end;
+  update public.tickets set status_key = 'pagar' where id = ticket_a;
   update public.tickets set status_key = 'vantar_pa_kund' where id = ticket_a;
   update public.tickets set status_key = 'lost' where id = ticket_a;
   select count(*) into n from public.tickets where id = ticket_a and resolved_at is not null;
@@ -632,6 +641,8 @@ insert into auth.users (id, email) values
 
 update public.profiles set role = 'admin', full_name = 'Admin via profilroll'
   where id = 'bbbbbbbb-0000-0000-0000-00000000000b';
+insert into public.support_role_grants(grantee_id,role_key,scope,reason)
+values('bbbbbbbb-0000-0000-0000-00000000000b','BERRYIT_SUPPORT_ADMIN','global','Explicit isolated legacy administrator fixture');
 update public.profiles set is_machine = true, full_name = 'Infrastrukturagent'
   where id = 'cccccccc-0000-0000-0000-00000000000c';
 
@@ -898,6 +909,16 @@ insert into public.organizations (id, name, is_internal) values
 update public.profiles
    set organization_id = 'aaaaaaaa-0000-0000-0000-000000000002', full_name = 'Kund C'
  where id = 'eeeeeeee-0000-0000-0000-00000000000e';
+
+-- Registry read permissions are now separate from ticket work. This fixture
+-- explicitly exercises combined roles without changing the IT SUPPORT role.
+insert into public.support_roles(key,label,rank,is_system) values('FIXTURE_REGISTRY_READER','Synthetic registry reader',1,false);
+insert into public.support_role_permissions(role_key,permission_key) values
+ ('FIXTURE_REGISTRY_READER','projects.read'),('FIXTURE_REGISTRY_READER','infrastructure.read');
+insert into public.support_role_grants(grantee_id,role_key,scope,reason) values
+ ('33333333-3333-3333-3333-333333333333','FIXTURE_REGISTRY_READER','global','Explicit isolated registry fixture');
+insert into public.support_role_grants(grantee_id,role_key,scope,organization_id,reason) values
+ ('dddddddd-0000-0000-0000-00000000000d','FIXTURE_REGISTRY_READER','organization','aaaaaaaa-0000-0000-0000-000000000001','Explicit isolated registry fixture');
 
 -- Projekt, nod och tjanst i tva olika kundorganisationer plus ett internt.
 insert into public.support_projects (id, organization_id, name, created_by) values

@@ -79,7 +79,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         setStatus("utloggad");
         return;
       }
-      const ctx = await loadAccessContext(client);
+      let ctx: AccessContext | null;
+      try { ctx = await loadAccessContext(client); }
+      catch (failure) {
+        setAccess(null); setOrganizations([]); setStatus("utloggad");
+        setError(failure instanceof Error ? failure.message : "Behörigheter kunde inte verifieras.");
+        return;
+      }
       setAccess(ctx);
       if (!ctx) {
         setStatus("utloggad");

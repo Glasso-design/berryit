@@ -114,6 +114,7 @@ try {
   aborted = true;
   failures++;
   console.log(`  FAIL ${String(e.message).split("\n")[0]}`);
+  if (e.where) console.log(`       ${e.where}`);
   try {
     await testDb.exec("rollback;");
   } catch {

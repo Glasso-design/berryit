@@ -7,6 +7,7 @@ import type {
 } from "@berryit/shared/ai";
 import { useSession } from "@/auth/session";
 import { AiClientError, createAiClient } from "@/ai/client";
+import { DiagnosticPanel } from '@/ai/DiagnosticPanel';
 
 function errorText(error: unknown): string {
   return error instanceof AiClientError
@@ -140,6 +141,7 @@ export function OnarlyAi({ onOpenTicket }: { onOpenTicket: (reference: string) =
   const [context, setContext] = useState<AiContext | null>(null);
   const [organizationId, setOrganizationId] = useState("");
   const [projectId, setProjectId] = useState("");
+  const [incidentId,setIncidentId]=useState('');
   const [serviceKey, setServiceKey] = useState("");
   const [conversations, setConversations] = useState<AiConversation[]>([]);
   const [conversationId, setConversationId] = useState("");
@@ -189,6 +191,7 @@ export function OnarlyAi({ onOpenTicket }: { onOpenTicket: (reference: string) =
 
   useEffect(() => {
     setProjectId("");
+    setIncidentId('');
     setConversationId("");
     setMessages([]);
     if (!organizationId) return;
@@ -232,6 +235,7 @@ export function OnarlyAi({ onOpenTicket }: { onOpenTicket: (reference: string) =
         active = await client.createConversation({
           organizationId,
           projectId: projectId || null,
+          incidentId: incidentId || null,
           serviceKey: serviceKey || null,
           title: question.trim().slice(0, 160),
         });
@@ -330,7 +334,7 @@ export function OnarlyAi({ onOpenTicket }: { onOpenTicket: (reference: string) =
               : "border-amber-300/40 text-amber-300"
           }`}
         >
-          {context?.gateway.available ? "Gateway tillgänglig" : "Gateway ej ansluten"}
+          {context?.gateway.available ? "Gateway serverkonfigurerad – kontakt ej verifierad" : "Gateway ej ansluten"}
         </span>
       </header>
 
@@ -364,7 +368,7 @@ export function OnarlyAi({ onOpenTicket }: { onOpenTicket: (reference: string) =
           <span className="text-muted">Projekt</span>
           <select
             value={projectId}
-            onChange={(event) => setProjectId(event.target.value)}
+            onChange={(event) => {setProjectId(event.target.value);setIncidentId('');}}
             disabled={Boolean(selectedConversation)}
             className="mt-2 w-full rounded-xl border border-field bg-ink px-3 py-2 text-paper disabled:opacity-50"
           >
@@ -394,6 +398,27 @@ export function OnarlyAi({ onOpenTicket }: { onOpenTicket: (reference: string) =
         </label>
       </section>
 
+      <section className="space-y-3 rounded-2xl border border-line p-4">
+       <label className="block text-sm">Incident
+        <select value={incidentId} disabled={Boolean(selectedConversation)} onChange={e=>{
+         const incident=context?.incidents?.find(i=>i.id===e.target.value);
+         setIncidentId(incident?.id??'');if(incident)setProjectId(incident.project_id??'');
+        }} className="mt-2 block w-full rounded-xl border border-field bg-ink px-3 py-2">
+         <option value="">Ingen vald incident / hela projektet</option>
+         {(context?.incidents??[]).filter(i=>i.organization_id===organizationId&&(!projectId||i.project_id===projectId)).map(i=><option key={i.id} value={i.id}>{i.title}</option>)}
+        </select>
+       </label>
+       {!selectedConversation&&(projectId||incidentId)&&<button type="button" disabled={busy!==null} onClick={()=>{
+        if(!client)return;setBusy('diagnostic');setError(null);
+        void client.createConversation({organizationId,projectId:projectId||null,incidentId:incidentId||null,serviceKey:null,title:'Sök felet'}).then(async conversation=>{
+         await loadConversations(organizationId);setConversationId(conversation.id);
+        }).catch(e=>setError(errorText(e))).finally(()=>setBusy(null));
+       }} className="rounded-full border border-line px-4 py-2 text-sm">Sök felet för valt mål</button>}
+       {client&&selectedConversation&&(selectedConversation.project_id||selectedConversation.incident_id)&&<DiagnosticPanel
+        key={selectedConversation.id} client={client} conversationId={selectedConversation.id} gatewayConfigured={Boolean(context?.gateway.available)}
+        onComplete={async()=>{setMessages(await client.messages(selectedConversation.id));await loadConversations(organizationId);}}/>}
+      </section>
+
       <div className="grid min-h-[520px] gap-5 lg:grid-cols-[260px_minmax(0,1fr)]">
         <aside className="rounded-2xl border border-line bg-ink-2 p-3">
           <div className="flex items-center justify-between px-2 py-2">
@@ -417,6 +442,7 @@ export function OnarlyAi({ onOpenTicket }: { onOpenTicket: (reference: string) =
                 onClick={() => {
                   setConversationId(conversation.id);
                   setProjectId(conversation.project_id ?? "");
+                  setIncidentId(conversation.incident_id??'');
                   setServiceKey(conversation.service_key ?? "");
                 }}
                 className={`block w-full rounded-xl px-3 py-2 text-left text-sm ${

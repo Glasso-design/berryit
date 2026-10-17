@@ -27,7 +27,7 @@ export async function getAccessContext(): Promise<AccessContext | null> {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const [{ data: profile }, { data: grants }, { data: aal }] = await Promise.all([
+  const [{ data: profile }, { data: grants }, { data: aal }, authority] = await Promise.all([
     supabase.from(TABLE.profiles).select(SELECT.profile).eq("id", user.id).maybeSingle<Profile>(),
     supabase
       .from(TABLE.supportRoleGrants)
@@ -35,7 +35,10 @@ export async function getAccessContext(): Promise<AccessContext | null> {
       .eq("grantee_id", user.id)
       .is("revoked_at", null),
     supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
+    supabase.rpc("support_access_context"),
   ]);
+  if (authority.error) throw new Error("Backend saknar verifierad behörighetskontext; godkänd schemaförnyelse krävs.");
+  if(authority.data?.accountActive!==true)return null;
 
   return buildAccessContext({
     userId: user.id,
@@ -44,6 +47,7 @@ export async function getAccessContext(): Promise<AccessContext | null> {
     grants: (grants ?? []) as RawSupportGrant[],
     currentLevel: aal?.currentLevel ?? null,
     nextLevel: aal?.nextLevel ?? null,
+    authority: authority.data,
   });
 }
 

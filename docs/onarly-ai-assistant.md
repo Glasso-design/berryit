@@ -1,5 +1,14 @@
 # Ask ONARLY AI — BerryIT server integration
 
+## Lokalt tillägg: Sök felet V1
+
+Projekt-/incidentdiagnostik, nya skyddade RPC:er, engångsgodkännande,
+testresultat och kvarvarande driftsgrindar beskrivs i
+[Sök felet-rapporten](ai-find-error-v1-2026-10-16.md).
+Detta tillägg är inte driftsatt. Den lokala tidigare backendadressen gav HTTP
+404 för `/ai/v1/health`; riktig Gateway-inferens är inte verifierad.
+`gateway.available` anger serverkonfiguration, inte verifierad anslutning.
+
 ## Inventering av befintlig ONARLY Gateway
 
 BerryIT bygger ingen egen modellmotor. Serveradaptern återanvänder de verifierade

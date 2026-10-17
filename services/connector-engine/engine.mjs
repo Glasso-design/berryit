@@ -18,6 +18,7 @@
 import { ConnectorError, assertValidAdapter, errorResult } from "./contract.mjs";
 import { ADAPTERS } from "./adapters.mjs";
 import { containerMetrics, validateAgentReport } from "./agent-contract.mjs";
+import { discoverRegisteredProject } from './project-discovery.mjs';
 
 export class ConnectorEngine {
   /**
@@ -92,6 +93,12 @@ export class ConnectorEngine {
 
     for (const integration of integrationer) {
       const resultat = await this.runIntegration(integration);
+      if(!resultat.error&&integration.config?.discovery_enabled===true){
+        try{
+          const projectId=await discoverRegisteredProject({integration,secrets:this.secrets,store:this.store,fetchImpl:this.fetchImpl,timeoutMs:this.timeoutMs});
+          resultat.discovery={status:'linked',project_id:projectId};
+        }catch(error){resultat.discovery={status:'blocked',code:error.code??'INTERNAL'};}
+      }
 
       // Mätpunkten hör till ett mål. Saknas målet finns inget att mäta på, och
       // då sparas ingen rad – hellre ingen historik än historik utan hemvist.
@@ -188,6 +195,7 @@ export function createRestStore({ baseUrl, serviceRoleKey, fetchImpl = fetch }) 
     async recordActivity(rad) {
       await anrop("/connector_activity_log", { method: "POST", body: JSON.stringify(rad) });
     },
+    async reconcileProject(args){return anrop('/rpc/reconcile_discovered_project',{method:'POST',body:JSON.stringify(args)});},
 
     /* ----------------------------------------------- Infrastructure Monitoring */
 
@@ -260,7 +268,8 @@ export async function ingestAgentReport({ store, agentId, report, now = Date.now
 
     // Containersiffrorna räknas här ur listan i stället för att tas på agentens
     // ord – två källor för samma siffra är en källa för mycket.
-    const harledda = containerMetrics(report.containers);
+    validerad.samples = validerad.samples.filter(sample => !["containers_running", "containers_unhealthy"].includes(sample.metric_key));
+    const harledda = Array.isArray(report.containers) ? containerMetrics(validerad.containers) : {};
     for (const [metric_key, value] of Object.entries(harledda)) {
       validerad.samples.push({
         organization_id: validerad.organization_id,

@@ -11,9 +11,9 @@ export type TicketNote = { id: string; author_id: string; body: string; created_
 export type TicketAttachment = { id: string; ticket_id: string; uploaded_by: string; file_name: string; mime_type: string; size_bytes: number; visibility: "customer" | "internal"; upload_completed_at: string | null; created_at: string };
 export type TicketEvent = { id: string; actor_id: string | null; event_type: string; from_value: string | null; to_value: string | null; payload: Record<string, unknown>; created_at: string };
 export type Technician = { id: string; label: string; is_external: boolean; expires_at: string | null };
-export type SupportOverview = { tickets: Ticket[]; customers: Customer[]; organizations: Organization[]; categories: Lookup[]; statuses: Lookup[]; canRegister: boolean };
+export type SupportOverview = { tickets: Ticket[]; customers: Customer[]; organizations: Organization[]; categories: Lookup[]; statuses: Lookup[]; canRegister: boolean; projects?:{id:string;name:string;organization_id:string}[] };
 export type TicketDetail = { ticket: Ticket; canWork: boolean; messages: TicketMessage[]; notes: TicketNote[]; attachments: TicketAttachment[]; events: TicketEvent[]; technicians: Technician[]; people: { id: string; label: string }[] };
-export type NewTicket = { customerId: string; subject: string; description: string; category_key: string };
+export type NewTicket = { customerId: string; subject: string; description: string; category_key: string; projectId?:string|null };
 export const customerRegistrationSchema = z.object({
   full_name: z.string().trim().min(2).max(200), email: z.string().trim().email().max(254),
   phone: z.string().trim().max(60).default(""), organization_id: z.uuid().nullable(),
@@ -33,7 +33,7 @@ export type SupportClient = {
   organization(name: string, orgNo: string): Promise<void>;
 };
 
-const TICKET_SELECT = "id,reference,subject,description,requester_id,status_key,priority_key,category_key,organization_id,assignee_id,contact_name,contact_email,contact_phone,created_at,updated_at,resolved_at,closed_at";
+const TICKET_SELECT = "id,reference,subject,description,requester_id,status_key,priority_key,category_key,organization_id,project_id,assignee_id,contact_name,contact_email,contact_phone,created_at,updated_at,resolved_at,closed_at";
 const CUSTOMER_SELECT = "id,full_name,email,phone,organization_id,login_activation_pending";
 const ATTACHMENT_SELECT = "id,ticket_id,uploaded_by,file_name,mime_type,size_bytes,visibility,upload_completed_at,created_at";
 const failed = (error: { message: string } | null) => { if (error) throw new Error(error.message); };
@@ -69,12 +69,13 @@ export function createSupportClient(supabase: SupabaseClient, userId: string, re
   }
   return {
     async overview() {
-      const [tickets, customers, organizations, categories, statuses, canRegister] = await Promise.all([
+      const [tickets, customers, organizations, categories, statuses, canRegister,projects] = await Promise.all([
         all<Ticket>("tickets", TICKET_SELECT), all<Customer>("profiles", CUSTOMER_SELECT, [["role", "customer"], ["is_active", true]]),
         all<Organization>("organizations", "id,name,org_no"), lookup("ticket_categories"), lookup("ticket_statuses"),
         rpc<boolean>("can_register_support_customer"),
+        all<{id:string;name:string;organization_id:string}>("support_projects","id,name,organization_id"),
       ]);
-      return { tickets: tickets.sort((a,b) => b.updated_at.localeCompare(a.updated_at) || a.id.localeCompare(b.id)), customers, organizations, categories, statuses, canRegister: canRegister === true };
+      return { tickets: tickets.sort((a,b) => b.updated_at.localeCompare(a.updated_at) || a.id.localeCompare(b.id)), customers, organizations, categories, statuses, canRegister: canRegister === true,projects };
     },
     async detail(id) {
       z.uuid().parse(id);
@@ -98,6 +99,7 @@ export function createSupportClient(supabase: SupabaseClient, userId: string, re
       failed(customer.error); if (!customer.data) throw new Error("Kunden är inte tillgänglig.");
       const result = await supabase.from("tickets").insert({
         requester_id:customer.data.id, organization_id:customer.data.organization_id,
+        project_id:input.projectId?z.uuid().parse(input.projectId):null,
         subject:draft.subject,description:draft.description,category_key:draft.category_key,source:"portal",
         contact_name:customer.data.full_name,contact_email:customer.data.email,contact_phone:customer.data.phone,
       }).select("id").single(); failed(result.error); return result.data!.id;

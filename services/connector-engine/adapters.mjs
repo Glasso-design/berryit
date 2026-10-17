@@ -26,9 +26,10 @@ const nu = () => Date.now();
 /**
  * Läser containerläget på en nod via Docker Engine API över en unix-socket.
  *
- * Socketen monteras read-only i motorns container och finns aldrig i
- * Windows-appen. Adaptern listar containrar och rapporterar hur många som kör
- * respektive är ohälsosamma – den rör dem inte.
+ * Läsaren injiceras server-side; den kan även leverera en normaliserad snapshot
+ * från en separat collector. Ingen socket finns i Windows-appen. En :ro-mount
+ * är INTE en behörighetsspärr för Docker API; direkt socketåtkomst måste hållas
+ * utanför Desktop och produktionsmotorn bakom en verifierad API-begränsning.
  */
 export const dockerAdapter = {
   key: "docker",
@@ -38,19 +39,42 @@ export const dockerAdapter = {
     const start = nu();
     const socket = requireConfig(ctx.config, "socket_path", "docker");
     const prefix = ctx.config.name_prefix ?? "";
+    const names = (key) => {
+      const value = ctx.config[key];
+      if (value === undefined) return null;
+      if (!Array.isArray(value) || value.length > 200 || value.some(name => typeof name !== "string" || !/^[A-Za-z0-9][A-Za-z0-9_.-]{0,119}$/.test(name)) || new Set(value).size !== value.length) {
+        throw new ConnectorError("BAD_CONFIG", `docker: ${key} måste innehålla unika, exakta containernamn`);
+      }
+      if (key === "container_names" && value.length === 0) throw new ConnectorError("BAD_CONFIG", "docker: container_names får inte vara tom");
+      return new Set(value);
+    };
+    const selected = names("container_names");
+    const expectedStopped = names("expected_stopped_containers") ?? new Set();
+    if ([...expectedStopped].some(name => (selected && !selected.has(name)) || (prefix && !name.startsWith(prefix)))) {
+      throw new ConnectorError("BAD_CONFIG", "docker: planerade stopp måste tillhöra kontrollens scope");
+    }
     if (!ctx.dockerList) {
       throw new ConnectorError("NOT_CONFIGURED", "docker: ingen läsare för Docker-socket är tillgänglig");
     }
 
     const containrar = await ctx.dockerList({ socketPath: socket });
-    const relevanta = containrar.filter((c) => !prefix || (c.name ?? "").startsWith(prefix));
+    const relevanta = containrar.filter((c) => (!prefix || (c.name ?? "").startsWith(prefix)) && (!selected || selected.has(c.name)));
     const kor = relevanta.filter((c) => c.state === "running");
-    const ohalsosamma = relevanta.filter((c) => c.health === "unhealthy");
+    // An exited container retains its previous health status. It is not a live
+    // health failure. Planned stops are explicit exact names, never prefixes.
+    const ohalsosamma = kor.filter((c) => c.health === "unhealthy");
     const stoppade = relevanta.filter((c) => c.state !== "running");
+    const planerade = stoppade.filter(c => c.state === "exited" && expectedStopped.has(c.name));
+    const ovantade = stoppade.filter(c => !planerade.includes(c));
+    const startade = kor.filter(c => expectedStopped.has(c.name));
+    const observed = new Set(relevanta.map(c => c.name));
+    const saknade = [...new Set([...(selected ?? []), ...expectedStopped])].filter(name => !observed.has(name));
 
     let status = "ok";
     if (relevanta.length === 0) status = "unknown";
-    else if (ohalsosamma.length > 0 || stoppade.length > 0) status = kor.length > 0 ? "degraded" : "down";
+    else if (ohalsosamma.length > 0 || ovantade.length > 0) status = kor.length > 0 ? "degraded" : "down";
+    else if (startade.length > 0 || saknade.length > 0) status = "degraded";
+    else if (kor.length === 0) status = "unknown";
 
     return makeResult({
       connector: "docker",
@@ -60,12 +84,20 @@ export const dockerAdapter = {
         relevanta.length === 0
           ? `Inga containrar matchade prefixet "${prefix}"`
           : `${kor.length} av ${relevanta.length} containrar kör` +
+            (planerade.length ? `, ${planerade.length} planerat stoppade` : "") +
+            (ovantade.length ? `, ${ovantade.length} oväntat stoppade` : "") +
+            (startade.length ? `, ${startade.length} oväntat startade` : "") +
+            (saknade.length ? `, ${saknade.length} förväntade saknas` : "") +
             (ohalsosamma.length ? `, ${ohalsosamma.length} ohälsosamma` : ""),
       detail: {
         totalt: relevanta.length,
         kor: kor.length,
         stoppade: stoppade.map((c) => c.name).slice(0, 20),
         ohalsosamma: ohalsosamma.map((c) => c.name).slice(0, 20),
+        planerat_stoppade: planerade.map(c => c.name),
+        ovantat_stoppade: ovantade.map(c => c.name),
+        ovantat_startade: startade.map(c => c.name),
+        saknade: saknade,
       },
     });
   },
@@ -81,7 +113,9 @@ export const githubAdapter = {
     const start = nu();
     const repo = requireConfig(ctx.config, "repository", "github");
     const token = requireSecret(ctx.secrets, ctx.secretRef, "github");
-    const bas = ctx.config.api_base ?? "https://api.github.com";
+    const bas = "https://api.github.com";
+    if(ctx.config.api_base&&ctx.config.api_base!==bas)throw new ConnectorError('BAD_CONFIG','GitHub-origin måste vara servergodkänt; egen API-bas stöds inte');
+    if(!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo))throw new ConnectorError('BAD_CONFIG','Ogiltig repositoryidentitet');
 
     const svar = await fetchWithTimeout(
       ctx.fetchImpl,
@@ -127,7 +161,8 @@ export const vercelAdapter = {
     const start = nu();
     const projekt = requireConfig(ctx.config, "project_id", "vercel");
     const token = requireSecret(ctx.secrets, ctx.secretRef, "vercel");
-    const bas = ctx.config.api_base ?? "https://api.vercel.com";
+    const bas = "https://api.vercel.com";
+    if(ctx.config.api_base&&ctx.config.api_base!==bas)throw new ConnectorError('BAD_CONFIG','Vercel-origin måste vara servergodkänt; egen API-bas stöds inte');
     const team = ctx.config.team_id ? `&teamId=${encodeURIComponent(ctx.config.team_id)}` : "";
 
     const svar = await fetchWithTimeout(

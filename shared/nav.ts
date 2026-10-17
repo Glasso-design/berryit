@@ -58,7 +58,7 @@ export const controlNav: NavItem[] = [
     href: "/control/projekt",
     label: "Projekt",
     icon: "app",
-    connected: false,
+    connected: true,
     desktopConnected: true,
     staffOnly: true,
     description: "Projektregister per kund.",
@@ -135,6 +135,17 @@ export const controlNav: NavItem[] = [
 
 export function navFor(isStaff: boolean): NavItem[] {
   return controlNav.filter((item) => !item.staffOnly || isStaff);
+}
+
+/** Presentation from server capabilities; this never grants resource access. */
+export function navForAccess(ctx: {isStaff:boolean;permissions?:string[]}):NavItem[]{
+  const permissions=ctx.permissions??[];
+  const visible:Partial<Record<NavKey,string[]>>={
+    kunder:['tickets.read','organizations.manage'],projekt:['projects.read','projects.manage','roles.manage','roles.grant'],
+    kommunikation:['tickets.read'],ai:['ai.use','tickets.read'],infrastruktur:['infrastructure.read'],
+    monitoring:['infrastructure.read'],integrationer:['connectors.manage'],
+  };
+  return controlNav.filter(item=>!item.staffOnly||visible[item.key]?.some(p=>permissions.includes(p)));
 }
 
 export function navItem(key: NavKey): NavItem {

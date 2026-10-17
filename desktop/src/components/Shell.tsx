@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Icon } from "@berryit/shared/ui/Icon";
-import { navFor, type NavKey } from "@berryit/shared/nav";
+import { navForAccess, type NavKey } from "@berryit/shared/nav";
 import { displayName, roleLabel } from "@berryit/shared/domain";
 import { useSession } from "@/auth/session";
 import { GlobalSearch } from "./GlobalSearch";
@@ -26,7 +26,7 @@ export function Shell({
   const { access, organizations, signOut } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
   const [org, setOrg] = useState("alla");
-  const items = navFor(access?.isStaff ?? false);
+  const items = navForAccess(access??{isStaff:false});
 
   return (
     <div className="flex h-full bg-ink text-paper">

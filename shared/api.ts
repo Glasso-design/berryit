@@ -70,12 +70,12 @@ export type ModuleRequirement = { title: string; description: string; requiremen
 
 export const MODULE_REQUIREMENTS: Record<string, ModuleRequirement> = {
   projekt: {
-    title: "Projekt är inte ansluten ännu",
-    description: "Projektregister per kund med status, miljöer och koppling till repo.",
+    title: "Projekt kräver uppdaterad backend",
+    description: "Gemensamt support_projects-register med serverkontrollerad administration.",
     requirements: [
-      "Migration för tabellen projects (kund, namn, status, miljö)",
-      "RLS enligt samma modell som övriga tabeller",
-      "Koppling till GitHub/Vercel för byggstatus",
+      "Godkänd framåtriktad projekt- och rollmigration",
+      "Giltig användarsession och serverkontrollerade projektpermissions",
+      "Extern anslutning behövs endast för providerfunktioner",
     ],
   },
   kommunikation: {

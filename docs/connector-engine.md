@@ -58,7 +58,7 @@ registret  →  adapter läser systemet  →  mätpunkt + aktivitetsrad tillbaka
 
 | Connector | Läser | Identitet |
 |---|---|---|
-| `docker` | containrar och hälsa på en nod | läsrätt på nodens Docker-socket, monterad read-only i motorn |
+| `docker` | containrar och hälsa från injicerad serverläsare/snapshot | separat serverlokal collector/API-begränsad läsare; ingen socket i Desktop |
 | `github` | senaste commit per repo | egen fine-grained token med enbart läsrätt |
 | `vercel` | senaste deployment | egen token med read-scope på projektet |
 | `onarly_ai` | hälsa via BERRYiT:s egen AI-adapter | ingen – adaptern håller gateway-token själv |
@@ -121,3 +121,42 @@ inga".
 4. Driftsätt motorn som ett schemalagt jobb på servern.
 
 Varje steg är ett eget beslut. Inget av dem ingår i PASS 2D.
+
+## PASS 1, 2026-10-16 — lokalt verifierad pilotgrund
+
+`services/connector-engine/pilot.mjs` förbereder ett utkast i samma befintliga
+tabeller: en nod (core-node-01), två projekt (FLIQS/AuroraPark), åtta tjänster
+och nio avstängda, läsande integrationer. Befintlig intern organisations-ID och
+behörig profils ID måste anges. Generatorn skapar inga organisationer, har ingen
+databasklient och kör inga kommandon. Före import måste befintliga projekt och
+tjänster matchas så att inga parallella registerrader skapas.
+
+Dockeradaptern stöder exakta `container_names` och
+`expected_stopped_containers`. Endast observerat `exited` för ett uttryckligen
+angivet namn räknas som planerat stopp. Wildcards, dubletter och namn utanför
+kontrollens scope avvisas. Saknade mål och oväntade starter syns fortfarande.
+Enbart planerade stopp ger `unknown`, aldrig en påhittad frisk, körande tjänst.
+`unhealthy` på en stoppad container är historisk metadata och räknas inte som
+ett aktuellt hälsolarm. En verkligt ohälsosam körande container larmar fortfarande.
+
+Agentmottagningen sparar härledda containersiffror en gång. Avsaknad av
+inventering ger inte längre påhittade nollvärden; fel form eller fler än 200
+poster avvisas, i stället för att en tyst trunkering skulle kunna dölja fel.
+
+**Säkerhetsgräns:** `:ro` på Docker-socketens mount blockerar inte skrivande
+Docker API-anrop. Den befintliga injektionspunkten är ingen färdig collector
+eller transportautentisering. En verklig API-begränsad läsare, autentiserad
+agentmottagning, egressregler och schemaläggning återstår före driftsättning.
+
+Se [PASS 1-rapport och produktionsgrind](master-integration-pass1-2026-10-16.md).
+
+## Lokalt tillägg: projekt och åtkomst
+
+Den lokala projekt-/rollutökningen beskrivs i
+[projekt- och åtkomstrapporten](project-access-master-2026-10-16.md).
+Discovery kräver explicit opt-in och pinnat provider-ID; samma projektregister
+återanvänds. Repositorygranskning kräver aktuell projektpermission i databasen
+och en separat serverallowlist i `BERRYIT_GITHUB_READ_CONNECTIONS`.
+Tokens hör endast hemma på servern. Ingen anslutning aktiverades här.
+Den nya framåtriktade migrationen och isolerad HTTP/MFA-grind måste godkännas
+innan klienten eller connectorutökningen tas i drift.

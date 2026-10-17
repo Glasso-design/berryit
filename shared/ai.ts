@@ -48,6 +48,7 @@ export type AiConversation = {
   id: string;
   organization_id: string;
   project_id: string | null;
+  incident_id?: string | null;
   service_key: string | null;
   created_by: string;
   title: string;
@@ -72,11 +73,17 @@ export type AiContext = {
   organizations: Array<{ id: string; name: string }>;
   projects: AiProject[];
   services: AiService[];
+  incidents?: Array<{id:string;organization_id:string;project_id:string|null;title:string}>;
   gateway: {
     available: boolean;
     reason: string | null;
+    verified?: boolean;
   };
 };
+
+export type AiDiagnosticContext={version:1;organizationId:string;projectId:string|null;incidentId:string|null;
+  facts:Array<{id:string;kind:string;at:string;text:string;origin:string;stale?:boolean}>;missingInformation:string[]};
+export type AiDiagnosticPreview={previewId:string;expiresAt:string;context:AiDiagnosticContext};
 
 export type AiTicketResult = {
   id: string;
@@ -149,6 +156,8 @@ export function aiErrorMessage(code: string): string {
     RATE_LIMITED: "För många AI-frågor. Vänta en stund och försök igen.",
     INVALID_INPUT: "Frågan eller kontexten är ogiltig.",
     NO_VERIFIED_SOLUTION: "Det finns ingen verifierad lösning att spara.",
+    CONTEXT_CHANGED: "Underlaget har ändrats, godkännandet har gått ut eller redan använts. Förhandsgranska och godkänn igen.",
+    DIAGNOSTIC_PREVIEW_REQUIRED: "Incidentanalys kräver förhandsgranskat underlag genom Sök felet.",
   };
   return known[code] ?? "AI-anropet misslyckades säkert. Försök igen eller samla mer diagnostik.";
 }

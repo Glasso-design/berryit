@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Shell, type ShellOrg } from "@/components/control/Shell";
 import { displayName, requireSession, roleLabel } from "@/lib/auth";
-import { navFor } from "@/lib/control-nav";
+import { navForAccess } from "@berryit/shared/nav";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -23,7 +23,7 @@ export default async function ControlLayout({ children }: LayoutProps<"/control"
 
   return (
     <Shell
-      nav={navFor(ctx.isStaff)}
+      nav={navForAccess(ctx)}
       user={{
         name: displayName(ctx),
         email: ctx.email,

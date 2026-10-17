@@ -65,6 +65,9 @@ export async function loadRegistry(supabase: SupabaseClient): Promise<RegistryDa
   ]);
 
   const statusChecks = (statusRes.data ?? []) as StatusCheck[];
+  for (const response of [orgRes,projRes,nodeRes,svcRes,statusRes]) {
+    if (response.error) throw new Error(response.error.message);
+  }
 
   const integrationRes = await supabase
     .from(REGISTRY_TABLE.integrations)
