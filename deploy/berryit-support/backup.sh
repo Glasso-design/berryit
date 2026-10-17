@@ -7,11 +7,11 @@
 # beslutad. Backupen ligger därför på samma värd som databasen, vilket inte
 # räcker för produktion. Se README.
 set -euo pipefail
+umask 077
 
 here="$(cd "$(dirname "$0")" && pwd)"
 backup_dir="${BACKUP_DIR:-$here/backups}"
 stamp="$(date -u +%Y%m%dT%H%M%SZ)"
-keep_days="${KEEP_DAYS:-30}"
 
 mkdir -p "$backup_dir"
 chmod 700 "$backup_dir"
@@ -31,8 +31,11 @@ docker run --rm --user "$(id -u):$(id -g)" \
 
 chmod 600 "$db_file" "$storage_file"
 
-# Gallring
-find "$backup_dir" -name 'berryit-support-*' -type f -mtime "+$keep_days" -delete
+# No implicit retention/deletion during a release gate. Retention is a separate
+# reviewed operation, never a side effect of creating a backup.
+checksum_file="$backup_dir/berryit-support-$stamp.sha256"
+(cd "$backup_dir" && sha256sum -- "$(basename "$db_file")" "$(basename "$storage_file")") > "$checksum_file"
+chmod 600 "$checksum_file"
 
 echo "klart:"
 ls -lh "$db_file" "$storage_file" | awk '{print "  " $5, $NF}'

@@ -12,6 +12,14 @@ container="berryit-support-db"
 # supabase/postgres degraderar "postgres"; superanvändaren i imagen är supabase_admin.
 db_user="${PGUSER:-supabase_admin}"
 
+shopt -s nullglob
+files=("$migrations_dir"/*.sql)
+[ "${#files[@]}" -gt 0 ] || { echo "inga migrationsfiler" >&2; exit 1; }
+for file in "${files[@]}"; do
+  version="$(basename "$file")"
+  [[ "$version" =~ ^[0-9]{14}_[a-z0-9_]+\.sql$ ]] || { echo "ogiltigt migrationsfilnamn" >&2; exit 1; }
+done
+
 psql() { docker exec -i "$container" psql -v ON_ERROR_STOP=1 -U "$db_user" -d postgres "$@"; }
 
 psql -q -c "
@@ -19,18 +27,24 @@ psql -q -c "
     version text primary key,
     applied_at timestamptz not null default now()
   );
+  alter table public.schema_migrations enable row level security;
+  revoke all on public.schema_migrations from public, anon, authenticated;
 "
 
 applied=0
-for file in $(ls -1 "$migrations_dir"/*.sql | sort); do
+for file in "${files[@]}"; do
   version="$(basename "$file")"
   if [ -n "$(psql -tAc "select 1 from public.schema_migrations where version = '$version'")" ]; then
     echo "  hoppar över $version (redan applicerad)"
     continue
   fi
   echo "  applicerar $version"
-  docker exec -i "$container" psql -v ON_ERROR_STOP=1 -U "$db_user" -d postgres --single-transaction < "$file"
-  psql -q -c "insert into public.schema_migrations (version) values ('$version')"
+  # SQL and ledger entry must commit together. A crash between two transactions
+  # must not cause a non-idempotent migration to be replayed.
+  {
+    cat "$file"
+    printf "\ninsert into public.schema_migrations (version) values ('%s');\n" "$version"
+  } | docker exec -i "$container" psql -v ON_ERROR_STOP=1 -U "$db_user" -d postgres --single-transaction
   applied=$((applied + 1))
 done
 

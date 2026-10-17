@@ -35,7 +35,9 @@ psql_admin -q -c "comment on database \"$test_db\" is '$owner_marker'"
 # Trap installeras först efter lyckad skapning och ägarmärkning. En kollision
 # eller ett fel före dess får aldrig radera en redan existerande databas.
 trap cleanup EXIT
-docker exec -i berryit-support-db pg_restore -U "$db_user" -d "$test_db" --no-owner --clean --if-exists < "$dump" >/dev/null 2>&1 || true
+# The database is new and owned by this run. Never clean an existing schema,
+# and never turn a partial/failed restore into a successful readiness check.
+docker exec -i berryit-support-db pg_restore -U "$db_user" -d "$test_db" --no-owner < "$dump" >/dev/null
 
 tables=$(psql_test -tAc "select count(*) from pg_tables where schemaname = 'public'")
 policies=$(psql_test -tAc "select count(*) from pg_policies where schemaname = 'public'")

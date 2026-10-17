@@ -65,9 +65,13 @@ och för ID:n skapade i samma körning; vid fel lämnas data kvar i teststacken.
 Det befintliga projektet `berryit-support` på `prod-node-01` nekas alltid.
 
 `backup.sh` gör `pg_dump -Fc` av databasen och en tar av storage-volymen till
-`./backups` (0600, 30 dagars gallring). `restore-test.sh` återställer senaste
+`./backups` (umask 077, SHA-256-manifest, ingen automatisk gallring). `restore-test.sh` återställer senaste
 dumpen till en tillfällig databas, kontrollerar tabeller, policies och RLS, och
 släpper endast den databas som samma körning skapat och ägarmärkt.
+Ett fel från `pg_restore` avbryter nu grinden; en delvis lyckad återställning
+räknas aldrig som PASS. SQL och migrationsledger skrivs i samma transaktion.
+Detta bevisar inte att DB-dump och filstorage är en konsistent gemensam snapshot.
+Den fullständiga backup-/restore-grinden finns i `../../docs/master-integration-pass1-2026-10-16.md`.
 
 **Offsite-backup är BLOCKED.** Destinationen är inte beslutad, så backupen finns
 bara på samma värd som databasen. Stacken är därför **inte produktionsklar**.
