@@ -18,7 +18,7 @@ export type AppConfig = {
   backendUrl: string;
   /** Publik anon-nyckel. Ger ingen åtkomst i sig – RLS avgör allt. */
   anonKey: string;
-  /** Next.js Control Center origin, used only for server-side customer registration. */
+  /** Next.js Control Center origin for protected registration/repository APIs. */
   controlUrl?: string;
 };
 

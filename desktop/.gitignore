@@ -4,3 +4,4 @@ dist-installer/
 src-tauri/target/
 src-tauri/gen/
 .env*
+.local/

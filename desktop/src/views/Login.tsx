@@ -12,27 +12,34 @@ import { ThemeToggle } from "@/components/ThemeToggle";
  * konton som finns. Nätverksfel skiljs från felaktiga uppgifter – en tekniker
  * utan Tailscale ska inte tro att lösenordet är fel.
  */
-export function Login() {
-  const { signIn, config } = useSession();
+export function Login({ onConfigure }: { onConfigure?: () => void }) {
+  const { signIn, config,error:sessionError } = useSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fel, setFel] = useState<string | null>(null);
   const [pagar, setPagar] = useState(false);
   const [uppkoppling, setUppkoppling] = useState<"okand" | "ok" | "nere">("okand");
+  const [connectionError, setConnectionError] = useState("");
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (!config) return;
+    setUppkoppling("okand");
+    let active = true;
     const styr = new AbortController();
     const timer = setTimeout(() => styr.abort(), 8000);
     checkBackendReachable(config.backendUrl, styr.signal).then((svar) => {
       clearTimeout(timer);
+      if (!active) return;
       setUppkoppling(svar.ok ? "ok" : "nere");
+      setConnectionError(svar.ok ? "" : svar.reason);
     });
     return () => {
+      active = false;
       clearTimeout(timer);
       styr.abort();
     };
-  }, [config]);
+  }, [config, attempt]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,6 +66,7 @@ export function Login() {
         <ThemeToggle />
       </div>
       <div className="w-full max-w-sm">
+        {sessionError&&<p role="alert" className="mb-4 rounded-xl border border-berry p-3 text-sm">{sessionError}</p>}
         <Logo className="h-8 w-auto" />
         <p className="mt-6 font-mono text-xs tracking-[0.2em] text-signal uppercase">
           Control Center
@@ -73,9 +81,11 @@ export function Login() {
             role="status"
             className="mt-5 rounded-xl border border-line bg-ink-2 px-4 py-3 text-sm text-muted"
           >
-            Ingen kontakt med backenden. Kontrollera nätverket eller Tailscale innan du loggar in.
+            {connectionError}
+            <button type="button" onClick={() => setAttempt(value => value + 1)} className="mt-2 block underline">Försök igen</button>
           </p>
         )}
+        {uppkoppling === "ok" && <p role="status" className="mt-5 text-sm text-muted">Ansluten till BERRYiT.</p>}
 
         <form onSubmit={submit} className="mt-6 space-y-4">
           <label className="block text-sm">
@@ -112,12 +122,13 @@ export function Login() {
 
           <button
             type="submit"
-            disabled={pagar}
+            disabled={pagar || uppkoppling !== "ok"}
             className="w-full rounded-full bg-berry px-6 py-3 font-semibold text-white transition hover:bg-berry-deep disabled:opacity-60"
           >
             {pagar ? "Loggar in…" : "Logga in"}
           </button>
         </form>
+        {onConfigure && <button type="button" onClick={onConfigure} disabled={pagar} className="mt-5 text-sm text-muted underline">Anslutningsinställningar</button>}
       </div>
     </div>
   );

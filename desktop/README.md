@@ -72,6 +72,7 @@ npm run tauri:dev     # kör appen med hot reload
 npm test              # enhetstester för delad logik
 npm run typecheck
 npm run package       # bygger dist-installer/BerryIT-Control-Center-Setup.exe
+npm run connect       # lokal SSH-tunnel med redan befintlig, betrodd SSH-identitet
 cd src-tauri && cargo test   # testar lagringen mot riktig Credential Manager
 ```
 
@@ -81,10 +82,12 @@ CORS-headers — kör `tauri:dev` när auth ska testas.
 
 ## Konfiguration
 
-Programmet levereras **utan** inbyggd backendadress. Vid första start frågar det
-efter adress och anon-nyckel, testar anslutningen och sparar den i
+Ett generiskt bygge utan distributionsprofil frågar vid första start efter
+adress och anon-nyckel. Ett konfigurerat bygge läser förval från
+`.env.production.local` och visar inloggningen direkt. Befintlig sparad
+konfiguration har företräde. Manuellt angivna uppgifter sparas i
 `%APPDATA%\se.berryit.controlcenter\config.json`. Filen innehåller ingen session
-och inget lösenord. Adressen kan ändras efteråt under Inställningar.
+och inget lösenord. Anslutningen kan ändras från inloggningen och under Inställningar.
 
 Under utveckling läses förval från `.env.development.local`:
 
@@ -107,9 +110,44 @@ Serverns service-role-nyckel får aldrig läggas i Desktop-konfigurationen.
 Den isolerade helresan beskrivs i
 [`docs/complete-support-workflow-v1.md`](../docs/complete-support-workflow-v1.md).
 
-Endast `BERRYIT_PUBLIC_*` når bundlen (`envPrefix` i `vite.config.ts`), så en
-hemlighet kan inte följa med av misstag. Filen laddas bara i utvecklingsläge —
-produktionsbygget blir alltid okonfigurerat.
+Endast de tre uttryckligen tillåtna variablerna ovan når bundlen. Vite avvisar
+ofullständiga profiler, osäkra origins, service-role-JWT och `sb_secret_`-nycklar.
+Produktionsprofilen är lokal och git-ignorerad; den innehåller bara publika
+anslutningsvärden. Ingen serverhemlighet eller privat SSH-nyckel kopieras till appen.
+
+### Verifierad anslutning på denna Windows-dator, 2026-10-16
+
+BerryITs befintliga backend finns på `prod-node-01` (`100.100.11.6`) och
+gatewayen lyssnar endast på serverns `127.0.0.1:8700`. Tailscale i sig exponerar
+inte den porten. Den lokala distributionsprofilen använder därför
+`http://127.0.0.1:8700` via en krypterad SSH-tunnel:
+
+```powershell
+npm run connect --prefix desktop
+```
+
+Hjälpen använder datorns redan befintliga `~/.ssh/prod-node-home`, strikt
+värdnyckelkontroll och `BatchMode`; den skapar inga nycklar och ändrar inget på
+servern. Endast Windows-loopback exponeras. Gatewayens identitet och Auth måste
+båda svara korrekt innan anslutningen rapporteras som fungerande. En fungerande
+anslutning återanvänds. Hjälpen vägrar ersätta en annan tjänst på port 8700.
+Kör hjälpen igen efter Windows-omstart eller tappad SSH-anslutning. Ingen
+autostart eller schemalagd uppgift installeras. Status och SSH-logg ligger i
+git-ignorerade `desktop/.local/`. Installeraren distribuerar inte denna identitet;
+andra datorer behöver separat godkänd nätverksåtkomst.
+
+`npm run test:desktop-connection` från repo-roten testar den byggda,
+förkonfigurerade frontenden med syntetisk Auth-health och spärrade externa
+anrop. Det är inte ett test av Windows WebView2 eller en verklig kontoinloggning.
+
+**Serverblockerare:** den läsande driftkontrollen hittade bara de sex första
+migrationerna till och med `20261013091000_support_authority_hardening.sql`.
+Senare MFA-, Communications-, AI-, Connector-, Monitoring-, DESK-, Security
+Repair- och Complete Support Workflow-migrationer är inte applicerade.
+Auth är nåbar, men den nya supporthelheten är inte driftverifierad och får inte
+rapporteras som klar. Ingen Next.js Control Center-server verifierades i
+BerryIT-stacken; `controlUrl` lämnas tom och kundregistrering är blockerad.
+Inga migrationer eller serverändringar ingår i denna Desktop-korrigering.
 
 Klienten tillåter `http://` bara mot loopback och Tailscale (100.64.0.0/10).
 Allt annat måste vara `https://`.
@@ -140,3 +178,13 @@ klientdatorn.
   externt och talar aldrig själv med backenden.
 * Tauri-behörigheterna är minimala: fönstret, appens egna kommandon och HTTP mot
   den konfigurerade adressen. Inget filsystem, ingen shell.
+
+## Lokal projekt-/rollutökning 2026-10-16
+
+Projekt och dynamiska roller använder skyddade databasfunktioner; klienten
+presenterar serverns förmågor. En äldre backend utan
+`20261016090000_project_access.sql` stöder inte den nya klientens åtkomstkontrakt.
+Distribuera därför inte detta lokala bygge mot nuvarande produktionsschema.
+Se [rapport, tester och uppgraderingsgrind](../docs/project-access-master-2026-10-16.md).
+Native release byggdes lokalt utan bundle; tidigare installerare ersattes inte.
+Riktig Windows-inloggning/MFA mot isolerad Supabase återstår.

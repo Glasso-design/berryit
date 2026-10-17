@@ -77,6 +77,7 @@ export const backendUrlSchema = z
 
 /** Säkerställer att en sträng inte är en service-role-nyckel innan den används i klienten. */
 export function looksLikeServiceRoleKey(value: string): boolean {
+  if (value.trim().startsWith("sb_secret_")) return true;
   const parts = value.split(".");
   if (parts.length !== 3) return false;
   try {

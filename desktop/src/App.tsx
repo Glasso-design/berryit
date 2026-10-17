@@ -26,6 +26,7 @@ export function App() {
   const { status, access } = useSession();
   const [vy, setVy] = useState<NavKey>("dashboard");
   const [arende, setArende] = useState<string | null>(null);
+  const [editingConnection, setEditingConnection] = useState(false);
 
   useEffect(() => {
     applyTheme(resolveTheme());
@@ -50,7 +51,9 @@ export function App() {
     return <div className="grid h-full place-items-center bg-ink text-muted">Startar…</div>;
   }
   if (status === "osatt") return <Setup />;
-  if (status === "utloggad") return <Login />;
+  if (status === "utloggad") return editingConnection
+    ? <Setup onClose={() => setEditingConnection(false)} />
+    : <Login onConfigure={() => setEditingConnection(true)} />;
   if (status === "mfa") return <Mfa />;
 
   const oppnaArende = (reference: string) => {

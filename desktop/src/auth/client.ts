@@ -86,17 +86,29 @@ export async function checkBackendReachable(
   backendUrl: string,
   signal?: AbortSignal,
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
+  const controller = new AbortController();
+  const cancel = () => controller.abort();
+  const timer = setTimeout(cancel, 8000);
+  let loopback = false;
+  try { loopback = ["127.0.0.1", "localhost", "[::1]"].includes(new URL(backendUrl).hostname); } catch { /* invalid URL is reported as a connection failure */ }
+  signal?.addEventListener("abort", cancel, { once: true });
+  if (signal?.aborted) cancel();
   try {
-    const res = await backendFetch(`${backendUrl}${API_PREFIX.auth}/health`, { signal });
+    const res = await backendFetch(`${backendUrl.replace(/\/+$/, "")}${API_PREFIX.auth}/health`, { signal: controller.signal });
     if (res.ok) return { ok: true };
     return { ok: false, reason: `Backenden svarade med status ${res.status}.` };
   } catch (e) {
     return {
       ok: false,
       reason:
-        e instanceof DOMException && e.name === "AbortError"
+        controller.signal.aborted || (e instanceof DOMException && e.name === "AbortError")
           ? "Anslutningen tog för lång tid."
-          : "Ingen kontakt med backenden. Kontrollera nätverket eller Tailscale.",
+          : loopback
+            ? "Ingen kontakt med backenden. Starta BerryITs lokala SSH-tunnel och försök igen."
+            : "Ingen kontakt med backenden. Kontrollera nätverket eller Tailscale.",
     };
+  } finally {
+    clearTimeout(timer);
+    signal?.removeEventListener("abort", cancel);
   }
 }

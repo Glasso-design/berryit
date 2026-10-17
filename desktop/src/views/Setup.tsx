@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { checkBackendReachable } from "@/auth/client";
-import { ConfigError, validateConfig } from "@/config";
+import { BUILD_DEFAULTS, ConfigError, validateConfig } from "@/config";
 import { saveConfig } from "@/platform";
 import { useSession } from "@/auth/session";
 import { Logo } from "@/components/Logo";
@@ -11,11 +11,11 @@ import { Logo } from "@/components/Logo";
  * Vi visar ingen inloggning och ingen data förrän anslutningen är angiven och
  * verifierad – ett tomt skal hade sett ut som om systemet vore nere.
  */
-export function Setup() {
-  const { setConfig, error } = useSession();
-  const [backendUrl, setBackendUrl] = useState("");
-  const [anonKey, setAnonKey] = useState("");
-  const [controlUrl,setControlUrl]=useState("");
+export function Setup({ onClose }: { onClose?: () => void }) {
+  const { setConfig, config, error } = useSession();
+  const [backendUrl, setBackendUrl] = useState(config?.backendUrl ?? BUILD_DEFAULTS.backendUrl ?? "");
+  const [anonKey, setAnonKey] = useState(config?.anonKey ?? BUILD_DEFAULTS.anonKey ?? "");
+  const [controlUrl,setControlUrl]=useState(config?.controlUrl ?? BUILD_DEFAULTS.controlUrl ?? "");
   const [fel, setFel] = useState<string | null>(null);
   const [pagar, setPagar] = useState(false);
 
@@ -30,14 +30,20 @@ export function Setup() {
       return;
     }
     setPagar(true);
-    const svar = await checkBackendReachable(giltig.backendUrl);
-    setPagar(false);
-    if (!svar.ok) {
-      setFel(svar.reason);
-      return;
+    try {
+      const svar = await checkBackendReachable(giltig.backendUrl);
+      if (!svar.ok) {
+        setFel(svar.reason);
+        return;
+      }
+      await saveConfig(giltig);
+      setConfig(giltig);
+      onClose?.();
+    } catch {
+      setFel("Anslutningen kunde inte sparas. Kontrollera inställningarna och försök igen.");
+    } finally {
+      setPagar(false);
     }
-    await saveConfig(giltig);
-    setConfig(giltig);
   };
 
   return (
@@ -92,6 +98,7 @@ export function Setup() {
           >
             {pagar ? "Testar anslutningen…" : "Spara och anslut"}
           </button>
+          {onClose && <button type="button" onClick={onClose} disabled={pagar} className="w-full rounded-full border border-line px-6 py-3 text-sm">Tillbaka till inloggning</button>}
         </form>
       </div>
     </div>
