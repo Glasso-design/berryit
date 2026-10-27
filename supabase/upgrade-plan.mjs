@@ -20,11 +20,14 @@ export const PENDING_MIGRATIONS = Object.freeze([
   "20261014235633_complete_support_workflow.sql",
 ]);
 // Separate from the historical PASS 1 eight-step review; never silently deploy.
-export const ADDITIONAL_MIGRATIONS = Object.freeze(['20261016090000_project_access.sql','20261016150000_ai_diagnostics.sql']);
+export const ADDITIONAL_MIGRATIONS = Object.freeze(['20261016090000_project_access.sql','20261016150000_ai_diagnostics.sql','20261025112940_project_control_center.sql']);
+// R1 follows the locked PCC package. It remains local-only until a separate
+// disposable HTTP-stack review approves application.
+export const PCC_R1_MIGRATIONS = Object.freeze(['20261025160000_pcc_http_conflict_and_ai_context.sql']);
 export function upgradeManifest() {
   const directory = new URL("./migrations/", import.meta.url);
   const files = readdirSync(directory).filter(name => name.endsWith(".sql")).sort();
-  const expected = [...DEPLOYED_BASELINE, ...PENDING_MIGRATIONS,...ADDITIONAL_MIGRATIONS];
+  const expected = [...DEPLOYED_BASELINE, ...PENDING_MIGRATIONS,...ADDITIONAL_MIGRATIONS,...PCC_R1_MIGRATIONS];
   if (JSON.stringify(files) !== JSON.stringify(expected)) throw new Error("Migration inventory differs from the reviewed chain plus explicit local extension; review required");
   return expected.map((name, index) => ({
     name, state: index < 6 ? "deployed_baseline" : "pending",

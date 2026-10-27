@@ -1,0 +1,14 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import {cloudflareReadonlyPreflight} from './cloudflare-readonly.mjs';
+const args=process.argv.slice(2);
+if(args.length!==2||args[0]!=='--mode=read-only'||!args[1].startsWith('--output='))throw Error('Requires explicit --mode=read-only --output=PATH');
+const target=path.resolve(args[1].slice(9)),allowed=path.resolve('test-results')+path.sep;
+if(!target.toLowerCase().startsWith(allowed.toLowerCase()))throw Error('Only this workspace test-results output is allowed');
+const token=process.env.CLOUDFLARE_API_TOKEN,tenantKey=process.env.CLOUDFLARE_API_KEY,tenantEmail=process.env.CLOUDFLARE_EMAIL;
+const secretStore={get:async ref=>ref==='approved-environment/token'&&token?{kind:'api-token',token}:ref==='approved-environment/tenant'&&tenantKey&&tenantEmail?{kind:'tenant-global-key',key:tenantKey,email:tenantEmail}:null};
+const result=await cloudflareReadonlyPreflight({secretStore,tokenRef:token?'approved-environment/token':null,tenantRef:tenantKey&&tenantEmail?'approved-environment/tenant':null,accountId:process.env.CLOUDFLARE_ACCOUNT_ID??null,tokenOwner:process.env.CLOUDFLARE_TOKEN_OWNER??'user'});
+const record={at:new Date().toISOString(),scope:'READ_ONLY_NO_PROVISIONING',...result};
+fs.mkdirSync(path.dirname(target),{recursive:true});fs.writeFileSync(target,JSON.stringify(record,null,2)+'\n');
+console.log(JSON.stringify({status:record.status,verification:record.verification,apiRequests:record.apiRequests,accountCount:record.accounts.length,provisioningMode:record.provisioningMode,output:target}));
+process.exitCode=record.status==='REAL_READ_ONLY_PASS'?0:2;

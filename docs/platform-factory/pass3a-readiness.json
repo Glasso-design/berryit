@@ -1,0 +1,83 @@
+{
+  "date": "2026-10-25",
+  "observedAt": "2026-10-25T03:41:26.348Z",
+  "overall": "BLOCKED",
+  "provisioningMode": "MOCK",
+  "realProvisioningApproved": false,
+  "cloudflare": {
+    "at": "2026-10-25T03:37:17.574Z",
+    "scope": "READ_ONLY_NO_PROVISIONING",
+    "verification": "NOT_RUN",
+    "status": "BLOCKED_CREDENTIALS",
+    "provisioningMode": "MOCK",
+    "realProvisioningApproved": false,
+    "writeCapabilities": "UNVERIFIED",
+    "apiRequests": 0,
+    "accounts": [],
+    "tenant": {
+      "status": "NOT_CONFIGURED"
+    },
+    "missingCapabilities": [
+      "account.read",
+      "token.verify",
+      "r2.buckets.read",
+      "zone.read",
+      "dns.read",
+      "email.routing.read",
+      "email.destinations.read"
+    ],
+    "accountModes": {
+      "DEDICATED_MANAGED": "ENTITLEMENT_UNVERIFIED",
+      "LIMITED_STANDALONE": "ELIGIBILITY_UNVERIFIED",
+      "MANAGED_RESOURCE_ISOLATION": "EXPLICIT_APPROVAL_REQUIRED"
+    }
+  },
+  "auth": {
+    "environment": "EXISTING_ISOLATED_BERRYIT_STACK",
+    "gotrue": "REAL_ISOLATED_HTTP_PASS",
+    "totp": "REAL_AAL2_PASS",
+    "backendAal1Denial": "PASS",
+    "forgedJwtDenial": "PASS",
+    "staleSessionPrivilegeDenial": "PASS",
+    "passed": 10,
+    "failed": 0,
+    "factoryOwnershipAndRls": "BLOCKED_SCHEMA_MISSING",
+    "onarlyCentralIdentity": "BLOCKED_NOT_VERIFIED",
+    "onarlyQabgoSso": "BLOCKED_NOT_INTEGRATED",
+    "qabgoFourAppSso": "BLOCKED",
+    "storageObjectAcl": "NOT_RUN",
+    "fullIdentityGate": "BLOCKED"
+  },
+  "backup": {
+    "status": "BLOCKED",
+    "destinationHost": "core-node-01",
+    "path": "/srv/berryit-backup",
+    "capacityBytes": 20957446144,
+    "availableBytes": 19866902528,
+    "restic": "0.16.4",
+    "restServer": "0.14.0",
+    "repositoryPresent": false,
+    "restServerRunning": false,
+    "productionResticInstalled": false,
+    "externalRestoreVerified": false,
+    "physicalFailureDomainVerified": false
+  },
+  "factoryView": {
+    "publishStatus": "BLOCKED_SCHEMA_MISSING",
+    "publishedToDatabase": false,
+    "sharedWorkspaceChanged": false
+  },
+  "blockers": [
+    "BLOCKED_CREDENTIALS",
+    "FACTORY_SCHEMA_MISSING",
+    "ISOLATED_FACTORY_MIGRATION_APPROVAL_PENDING",
+    "ONARLY_SSO_NOT_INTEGRATED",
+    "QABGO_REAL_SSO_COMPOSITION_NOT_AVAILABLE",
+    "BACKUP_REPOSITORY_NOT_INITIALIZED",
+    "EXTERNAL_RESTORE_NOT_VERIFIED",
+    "PHYSICAL_FAILURE_DOMAIN_NOT_CERTIFIED",
+    "REAL_PROVISIONING_JOURNEY_NOT_APPROVED"
+  ],
+  "serverSchemaChanged": false,
+  "productionChanged": false
+}

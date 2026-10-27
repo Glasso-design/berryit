@@ -1,5 +1,5 @@
 /*
- * Control Center-navigation – samma tio moduler i webben och desktopappen.
+ * Control Center-navigation – gemensamma moduler i webben och desktopappen.
  *
  * `connected: false` betyder att modulen saknar backend-koppling. Sådana vyer
  * visar en tydlig "ej ansluten"-ruta och aldrig påhittad status eller mockdata.
@@ -13,6 +13,8 @@ export type NavKey =
   | "dashboard"
   | "kunder"
   | "projekt"
+  | "tasks"
+  | "factory"
   | "support"
   | "kommunikation"
   | "ai"
@@ -35,6 +37,8 @@ export type NavItem = {
 };
 
 export const controlNav: NavItem[] = [
+  {key:'tasks',href:'/control/tasks',label:'All Tasks',icon:'install',connected:true,desktopConnected:true,staffOnly:true,description:'Behöriga projektuppgifter och blockerare.'},
+  {key:'factory',href:'/control/factory',label:'Platform Factory',icon:'app',connected:true,desktopConnected:true,staffOnly:true,description:'Isolerade instanser och installationsunderlag · MOCK.'},
   {
     key: "dashboard",
     href: "/control",
@@ -143,7 +147,7 @@ export function navForAccess(ctx: {isStaff:boolean;permissions?:string[]}):NavIt
   const visible:Partial<Record<NavKey,string[]>>={
     kunder:['tickets.read','organizations.manage'],projekt:['projects.read','projects.manage','roles.manage','roles.grant'],
     kommunikation:['tickets.read'],ai:['ai.use','tickets.read'],infrastruktur:['infrastructure.read'],
-    monitoring:['infrastructure.read'],integrationer:['connectors.manage'],
+    monitoring:['infrastructure.read'],integrationer:['connectors.manage'],factory:['factory.read','factory.create'],tasks:['tasks.read'],
   };
   return controlNav.filter(item=>!item.staffOnly||visible[item.key]?.some(p=>permissions.includes(p)));
 }

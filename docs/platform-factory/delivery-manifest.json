@@ -1,0 +1,794 @@
+{
+  "at": "2026-10-24T22:24:56.482Z",
+  "status": "LOCAL_MOCK_PASS_LIVE_BLOCKED",
+  "branch": "feat/support-desk",
+  "head": "dabecfe34e71a1ffc7e98fd1be6968a23fd91df2",
+  "committed": false,
+  "pushed": false,
+  "deployed": false,
+  "productionChanged": false,
+  "toolsInstalled": false,
+  "inventory": [
+    {
+      "root": "C:\\projects\\aurorapark.se",
+      "branch": "main",
+      "head": "c09241e6847e1a5dffcbe1c102e006ecfdf23523",
+      "initialChanges": 9
+    },
+    {
+      "root": "C:\\projects\\baravarajag.se",
+      "branch": "feature/masterpass-3",
+      "head": "dd4897ec45f8c23eb45e4a69929fa6b9943b276e",
+      "initialChanges": 0
+    },
+    {
+      "root": "C:\\projects\\berryit",
+      "branch": "feat/support-desk",
+      "head": "dabecfe34e71a1ffc7e98fd1be6968a23fd91df2",
+      "initialChanges": 27
+    },
+    {
+      "root": "C:\\projects\\BUDGY",
+      "branch": null,
+      "head": null,
+      "initialChanges": 0
+    },
+    {
+      "root": "C:\\projects\\CASELINE_PASS1",
+      "branch": "pass5-evidence-experience",
+      "head": "5512e7ad17bc1e7ef0eb3c55d9dcb4d7302ea23c",
+      "initialChanges": 0
+    },
+    {
+      "root": "C:\\projects\\DONNAGINA",
+      "branch": "codex/admin-v1-completion",
+      "head": "b469d9dee253c5f3b54837077e4a950254dcb46d",
+      "initialChanges": 0
+    },
+    {
+      "root": "C:\\projects\\GLASNOVIC_SE",
+      "branch": "integration/public-v1-visual",
+      "head": "6e30be8b4767524532da070fbe08279567beeed0",
+      "initialChanges": 0
+    },
+    {
+      "root": "C:\\projects\\ONARLY\\Onarly-face",
+      "branch": "feature/face-v1",
+      "head": "77e660e84e69e8350956d12d24011366cf685c8c",
+      "initialChanges": 0
+    },
+    {
+      "root": "C:\\projects\\ONARLY\\onarly-website",
+      "branch": "feature/website-v3-visual-system",
+      "head": "904b9402739e8ae6f3a4690d6e7c566ac59526dd",
+      "initialChanges": 1
+    },
+    {
+      "root": "C:\\projects\\ONARLY-CREATE-phase0",
+      "branch": "main",
+      "head": "a0cf0cb63dfe1e721d38e7f2d37d2b546bd9e17f",
+      "initialChanges": 0
+    },
+    {
+      "root": "C:\\projects\\ONARLY-DESK",
+      "branch": "feature/desk-v0.1",
+      "head": "c762b961796b9bc58cbeec1933620115ba4c97b8",
+      "initialChanges": 19
+    },
+    {
+      "root": "C:\\projects\\ONARLY-DEV",
+      "branch": "feature/onarly-dev-device-runtime-v1",
+      "head": "9435e70472ff398893b809b276a32475cb0b708c",
+      "initialChanges": 0
+    },
+    {
+      "root": "C:\\projects\\ONARLY-DRIVE",
+      "branch": "feature/drive-customer-app-v1",
+      "head": "13028a3437d1bb00ae4434ac5b39c819dc501d8c",
+      "initialChanges": 0
+    },
+    {
+      "root": "C:\\projects\\ONARLY-DRIVE-PASS6",
+      "branch": null,
+      "head": null,
+      "initialChanges": 0
+    },
+    {
+      "root": "C:\\projects\\onarly-refhub",
+      "branch": "feature/refhub-match-session-v1",
+      "head": "64c876a75f1825b9a59c2fce61c6bf3d3de3c31e",
+      "initialChanges": 0
+    },
+    {
+      "root": "C:\\projects\\onarly-refhub-pass1c",
+      "branch": "feature/refhub-pass1c-auth-device-identity",
+      "head": "821e84f736970173698082d7ccc40f4f5351a69e",
+      "initialChanges": 0
+    },
+    {
+      "root": "C:\\projects\\ONARLY-VISI",
+      "branch": "feature/visi-bild-readaloud-text-only-v1",
+      "head": "577bcae3ae4a8cd069685fbdcb967326b7886968",
+      "initialChanges": 0
+    },
+    {
+      "root": "C:\\projects\\OPERA-accounting-complete",
+      "branch": "feature/opera-accounting-complete-v1",
+      "head": "0e980aca1b335706cc410f9a56a0858657747011",
+      "initialChanges": 0
+    },
+    {
+      "root": "C:\\projects\\OPERA-expenses-advisor",
+      "branch": "feature/opera-expenses-advisor-v1",
+      "head": "f5d070e0deb43f5e8904a3db80f2dd2099c30841",
+      "initialChanges": 0
+    },
+    {
+      "root": "C:\\projects\\OPERA-finance-core",
+      "branch": "feature/finance-core-v1",
+      "head": "d953c17ee88c1bf74b2c9d7249af32dcfe37bc57",
+      "initialChanges": 0
+    },
+    {
+      "root": "C:\\projects\\OPERA-finance-core-pass7",
+      "branch": "feature/commerce-core-pass7-v1",
+      "head": "bac6acd708c583deb987411c1323c9a9e910e80b",
+      "initialChanges": 0
+    },
+    {
+      "root": "C:\\projects\\OPERA-pass8",
+      "branch": "feature/opera-pass8-api-pilot-ui-v1",
+      "head": "2a8c0f797c45df748e9b90bbea39c04f08712f77",
+      "initialChanges": 0
+    },
+    {
+      "root": "C:\\projects\\OPERA-pilot-deploy",
+      "branch": "feature/opera-pilot-deploy-v1",
+      "head": "41ba8804e26899c2bd6791e944ff535c20266191",
+      "initialChanges": 0
+    },
+    {
+      "root": "C:\\projects\\printbuddy-test",
+      "branch": "",
+      "head": "247fe8829891e391fc81611094227881c850be41",
+      "initialChanges": 0
+    },
+    {
+      "root": "C:\\projects\\printbudy",
+      "branch": "release/printbuddy-master-v1",
+      "head": "39aecc496c99465cd8f261fac095356bdc36e12d",
+      "initialChanges": 0
+    },
+    {
+      "root": "C:\\projects\\Triply",
+      "branch": "feature/triply-testflight-ci-v1",
+      "head": "fe1e360ebd16fc7934087ab2f0537d14dacacd74",
+      "initialChanges": 0
+    },
+    {
+      "root": "C:\\projects\\Viking-Allstars",
+      "branch": "master",
+      "head": "f1a5e3fb5e4603c64e314982ded949c060b2bb2e",
+      "initialChanges": 0
+    },
+    {
+      "root": "C:\\ONARLY-HUB\\asset-manager-beta-completion-v1",
+      "branch": "fix/asset-manager-beta-completion-v1",
+      "head": "562deb1d1e35d89f08de60f61a65bbb05b0e05e2",
+      "initialChanges": 0
+    },
+    {
+      "root": "C:\\ONARLY-HUB\\fliqs-addon-hub",
+      "branch": "feature/fliqs-addon-hub-pass1",
+      "head": "3f09e8d33253853e253e978f97d6de13670ad56c",
+      "initialChanges": 0
+    },
+    {
+      "root": "C:\\ONARLY-HUB\\fliqs-apple-playback",
+      "branch": "fix/fliqs-web-filters-series-player",
+      "head": "2a13196cfb6985ef2938088131bde7861f1f7f3b",
+      "initialChanges": 0
+    },
+    {
+      "root": "C:\\ONARLY-HUB\\fliqs-beta",
+      "branch": "feature/fliqs-unified-beta-v1",
+      "head": "60b3ef509f8862630bff9f6e0a3c6cbaca05c631",
+      "initialChanges": 0
+    },
+    {
+      "root": "C:\\ONARLY-HUB\\fliqs-catalog",
+      "branch": "feature/fliqs-streaming-catalog-pass1",
+      "head": "27468b3a8e8f014395982caf4c138b721b908dcc",
+      "initialChanges": 0
+    },
+    {
+      "root": "C:\\ONARLY-HUB\\fliqs-community",
+      "branch": "master",
+      "head": null,
+      "initialChanges": 20
+    },
+    {
+      "root": "C:\\ONARLY-HUB\\fliqs-local-adhoc",
+      "branch": "ci/fliqs-local-adhoc",
+      "head": "4c2b6c73b61957cf48c6dc7fc88cee9ff4794f82",
+      "initialChanges": 0
+    },
+    {
+      "root": "C:\\ONARLY-HUB\\fliqs-native-fix",
+      "branch": "fix/fliqs-native-watch-progress",
+      "head": "e32e6b23d761e3e8865065425620692913c59845",
+      "initialChanges": 0
+    },
+    {
+      "root": "C:\\ONARLY-HUB\\fliqs-pass5",
+      "branch": "feature/fliqs-pass-5-unified-experience",
+      "head": "7ea9a8f68cbf25f852f4ef7f21fa05c4f94fdf41",
+      "initialChanges": 0
+    },
+    {
+      "root": "C:\\ONARLY-HUB\\fliqs-pass6",
+      "branch": "feature/fliqs-pass-6-discord-addon-hub",
+      "head": "b5f879d0eb09de5de620c381ccbfee2bbdf69126",
+      "initialChanges": 0
+    },
+    {
+      "root": "C:\\ONARLY-HUB\\hub-beta-completion-v1",
+      "branch": "fix/hub-beta-completion-reconciled-v1",
+      "head": "37654cfa5b14a316bd2d513cb09ef6c1e621261e",
+      "initialChanges": 0
+    },
+    {
+      "root": "C:\\ONARLY-HUB\\onarly-create",
+      "branch": null,
+      "head": null,
+      "initialChanges": 0
+    },
+    {
+      "root": "C:\\ONARLY-HUB\\onarly-main",
+      "branch": "feature/hub-streamdeck-v1",
+      "head": "70d0933f0a213eb8cc060d9566af36e6b3fa581b",
+      "initialChanges": 7
+    },
+    {
+      "root": "C:\\ONARLY-HUB\\onarly-movio",
+      "branch": "codex/fliqs-cloud-sync-pass-5",
+      "head": "2336941660e6b5b4877f4952c04b2873ac28e5b1",
+      "initialChanges": 18
+    },
+    {
+      "root": "C:/projects/ONARLY-DRIVE-worktrees/qabgo-driver-ui-v2-feature",
+      "branch": "codex/qabgo-solo-master-20261020",
+      "head": "01d27b5ccd9e669d8dfb8e3fe9f785332a35d397",
+      "initialChanges": 0
+    }
+  ],
+  "preserved": {
+    "count": 27,
+    "allUnchanged": true,
+    "files": [
+      {
+        "file": "desktop/README.md",
+        "unchanged": true
+      },
+      {
+        "file": "desktop/package-lock.json",
+        "unchanged": true
+      },
+      {
+        "file": "desktop/package.json",
+        "unchanged": true
+      },
+      {
+        "file": "desktop/scripts/package.mjs",
+        "unchanged": true
+      },
+      {
+        "file": "desktop/src-tauri/Cargo.lock",
+        "unchanged": true
+      },
+      {
+        "file": "desktop/src-tauri/Cargo.toml",
+        "unchanged": true
+      },
+      {
+        "file": "desktop/src-tauri/tauri.conf.json",
+        "unchanged": true
+      },
+      {
+        "file": "desktop/vite.config.ts",
+        "unchanged": true
+      },
+      {
+        "file": "deploy/berryit-support/backup-gate/README.md",
+        "unchanged": true
+      },
+      {
+        "file": "deploy/berryit-support/backup-gate/isolated-postgres-recovery.py",
+        "unchanged": true
+      },
+      {
+        "file": "deploy/berryit-support/backup-gate/synthetic-restore.test.mjs",
+        "unchanged": true
+      },
+      {
+        "file": "deploy/berryit-support/hotfixes/active-support-grants/README.md",
+        "unchanged": true
+      },
+      {
+        "file": "deploy/berryit-support/hotfixes/active-support-grants/apply.sql",
+        "unchanged": true
+      },
+      {
+        "file": "deploy/berryit-support/hotfixes/active-support-grants/containment.sql",
+        "unchanged": true
+      },
+      {
+        "file": "desktop/scripts/distribution-profile.d.mts",
+        "unchanged": true
+      },
+      {
+        "file": "desktop/scripts/distribution-profile.mjs",
+        "unchanged": true
+      },
+      {
+        "file": "desktop/tests/distribution-profile.test.ts",
+        "unchanged": true
+      },
+      {
+        "file": "docs/backup-recovery-pass3c-2026-10-21.md",
+        "unchanged": true
+      },
+      {
+        "file": "docs/backup-recovery-pass3c-manifest.json",
+        "unchanged": true
+      },
+      {
+        "file": "docs/backup-security-pass3da-2026-10-22.md",
+        "unchanged": true
+      },
+      {
+        "file": "docs/backup-security-pass3da-manifest.json",
+        "unchanged": true
+      },
+      {
+        "file": "docs/desktop-owner-installer-2026-10-23.md",
+        "unchanged": true
+      },
+      {
+        "file": "docs/production-readiness-pass3a-2026-10-17.md",
+        "unchanged": true
+      },
+      {
+        "file": "docs/production-readiness-pass3a-manifest.json",
+        "unchanged": true
+      },
+      {
+        "file": "docs/security-backup-gates-pass3b-2026-10-18.md",
+        "unchanged": true
+      },
+      {
+        "file": "docs/security-backup-gates-pass3b-manifest.json",
+        "unchanged": true
+      },
+      {
+        "file": "supabase/tests/active-grants-hotfix.test.mjs",
+        "unchanged": true
+      }
+    ]
+  },
+  "changedFactoryFileCount": 62,
+  "manifestFile": "docs/platform-factory/delivery-manifest.json",
+  "manifestSelfHashExcluded": true,
+  "changedFactoryFiles": [
+    {
+      "status": " M",
+      "file": ".github/workflows/verify.yml",
+      "sha256": "18eb0f25b44df783336a9af0a216623fb9666f5621857da791e20cbb6973ceec"
+    },
+    {
+      "status": " M",
+      "file": "desktop/src/App.tsx",
+      "sha256": "5c4a809bdea8131b80e71f7f38b491c216fec4283f009bc95a49261cee095a9d"
+    },
+    {
+      "status": " M",
+      "file": "desktop/tests/shared.test.ts",
+      "sha256": "f03a0629fb6a2a2a425bd26c65c726dd1df1d6f835b13d5973eb734622b55aee"
+    },
+    {
+      "status": " M",
+      "file": "eslint.config.mjs",
+      "sha256": "efecb0592897e11dd89aee3705bd26a52e8ab14ec2de1393c54c4076ee76fffe"
+    },
+    {
+      "status": " M",
+      "file": "package.json",
+      "sha256": "e2cb0d88265884292d1f43fc840e3678a426a4f437f72ea2ceac74cdce7e4cc1"
+    },
+    {
+      "status": " M",
+      "file": "shared/nav.ts",
+      "sha256": "6cb6d93f5a47b66388dd3d57779e33176914c3d60b4e1e4ac66f4f1aaf7b7e21"
+    },
+    {
+      "status": " M",
+      "file": "tsconfig.json",
+      "sha256": "267b5f4269a897670eadf1f0dffa625cc00c193cb3fedf5466e12a39474c8aef"
+    },
+    {
+      "status": "??",
+      "file": "desktop/src/views/Factory.tsx",
+      "sha256": "5887843f73409ff68178a3734db26b50adef17edc1ccfdfc902c728903bfca6c"
+    },
+    {
+      "status": "??",
+      "file": "docs/platform-factory/discovery-2026-10-24.md",
+      "sha256": "05d4147557ae51ab7afb2cc18c23b5225f6360cf7872325170598c76b515e59f"
+    },
+    {
+      "status": "??",
+      "file": "docs/platform-factory/report-2026-10-25.md",
+      "sha256": "b5c9d71e1ebed7e5b0d0e47a4f878f0d8e49acaf9e415f3240b721c24c3a145d"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/README.md",
+      "sha256": "ebf710e011dde7464d4cf3de43c7d95c44aa2939fa8feaa14c54472c270cc394"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/adapters/qabgo-source.mjs",
+      "sha256": "f7090a3fa469871e241777404b0887441c5a12a5e46687f708ab275c75d8a316"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/adapters/qabgo.mjs",
+      "sha256": "717b0348919253a67bda0c74bd22a51029ccc1ec529237e7555e72f4dcf5dfc1"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/adapters/qabgo.template.json",
+      "sha256": "1092a176e5abf2b79e2b2601a627619a459b4d6969c76c30c66829b7a0f3ba74"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/catalog.mjs",
+      "sha256": "c42ae737352e1e085a4ba11a367770aadd422350fc48fa7919d055880715e68c"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/contract.mjs",
+      "sha256": "98e375973890c35120f19e231abed33850e8eeedb95a2b97f1384da11e88ddbb"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/db/001_factory.sql",
+      "sha256": "35d7b8de6a84336b1b34dc7d5b3fec201f1e28dd3f2ecab0de796b82b6f24830"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/engine.mjs",
+      "sha256": "9f0134a3927858eda4370ec84d6b3a02805895ce4765bb5ba266dd7035b49f7b"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/package.json",
+      "sha256": "3f0865608e3225df97f5f65226237b03cb0728bf1af818151562bfb478c0d0a3"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/providers/backup.mjs",
+      "sha256": "9ea85bd25d87237f5cb711267c1e7d2f2f1b12db8239f9ef056c7e0dfe3a756c"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/providers/cloudflare.mjs",
+      "sha256": "4b9c3d7d88260f84159948a92e4f0ba739a0f8bd49e5f7b68a2d77f82689209d"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/providers/local-storage.mjs",
+      "sha256": "4a2f39e56fc4c2abd2c55026d7b9df0d2acded4bbb9a26dc430b9ccebcad328b"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/providers/mock.mjs",
+      "sha256": "2c0384fae30892cc7b1bc9209ad74cdda8d86647695ece97bf1c8515d88544b7"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/providers/registry.mjs",
+      "sha256": "0c4da8a68336903764f0e96adf1bfe2f952092789446e5fc47505aeb65e23914"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/registry.mjs",
+      "sha256": "1e649ee252e26f8464a1efaa7ea12d202b270cdc5577e834e5beab8b95555771"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/store.mjs",
+      "sha256": "d55bb884d11389ecfc79d036ff24f2ceadaa671b74d340bb6c87e0cce72f5dce"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/tests/api.test.mjs",
+      "sha256": "61b28314c3dec63c8d16e43edfc072c9eafea716faf969fbd2f45ad0dd181d25"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/tests/backup.test.mjs",
+      "sha256": "88810227d3b02783408224c97ff5bf0855fd9c100f4264e03ab064ea2b7e0977"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/tests/build-qabgo.mjs",
+      "sha256": "98a96eb612a50c1c96293dfd50b51a0c35d63101e1cc10858ebf3340703aadef"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/tests/catalog.test.mjs",
+      "sha256": "1296b8483944ca21b05acd3951e502505df443b05285bb494488dad81785fb78"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/tests/engine.test.mjs",
+      "sha256": "e577c8f51c80c0aa11c950f34679182ca24f80b1e5dfd61c9c9ae32cdd3363fb"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/tests/fixture.mjs",
+      "sha256": "bc32fd05e845715155d5f5b848445143e2ad5de9cadf9d5ca7867b11970c37c3"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/tests/local-qabgo.test.mjs",
+      "sha256": "8e0566014efb43739d32e7dfba533cc5729c7449108dcc823c446a1ae3ac0da0"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/tests/postgres/backup.mjs",
+      "sha256": "1091d2239e5144064922e0320849ece274f908c18f4a44a410d3fe103c3c286e"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/tests/postgres/browser.mjs",
+      "sha256": "784b75e63dd7d7c40cd0889fad73ae2fecb359031f9c4ab0111832fee21e2a71"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/tests/postgres/cluster.mjs",
+      "sha256": "8e950d9466def2a6d49c8a58f3387875778a7b8dd4db5606614d3bed268f03a4"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/tests/postgres/local-qabgo.mjs",
+      "sha256": "793019e80bd8a00cba9b38534cff9116cb69e5285cb49f482e4335afa75daec7"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/tests/postgres/start.ps1",
+      "sha256": "844a219b1017b2eef9afdc95ee2812e2ace3347efd6ca6166e76a5ff0d1517c8"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/tests/postgres/stop.mjs",
+      "sha256": "29989c8b123c7f1f9228effcc498d136ea9007a61d9aee95e8f06d3637dbd464"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/tests/providers.test.mjs",
+      "sha256": "1d8ffb0916c80a5703b13da24a06d19518b10019be85ce5dfc932fe5812b2b2d"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/tests/quota.test.mjs",
+      "sha256": "2b34c96b573a491098c2ea3476842f3d326af765af99dc2de2bd63deadea4948"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/tests/run.mjs",
+      "sha256": "10b838cdc0acba7510c251c6bd87b6ff4d392b2a87670c3ba4e4c2cb28ec774f"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/tests/sdk.test.mjs",
+      "sha256": "ddf1bfb5ebbce23db7203a4636559431123429091a31a5f67e5ff0bec9be863c"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/tests/security.test.mjs",
+      "sha256": "4046f9d1f229e5de53eaf905f586b479788e6e43f74d8d88de00eb4a56649d4d"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/tests/storage.test.mjs",
+      "sha256": "125eecb358be070f7f5e98ca9e355eacd793c1c339dcbefb4f2e35dd1792087b"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/tests/worker.test.mjs",
+      "sha256": "01d1a484a5e787e4da9bab1529e95a45d64c97c9a59dae3a9d571a0c059eb804"
+    },
+    {
+      "status": "??",
+      "file": "services/platform-factory/worker.mjs",
+      "sha256": "cd7f1f9ea1bcde881e7e5264937d8531d235fea83aa0b8f3972926b798768d75"
+    },
+    {
+      "status": "??",
+      "file": "shared/factory.ts",
+      "sha256": "07d32bb02be78dd27cc9e4bb7bb9735a5a6240e2f174e6b13a7cd04fcd2cfb65"
+    },
+    {
+      "status": "??",
+      "file": "shared/factory/package.json",
+      "sha256": "a90fc33418afa2b9cbf4768524b021135b965ecdf993457505bfae3ac44a8428"
+    },
+    {
+      "status": "??",
+      "file": "shared/factory/schema.d.mts",
+      "sha256": "0ffadcbd6dcf180268d469a707e0b4e8aefe5275c65fb2fa4428f8d4c0381fd9"
+    },
+    {
+      "status": "??",
+      "file": "shared/factory/schema.mjs",
+      "sha256": "85e3035ac6ac23de9b5969e1ceb492b22cd2e81ba2da6369fd63a51d652e12a0"
+    },
+    {
+      "status": "??",
+      "file": "shared/ui/FactoryWorkspace.tsx",
+      "sha256": "a3e743e3df1369d9384bd4739aa5e797539d2c2b57ebf220a9d998b2af6ddf2a"
+    },
+    {
+      "status": "??",
+      "file": "src/app/api/control/factory/route.ts",
+      "sha256": "e3064a11175f8b440ad398dad83cd7d090d49ff49661a803c8f3faa41255b6f4"
+    },
+    {
+      "status": "??",
+      "file": "src/app/control/(shell)/factory/page.tsx",
+      "sha256": "06837fc56b5942cf2b0b89f62564a7338ba2cea6f5f5cf0ab0005b1f4c2846d3"
+    },
+    {
+      "status": "??",
+      "file": "src/components/control/FactoryClient.tsx",
+      "sha256": "8fb9b41900c03d8f2855fda7a6853ed40b37c6d66ff58caabe98868de2e80187"
+    },
+    {
+      "status": "??",
+      "file": "tests/factory/index.html",
+      "sha256": "6f975d9cb3f2e0d4b91cbea0cb993503c8969f3abf0e1e7798c1d2e04565c22e"
+    },
+    {
+      "status": "??",
+      "file": "tests/factory/main.tsx",
+      "sha256": "dad4a2b7a57591e9fcede1513f5e940d12574a995c32b71679341c5095836ee0"
+    },
+    {
+      "status": "??",
+      "file": "tests/factory/package.json",
+      "sha256": "a90fc33418afa2b9cbf4768524b021135b965ecdf993457505bfae3ac44a8428"
+    },
+    {
+      "status": "??",
+      "file": "tests/factory/playwright.config.ts",
+      "sha256": "57918d6a653a597de92e69d2d126da602f1fb3c2d13d8bbf1974e1453ad114fc"
+    },
+    {
+      "status": "??",
+      "file": "tests/factory/run.mjs",
+      "sha256": "eee061bb0f68e8b568fd815869d53872ca1c200feec08138c9ed1e3df3fa733a"
+    },
+    {
+      "status": "??",
+      "file": "tests/factory/workflow.spec.ts",
+      "sha256": "38166563b27e98992270e88f01ff312dcca9e4f66aa6800cb4c690bab2b1091f"
+    }
+  ],
+  "externalChanges": [
+    {
+      "root": "C:/projects/ONARLY-DRIVE-worktrees/qabgo-driver-ui-v2-feature",
+      "head": "01d27b5ccd9e669d8dfb8e3fe9f785332a35d397",
+      "branch": "codex/qabgo-solo-master-20261020",
+      "changedFiles": [
+        {
+          "file": "apps/admin/src/PlatformFactoryEntry.tsx",
+          "sha256": "9df6b4d46a404362348535a59b93e0ddb197976833e447bec891b42a8245c967"
+        },
+        {
+          "file": "apps/admin/src/PlatformTenants.tsx",
+          "sha256": "53dcec7419ff4ee90d7326386346233add01aa73a0e7d3b3f1a9d8b93c51f13b"
+        }
+      ]
+    },
+    {
+      "root": "C:/ONARLY-HUB/hub-beta-completion-v1",
+      "head": "37654cfa5b14a316bd2d513cb09ef6c1e621261e",
+      "branch": "fix/hub-beta-completion-reconciled-v1",
+      "changedFiles": [
+        {
+          "file": "src/components/admin/AdminCoreWorkspace.tsx",
+          "sha256": "a4e50d3003c74c58ea5f7caa3bdb9d95c3e375c76648b0d37017fbbd78d3295e"
+        },
+        {
+          "file": "src/components/admin/PlatformFactoryEntry.tsx",
+          "sha256": "47c986a0662c5408f5d58c916e7dec6cf5e63aa3f9c6a2f7e246b19a58850e5e"
+        }
+      ]
+    }
+  ],
+  "security": {
+    "staticCredentialScan": "PASS",
+    "scope": "new/modified Factory source and documentation plus four external integration files; generated/private test data excluded from Git",
+    "findings": [],
+    "historicalMigrationsChanged": false,
+    "anonymousExecuteAndDefinerSearchPaths": "PASS",
+    "cleanupDeletes": false
+  },
+  "tests": {
+    "factory": 54,
+    "factoryBrowser": 1,
+    "realPostgresAndQabgo": 8,
+    "rls": 272,
+    "service": 135,
+    "desktop": 149,
+    "desktopBrowser": 10,
+    "supportWorkflow": 3,
+    "projectAccess": 2,
+    "aiDiagnostics": 2
+  },
+  "builds": {
+    "web": "WEBPACK_PASS",
+    "desktop": "PASS",
+    "qabgo": {
+      "customer": "PASS",
+      "driver": "PASS",
+      "dispatch": "PASS",
+      "admin": "PASS"
+    },
+    "hub": "PASS"
+  },
+  "typecheck": {
+    "berryit": "PASS",
+    "desktop": "PASS",
+    "qabgo": "4/4 PASS",
+    "hub": "PASS"
+  },
+  "lint": "PASS",
+  "clusterStates": [
+    {
+      "status": "OWNED_SYNTHETIC_CLUSTER_STOPPED",
+      "port": 19840,
+      "runId": "5678b94b-a84a-414a-859e-07c249e61bb2",
+      "deleted": false,
+      "existingClustersTouched": false
+    },
+    {
+      "status": "OWNED_SYNTHETIC_CLUSTER_STOPPED",
+      "port": 19841,
+      "runId": "c2cfc955-555a-4800-85a3-d6ccafec847c",
+      "deleted": false,
+      "existingClustersTouched": false
+    },
+    {
+      "status": "OWNED_SYNTHETIC_CLUSTER_STOPPED",
+      "port": 19842,
+      "runId": "1a0eb84e-7e9c-4fa1-8559-2b80ab5fa5a5",
+      "deleted": false,
+      "existingClustersTouched": false
+    }
+  ],
+  "blockers": [
+    "Real Cloudflare account/capabilities/budgets and live provider activation",
+    "Approved runtime/database/R2 IAM and product upload broker",
+    "Verified production DNS/TLS and email provider/destinations",
+    "Full Supabase HTTP/GoTrue/MFA and cross-product SSO",
+    "Signed QABGO production distribution approval",
+    "External encrypted backup and restore approval; existing 3D-A prerequisites remain",
+    "Product-specific business/pricing/third-party agreement activation",
+    "Other actual product adapters are not ready"
+  ],
+  "githubActions": "Local workflow edited and reviewed; no push or remote CI run",
+  "workingTreeClean": false
+}

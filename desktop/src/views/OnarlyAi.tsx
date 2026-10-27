@@ -132,7 +132,7 @@ function MessageCard({ message }: { message: AiMessage }) {
   );
 }
 
-export function OnarlyAi({ onOpenTicket }: { onOpenTicket: (reference: string) => void }) {
+export function OnarlyAi({ onOpenTicket,initialProject }: { onOpenTicket: (reference: string) => void;initialProject?:string }) {
   const { access, config, session } = useSession();
   const client = useMemo(
     () => (config && session ? createAiClient(config, session) : null),
@@ -179,7 +179,8 @@ export function OnarlyAi({ onOpenTicket }: { onOpenTicket: (reference: string) =
       .then((next) => {
         if (cancelled) return;
         setContext(next);
-        setOrganizationId((current) => current || next.organizations[0]?.id || "");
+        const requested=next.projects.find(p=>p.id===initialProject);
+        setOrganizationId((current) => requested?.organization_id||current||next.organizations[0]?.id||"");
       })
       .catch((caught) => {
         if (!cancelled) setError(errorText(caught));
@@ -187,16 +188,16 @@ export function OnarlyAi({ onOpenTicket }: { onOpenTicket: (reference: string) =
     return () => {
       cancelled = true;
     };
-  }, [client, access?.isStaff]);
+  }, [client, access?.isStaff,initialProject]);
 
   useEffect(() => {
-    setProjectId("");
+    setProjectId(context?.projects.find(p=>p.id===initialProject&&p.organization_id===organizationId)?.id??'');
     setIncidentId('');
     setConversationId("");
     setMessages([]);
     if (!organizationId) return;
     void loadConversations(organizationId).catch((caught) => setError(errorText(caught)));
-  }, [organizationId, loadConversations]);
+  }, [organizationId, loadConversations,initialProject,context?.projects]);
 
   useEffect(() => {
     if (!client || !conversationId) {
@@ -482,6 +483,7 @@ export function OnarlyAi({ onOpenTicket }: { onOpenTicket: (reference: string) =
           </div>
 
           <div className="mt-4 border-t border-line pt-4">
+            {projectId&&<div className="mb-3 flex flex-wrap gap-2">{['Vad har vi gjort den senaste veckan?','Vilka buggar återstår?','Vilken branch ligger närmast release?','Vad blockerar produktion?','Vilka tasks bör prioriteras?'].map(q=><button type="button" key={q} className="rounded-xl border border-line px-3 py-2 text-xs" onClick={()=>{setQuestion(q);setApproved(false);}}>{q}</button>)}</div>}
             <textarea
               value={question}
               onChange={(event) => setQuestion(event.target.value)}
@@ -499,7 +501,7 @@ export function OnarlyAi({ onOpenTicket }: { onOpenTicket: (reference: string) =
               />
               <span>
                 Jag har granskat texten och godkänner att frågan och den valda, behörighetskontrollerade
-                kontexten skickas via ONARLY AI Gateway.
+                kontexten, inklusive tillgängliga tasks och projekthistorik, skickas via ONARLY AI Gateway.
               </span>
             </label>
             <div className="mt-3 flex flex-wrap gap-3">

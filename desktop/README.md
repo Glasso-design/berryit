@@ -71,7 +71,8 @@ npm install
 npm run tauri:dev     # kör appen med hot reload
 npm test              # enhetstester för delad logik
 npm run typecheck
-npm run package       # bygger dist-installer/BerryIT-Control-Center-Setup.exe
+npm run package:owner # kräver validerad publik profil; versionsmärkt ägarinstallerare
+npm run package:generic # separat paket utan anslutningsförval
 npm run connect       # lokal SSH-tunnel med redan befintlig, betrodd SSH-identitet
 cd src-tauri && cargo test   # testar lagringen mot riktig Credential Manager
 ```
@@ -82,9 +83,12 @@ CORS-headers — kör `tauri:dev` när auth ska testas.
 
 ## Konfiguration
 
-Ett generiskt bygge utan distributionsprofil frågar vid första start efter
-adress och anon-nyckel. Ett konfigurerat bygge läser förval från
-`.env.production.local` och visar inloggningen direkt. Befintlig sparad
+Standardbygget är ett ägarbygge och avbryts om backend-origin eller publik
+klientnyckel saknas eller är ogiltig. `npm run package:owner` läser förval från
+`.env.production.local` och visar inloggningen direkt. Ett generiskt paket måste
+begäras med `npm run package:generic`; det tömmer samtliga anslutningsförval även
+om en lokal ägarprofil finns, och frågar efter adress och anon-nyckel vid första
+start. Befintlig sparad
 konfiguration har företräde. Manuellt angivna uppgifter sparas i
 `%APPDATA%\se.berryit.controlcenter\config.json`. Filen innehåller ingen session
 och inget lösenord. Anslutningen kan ändras från inloggningen och under Inställningar.
@@ -162,8 +166,20 @@ saknar backend och är märkta "ej ansluten" redan i menyn.
 
 ## Installation
 
-`dist-installer/BerryIT-Control-Center-Setup.exe` (NSIS, per användare, svenska
-och engelska). Kräver WebView2, som ingår i Windows 10/11.
+`dist-installer/owner/BerryIT-Control-Center-Owner-<version>-x64-Setup.exe`
+(NSIS, per användare, svenska och engelska). Det generiska paketet ligger separat
+i `dist-installer/generic/`. Varje nytt paket har en intilliggande JSON-manifestfil
+med version, SHA-256 och publik profilfingerprint, utan nyckelvärdet. Paketeringen
+accepterar endast en nybyggd installerare med exakt förväntad version; den väljer
+inte en äldre fil efter ändringstid. Äldre distributionsfiler ersätts inte.
+Kräver WebView2, som ingår i Windows 10/11.
+
+Profilvalidering granskar origin och klientnyckelns format/roll/utgångstid.
+Den ersätter inte serveridentitetskontroll, fungerande transport eller databasens
+behörighetskontroller. Ägarprofilen på denna dator använder en lokal SSH-tunnel;
+installeraren distribuerar ingen privat SSH-identitet och startar ingen tunnel.
+Ett paket kan därför öppna inloggningen korrekt samtidigt som anslutning eller
+det driftsatta schemat blockerar fortsatt användning.
 
 Automatisk uppdatering är **avstängd**. Den får inte aktiveras förrän
 installeraren signeras — en osignerad uppdateringskanal är en väg rakt in i

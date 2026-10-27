@@ -11,6 +11,7 @@ import type { Service, StatusCheck } from "@berryit/shared/connectors";
 import { useSession } from "@/auth/session";
 import { backendFetch } from "@/auth/client";
 import { type RegistryData } from "@/registry/data";
+import {desktopProjectControl} from '@/project-control/client';
 
 /**
  * Projekt: våra egna och kundernas, med tjänsterna som hör till.
@@ -19,7 +20,7 @@ import { type RegistryData } from "@/registry/data";
  * projektet, så den kan inte glida isär. Driftstatus visas bara när det finns
  * en mätning – och sägs vara gammal när den är gammal.
  */
-export function Projekt() {
+export function Projekt({onOpenTicket,onOpenFactory,onOpenAi}:{onOpenTicket?:(reference:string)=>void;onOpenFactory?:(project:string,product:string)=>void;onOpenAi?:(project:string,organization:string)=>void}={}) {
   const { supabase,config } = useSession();
   const client = useMemo(() => supabase ? createAccessClient(supabase,async input=>{
     if(!config?.controlUrl)throw new Error("Repositoryläsning kräver godkänd Control Center-URL i Inställningar.");
@@ -27,7 +28,8 @@ export function Projekt() {
     const response=await backendFetch(config.controlUrl+"/api/control/repository",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${data.session.access_token}`},body:JSON.stringify(input)});
     const result=await response.json();if(!response.ok)throw new Error(result.error??"Repositoryåtkomst nekades.");return result.data;
   }) : null, [supabase,config]);
-  return client ? <ProjectAccessWorkspace client={client}/> : null;
+  const control=useMemo(()=>supabase?desktopProjectControl(supabase,config?.controlUrl):undefined,[supabase,config?.controlUrl]);
+  return client ? <ProjectAccessWorkspace client={client} control={control} onOpenTicket={onOpenTicket} onOpenFactory={onOpenFactory} onOpenAi={onOpenAi}/> : null;
 }
 
 export function TjansteRad({

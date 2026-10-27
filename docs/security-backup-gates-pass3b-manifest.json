@@ -1,0 +1,150 @@
+{
+  "sourceCommit": "dabecfe34e71a1ffc7e98fd1be6968a23fd91df2",
+  "branch": "feat/support-desk",
+  "preparedAt": "2026-10-17T22:30:23.501Z",
+  "executionApproved": false,
+  "readyForProduction": false,
+  "status": {
+    "localHotfix": "PASS",
+    "productionSecurity": "BLOCKED",
+    "externalBackup": "BLOCKED",
+    "realSupabaseRestore": "BLOCKED",
+    "vercelPreviewDisabled": "UNVERIFIED",
+    "productionUpgrade": "BLOCKED"
+  },
+  "expectedLedger": [
+    "20261013080000_platform_bootstrap.sql",
+    "20261013090000_support_desk_core.sql",
+    "20261013090100_support_desk_rls.sql",
+    "20261013090200_support_desk_storage.sql",
+    "20261013090300_support_authority.sql",
+    "20261013091000_support_authority_hardening.sql"
+  ],
+  "expectedOldHelperBodyMd5": "7046b3ef55adcf0b7ec7a454d43c106c",
+  "expectedHotfixHelperBodyMd5": "cdd0ccbd4098db65edcf14a872e002be",
+  "legacy": {
+    "currentGlobalTechnicianGrants": 0,
+    "legacyTechnicianProfiles": 1,
+    "prospectiveGlobalRoles": [
+      "BERRYIT_SUPPORT_TECHNICIAN",
+      "BERRYIT_LEGACY_INFRA_READ"
+    ],
+    "approvedTargetScope": null,
+    "protectedOwnerGrantRetained": true
+  },
+  "backup": {
+    "destination": null,
+    "decision": "User confirmed no destination decided: BLOCKED",
+    "credentialsProvisioned": false,
+    "localRehearsal": "PGlite snapshot + GPG/tar + synthetic Storage/config; local offsite SIMULATION only",
+    "realPgDumpPgRestoreVerified": false,
+    "realHttpMfaRestoreVerified": false
+  },
+  "tests": {
+    "hotfix": {
+      "pass": 21,
+      "fail": 0
+    },
+    "syntheticBackupRestore": {
+      "pass": 10,
+      "fail": 0
+    },
+    "existingDatabaseChecks": {
+      "pass": 272,
+      "fail": 0
+    },
+    "securityRepair": {
+      "pass": 22,
+      "fail": 0
+    },
+    "masterUpgrade": {
+      "pass": 29,
+      "fail": 0
+    },
+    "projectAccess": {
+      "pass": 40,
+      "fail": 0
+    },
+    "environmentSafety": {
+      "pass": 5,
+      "fail": 0
+    },
+    "newTestFilesLint": {
+      "exit": 0
+    },
+    "rawWorkspaceTypecheck": {
+      "exit": 2,
+      "reason": "Existing ignored test-results/secure-push/clean-source is included by the root TypeScript glob"
+    },
+    "sourceTypecheck": {
+      "exit": 0,
+      "config": "Ignored temporary extension of unchanged tsconfig; excludes generated test-results in addition to existing excludes"
+    },
+    "buildsRerun": false
+  },
+  "productionFilesystemDeviation": {
+    "timeUtc": "2026-10-17T22:15:47.948Z",
+    "command": "gpg --list-keys",
+    "created": [
+      "/home/ubuntu/.gnupg",
+      "/home/ubuntu/.gnupg/pubring.kbx",
+      "/home/ubuntu/.gnupg/trustdb.gpg"
+    ],
+    "generatedKeys": 0,
+    "remediationPerformed": false,
+    "separateApprovalRequired": true
+  },
+  "preservedPass3aFiles": [
+    {
+      "file": "docs/production-readiness-pass3a-2026-10-17.md",
+      "sha256": "665b24bc7d25e07e780b3648a4559a391826373d298c03694ce6644751cdcc3d"
+    },
+    {
+      "file": "docs/production-readiness-pass3a-manifest.json",
+      "sha256": "572bddea1e5b29aa15952edea8960745e3f8e72acd502356c2944ed5c5bc49da"
+    }
+  ],
+  "files": [
+    {
+      "file": "deploy/berryit-support/hotfixes/active-support-grants/apply.sql",
+      "sha256": "77729427994d4706af0cf8767eeeeb03f36a7cb7f8931996cd30da9887c961cc",
+      "bytes": 2560
+    },
+    {
+      "file": "deploy/berryit-support/hotfixes/active-support-grants/containment.sql",
+      "sha256": "42701362fd17f9b414fde0d6c0fb1ca474abf5d177ee023d072d306fd82604ad",
+      "bytes": 795
+    },
+    {
+      "file": "deploy/berryit-support/hotfixes/active-support-grants/README.md",
+      "sha256": "a746e73c396f63b67ac01986974e00818b57d8376b6282e05995ce6383fb4b71",
+      "bytes": 6257
+    },
+    {
+      "file": "supabase/tests/active-grants-hotfix.test.mjs",
+      "sha256": "9ef606b4b9b63a8fdd1e99d16b7de712ea4680fbd2221d9975aaf20e0d859d34",
+      "bytes": 12919
+    },
+    {
+      "file": "deploy/berryit-support/backup-gate/README.md",
+      "sha256": "6477571bea67f3c073db8777261885e9573e5de4cb985af2771822b763e6fef2",
+      "bytes": 11320
+    },
+    {
+      "file": "deploy/berryit-support/backup-gate/synthetic-restore.test.mjs",
+      "sha256": "bd794b2aa00e17bbb66dddb5982ff08406455e363b1785425d88b4777750148a",
+      "bytes": 13421
+    },
+    {
+      "file": "docs/security-backup-gates-pass3b-2026-10-18.md",
+      "sha256": "8bc315d8251424e054d797ca201212d1ead282af1eb522d768ecadcedc2fbdec",
+      "bytes": 16547
+    }
+  ],
+  "productionSqlApplied": false,
+  "productionDataCopied": false,
+  "servicesRestarted": false,
+  "aiInferencePerformed": false,
+  "commitCreated": false,
+  "pushed": false
+}

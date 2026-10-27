@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { applyTheme, resolveTheme } from "@berryit/shared/theme";
-import { navItem, type NavKey } from "@berryit/shared/nav";
+import { navForAccess, type NavKey } from "@berryit/shared/nav";
+import { Factory } from '@/views/Factory';
 import { useSession } from "@/auth/session";
 import { Shell } from "@/components/Shell";
 import { Dashboard } from "@/views/Dashboard";
@@ -17,16 +18,19 @@ import { Projekt } from "@/views/Projekt";
 import { OnarlyAi } from "@/views/OnarlyAi";
 import { Setup } from "@/views/Setup";
 import { Support } from "@/views/Support";
+import {Tasks} from '@/views/Tasks';
 
 /**
  * Appens rot. Vilken vy som visas styrs av sessionsstatus först och av
- * navigationen sedan – en vy kan aldrig renderas före rätt behörighetsnivå.
+ * navigationen sedan. Backend och RLS avgör alltid faktisk resursåtkomst.
  */
 export function App() {
   const { status, access } = useSession();
   const [vy, setVy] = useState<NavKey>("dashboard");
   const [arende, setArende] = useState<string | null>(null);
   const [editingConnection, setEditingConnection] = useState(false);
+  const [factoryProject,setFactoryProject]=useState<{project:string;product:string}|null>(null);
+  const [aiProject,setAiProject]=useState<string|null>(null);
 
   useEffect(() => {
     applyTheme(resolveTheme());
@@ -35,7 +39,7 @@ export function App() {
   // Byter rollen (t.ex. efter MFA) ska en vy som inte längre får visas lämnas.
   useEffect(() => {
     if (!access) return;
-    if (navItem(vy).staffOnly && !access.isStaff) setVy("dashboard");
+    if (!navForAccess(access).some(item=>item.key===vy)) setVy("dashboard");
   }, [access, vy]);
 
   // En ny inloggning börjar på översikten. App-komponenten lever kvar genom en
@@ -45,6 +49,7 @@ export function App() {
   useEffect(() => {
     setVy("dashboard");
     setArende(null);
+    setFactoryProject(null);setAiProject(null);
   }, [inloggadSom]);
 
   if (status === "laddar") {
@@ -66,6 +71,8 @@ export function App() {
       current={vy}
       onNavigate={(key) => {
         if (key !== "support") setArende(null);
+        if(key==='factory')setFactoryProject(null);
+        if(key==='ai')setAiProject(null);
         setVy(key);
       }}
       onOpenTicket={oppnaArende}
@@ -73,14 +80,16 @@ export function App() {
       {vy === "dashboard" && <Dashboard onNavigate={setVy} />}
       {vy === "kunder" && <Kunder />}
       {vy === "support" && <Support focus={arende} />}
-      {vy === "ai" && <OnarlyAi onOpenTicket={oppnaArende} />}
-      {vy === "projekt" && <Projekt />}
+      {vy === "ai" && <OnarlyAi onOpenTicket={oppnaArende} initialProject={aiProject??undefined}/>}
+      {vy === "projekt" && <Projekt onOpenTicket={oppnaArende} onOpenFactory={(project,product)=>{setFactoryProject({project,product});setVy('factory');}} onOpenAi={project=>{setAiProject(project);setVy('ai');}}/>}
+      {vy === "factory" && <Factory project={factoryProject?.project} product={factoryProject?.product}/>}
+      {vy === "tasks" && <Tasks onOpenTicket={oppnaArende}/>}
       {vy === "infrastruktur" && <Infrastruktur />}
       {vy === "integrationer" && <Integrationer />}
       {vy === "monitoring" && <Monitoring />}
       {vy === "kommunikation" && <Kommunikation />}
       {vy === "installningar" && <Installningar />}
-      {!["dashboard", "kunder", "support", "ai", "projekt", "infrastruktur", "integrationer", "monitoring", "kommunikation", "installningar"].includes(
+      {!["dashboard", "kunder", "support", "ai", "projekt", "factory", "tasks", "infrastruktur", "integrationer", "monitoring", "kommunikation", "installningar"].includes(
         vy,
       ) && <Modul nyckel={vy} />}
     </Shell>
