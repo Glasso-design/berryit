@@ -17,8 +17,9 @@ beforeAll(async () => {
   // This constructor has no URL, persistent path, credentials or network access.
   db = await PGlite.create({ extensions: { pgcrypto } });
   await db.exec(read("tests/local_bootstrap.sql"));
-  for (const file of readdirSync(new URL("../../supabase/migrations/", import.meta.url)).filter((f) => f.endsWith(".sql")).sort()) {
+  for (const [index,file] of readdirSync(new URL("../../supabase/migrations/", import.meta.url)).filter((f) => f.endsWith(".sql")).sort().entries()) {
     await db.exec(read(`migrations/${file}`));
+    if(index===0)await db.exec(read('tests/local_storage_bootstrap.sql'));
   }
   await db.exec(`
     insert into auth.users(id,email) values ('${user}','a@example.test'),('${foreign}','b@example.test'),('${staff}','staff@example.test');

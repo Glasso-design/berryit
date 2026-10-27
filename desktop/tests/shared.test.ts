@@ -94,8 +94,10 @@ describe("rolletikett", () => {
 });
 
 describe("navigation", () => {
-  it("har tio moduler", () => {
-    expect(controlNav).toHaveLength(10);
+  it("har tolv moduler inklusive Platform Factory och All Tasks", () => {
+    expect(controlNav).toHaveLength(12);
+    expect(navItem('factory').href).toBe('/control/factory');
+    expect(navItem('tasks').href).toBe('/control/tasks');
   });
 
   it("kunder ser bara moduler som inte är personalvyer", () => {
@@ -104,7 +106,16 @@ describe("navigation", () => {
   });
 
   it("personal ser alla moduler", () => {
-    expect(navFor(true)).toHaveLength(10);
+    expect(navFor(true)).toHaveLength(12);
+  });
+
+  it('Factory-menyn följer serverns permissions, inte en klientroll',()=>{
+    expect(navForAccess({isStaff:true,permissions:[]}).some(n=>n.key==='factory')).toBe(false);
+    expect(navForAccess({isStaff:false,permissions:['factory.read']}).some(n=>n.key==='factory')).toBe(true);
+  });
+  it('All Tasks presenteras endast efter serverns tasks.read capability',()=>{
+    expect(navForAccess({isStaff:true,permissions:[]}).some(n=>n.key==='tasks')).toBe(false);
+    expect(navForAccess({isStaff:true,permissions:['tasks.read']}).some(n=>n.key==='tasks')).toBe(true);
   });
 
   it("varje ej ansluten modul beskriver vad som saknas", () => {

@@ -1,0 +1,1705 @@
+{
+  "productId": "qabgo",
+  "version": "01d27b5ccd9e669d8dfb8e3fe9f785332a35d397",
+  "approval": "LOCAL_REVIEW_ONLY",
+  "repository": "Glasso-design/onarly-drive",
+  "seedPolicy": "schema-and-neutral-only",
+  "core": "services/drive-core",
+  "components": [
+    "apps/customer",
+    "apps/driver",
+    "apps/dispatch",
+    "apps/admin"
+  ],
+  "migrations": [
+    {
+      "path": "services/drive-core/migrations/0001_foundation.sql",
+      "sha256": "de950141e7d5e2c82350d57d253c6c70ae9deaf78a3c1c51fa8c307ee7c2a117"
+    },
+    {
+      "path": "services/drive-core/migrations/0002_bookings.sql",
+      "sha256": "519ab03ed86bcec58dd87507f4a12991e47fad730031a6caaba8e445202a35fb"
+    },
+    {
+      "path": "services/drive-core/migrations/0003_operations.sql",
+      "sha256": "8dea40de6324aba7040eee2b3d728a6faf76cd0902e37aae5a5c3069039c4b53"
+    },
+    {
+      "path": "services/drive-core/migrations/0004_customer_profiles.sql",
+      "sha256": "4d433d1e1a57be6b30acafe4225f3da35a6f8af4a20cf39720d2509f733a1775"
+    },
+    {
+      "path": "services/drive-core/migrations/0005_driver_shift.sql",
+      "sha256": "91b7d9ae165503db8c062271868fda63e6c2114cde4dc045a2912426feeb34ab"
+    },
+    {
+      "path": "services/drive-core/migrations/0006_smart_dispatch_vehicles_access.sql",
+      "sha256": "11ab8faf552c1bca5f6f73cce4acb78d1ec1e31832ffa55e13260ecb2619eb59"
+    },
+    {
+      "path": "services/drive-core/migrations/0007_call_center_bookings.sql",
+      "sha256": "460c008502aacb1c945a6cec8cbc855bdf2d0713dfe1393f5de63f246a55e8db"
+    },
+    {
+      "path": "services/drive-core/migrations/0008_sites.sql",
+      "sha256": "d6596a5ad5b7774fb545c5dd0ac5db2b3d6e29d7cfd9cb1423a53c533b90e0d8"
+    },
+    {
+      "path": "services/drive-core/migrations/0009_payments.sql",
+      "sha256": "5e57679d8278117e03115515a3c415ac7f035ebce77cda88ce3b5c8ae561eb71"
+    },
+    {
+      "path": "services/drive-core/migrations/0010_payments_quality_gate.sql",
+      "sha256": "85ab676ac7958a09c2a3df02264ba8609cf5cefa516a1462aa36c954e559319a"
+    },
+    {
+      "path": "services/drive-core/migrations/0011_notifications.sql",
+      "sha256": "20bc2150aec9586714cd984419f20962c8a8813f6da22baaa388a3f9f024bba5"
+    },
+    {
+      "path": "services/drive-core/migrations/0012_communications.sql",
+      "sha256": "c52d2e3e5f9b2bb0848ca3f18cd892661c8ef0b24c48ac2aaad6bd202b457cf7"
+    },
+    {
+      "path": "services/drive-core/migrations/0013_customer_360.sql",
+      "sha256": "dbe8c8a7a2428e6e4353c5ac2decc51db717cdf40af9c58645726884e8bfa4c9"
+    },
+    {
+      "path": "services/drive-core/migrations/0015_notification_router_activation.sql",
+      "sha256": "1e1858cac2638f309461b09ed93abc403dd905da9de12cc157df266595fc88f1"
+    },
+    {
+      "path": "services/drive-core/migrations/0016_maps_gps_roles.sql",
+      "sha256": "7a83bf477e0cf9b095b201cc33f5698f8004a4f9d0c785bda22840181c876e2e"
+    },
+    {
+      "path": "services/drive-core/migrations/0017_staff_platform.sql",
+      "sha256": "72e0af2ff3b9146803a13da862ee2faf83eedc9d9bf39db88503957f4f192e29"
+    },
+    {
+      "path": "services/drive-core/migrations/0018_calendar.sql",
+      "sha256": "9b8978a96575cb4f17d5faf96c0ccf3cdbefb0dea090be17c544f0311e1bbf5d"
+    },
+    {
+      "path": "services/drive-core/migrations/0021_email_inbox.sql",
+      "sha256": "bda0347dbc0420b4380677aecb8877f5b825b4bc0f2e9590befe02cc47a844bf"
+    },
+    {
+      "path": "services/drive-core/migrations/0023_customer_accounts.sql",
+      "sha256": "153deb7c27bfd05b9bcb48e2a71b90345feaa8393f9cd7f0d291374cb979ff2b"
+    }
+  ],
+  "files": [
+    {
+      "path": "services/drive-core/migrations/0001_foundation.sql",
+      "sha256": "de950141e7d5e2c82350d57d253c6c70ae9deaf78a3c1c51fa8c307ee7c2a117"
+    },
+    {
+      "path": "services/drive-core/migrations/0002_bookings.sql",
+      "sha256": "519ab03ed86bcec58dd87507f4a12991e47fad730031a6caaba8e445202a35fb"
+    },
+    {
+      "path": "services/drive-core/migrations/0003_operations.sql",
+      "sha256": "8dea40de6324aba7040eee2b3d728a6faf76cd0902e37aae5a5c3069039c4b53"
+    },
+    {
+      "path": "services/drive-core/migrations/0004_customer_profiles.sql",
+      "sha256": "4d433d1e1a57be6b30acafe4225f3da35a6f8af4a20cf39720d2509f733a1775"
+    },
+    {
+      "path": "services/drive-core/migrations/0005_driver_shift.sql",
+      "sha256": "91b7d9ae165503db8c062271868fda63e6c2114cde4dc045a2912426feeb34ab"
+    },
+    {
+      "path": "services/drive-core/migrations/0006_smart_dispatch_vehicles_access.sql",
+      "sha256": "11ab8faf552c1bca5f6f73cce4acb78d1ec1e31832ffa55e13260ecb2619eb59"
+    },
+    {
+      "path": "services/drive-core/migrations/0007_call_center_bookings.sql",
+      "sha256": "460c008502aacb1c945a6cec8cbc855bdf2d0713dfe1393f5de63f246a55e8db"
+    },
+    {
+      "path": "services/drive-core/migrations/0008_sites.sql",
+      "sha256": "d6596a5ad5b7774fb545c5dd0ac5db2b3d6e29d7cfd9cb1423a53c533b90e0d8"
+    },
+    {
+      "path": "services/drive-core/migrations/0009_payments.sql",
+      "sha256": "5e57679d8278117e03115515a3c415ac7f035ebce77cda88ce3b5c8ae561eb71"
+    },
+    {
+      "path": "services/drive-core/migrations/0010_payments_quality_gate.sql",
+      "sha256": "85ab676ac7958a09c2a3df02264ba8609cf5cefa516a1462aa36c954e559319a"
+    },
+    {
+      "path": "services/drive-core/migrations/0011_notifications.sql",
+      "sha256": "20bc2150aec9586714cd984419f20962c8a8813f6da22baaa388a3f9f024bba5"
+    },
+    {
+      "path": "services/drive-core/migrations/0012_communications.sql",
+      "sha256": "c52d2e3e5f9b2bb0848ca3f18cd892661c8ef0b24c48ac2aaad6bd202b457cf7"
+    },
+    {
+      "path": "services/drive-core/migrations/0013_customer_360.sql",
+      "sha256": "dbe8c8a7a2428e6e4353c5ac2decc51db717cdf40af9c58645726884e8bfa4c9"
+    },
+    {
+      "path": "services/drive-core/migrations/0015_notification_router_activation.sql",
+      "sha256": "1e1858cac2638f309461b09ed93abc403dd905da9de12cc157df266595fc88f1"
+    },
+    {
+      "path": "services/drive-core/migrations/0016_maps_gps_roles.sql",
+      "sha256": "7a83bf477e0cf9b095b201cc33f5698f8004a4f9d0c785bda22840181c876e2e"
+    },
+    {
+      "path": "services/drive-core/migrations/0017_staff_platform.sql",
+      "sha256": "72e0af2ff3b9146803a13da862ee2faf83eedc9d9bf39db88503957f4f192e29"
+    },
+    {
+      "path": "services/drive-core/migrations/0018_calendar.sql",
+      "sha256": "9b8978a96575cb4f17d5faf96c0ccf3cdbefb0dea090be17c544f0311e1bbf5d"
+    },
+    {
+      "path": "services/drive-core/migrations/0021_email_inbox.sql",
+      "sha256": "bda0347dbc0420b4380677aecb8877f5b825b4bc0f2e9590befe02cc47a844bf"
+    },
+    {
+      "path": "services/drive-core/migrations/0023_customer_accounts.sql",
+      "sha256": "153deb7c27bfd05b9bcb48e2a71b90345feaa8393f9cd7f0d291374cb979ff2b"
+    },
+    {
+      "path": "services/drive-core/package.json",
+      "sha256": "0a673825934fd0e4aef2a396688bbb89cea1f20b1a69f51a56fc5943aae9481e"
+    },
+    {
+      "path": "services/drive-core/src/app.ts",
+      "sha256": "76cb4bf5d7205ed2cb5120c6bea44c3515d6b6ab353e24ef0c13b1d2722da2cc"
+    },
+    {
+      "path": "services/drive-core/src/auth/auth-service.ts",
+      "sha256": "dd586b3c0d8e4d6c5221a8f58a8b585aedc07d797a42065128e902575563e97c"
+    },
+    {
+      "path": "services/drive-core/src/auth/principal.ts",
+      "sha256": "4d3425cc89146484f2156fe97d91bed6ffb11a0ee4777049cc44adeabac468f6"
+    },
+    {
+      "path": "services/drive-core/src/bookings/bookings.ts",
+      "sha256": "dbed095af3d6357c1c707eb31e114b4a4822a02689a5a7b53798857d63b9f11f"
+    },
+    {
+      "path": "services/drive-core/src/bookings/payments.ts",
+      "sha256": "f84796781977290da93b9cf9af555c91a7aab3f37f710fc200a77b3d7eabaa94"
+    },
+    {
+      "path": "services/drive-core/src/bookings/quotes.ts",
+      "sha256": "f9f4a9c58d20eac83cc7ce2e0beb2ff03ed28ddf89a760b9af512806cb814626"
+    },
+    {
+      "path": "services/drive-core/src/bookings/time.ts",
+      "sha256": "9391cd8628221b0c8b1b8aa583df82d5f901c1a6fe9e2096ac9b1e28aa4525c8"
+    },
+    {
+      "path": "services/drive-core/src/bookings/workflow.ts",
+      "sha256": "0f179f3a9a98d97b0ef7c08151c88f7b306dbfc151f229e2bb3c3c9a277a004c"
+    },
+    {
+      "path": "services/drive-core/src/calendar/calendar.ts",
+      "sha256": "12bffd11aacdb214ff9b31368ee27d38ce2a93e063ee873a3b0f4a82189e8e55"
+    },
+    {
+      "path": "services/drive-core/src/cli.ts",
+      "sha256": "b9946faf23a0cb53c491731f5667c79821ea30ba2d82cf3950e7681e3d900fa7"
+    },
+    {
+      "path": "services/drive-core/src/communications/email-inbox.ts",
+      "sha256": "3ccc0139464fd2712104c06d5097cd520f1484bc1972529685519d489cc17f74"
+    },
+    {
+      "path": "services/drive-core/src/communications/hub.ts",
+      "sha256": "280f657a50e8d0a4bd4e784d702d2bedac2f1d9f40f89730c33025ef69978ac8"
+    },
+    {
+      "path": "services/drive-core/src/communications/service.ts",
+      "sha256": "9fbedb42e7982c01fa5b0b389e9eec7c6ca180593a12bb1552bc2ab9ec9a5173"
+    },
+    {
+      "path": "services/drive-core/src/config.ts",
+      "sha256": "4305692e03176d8c89bf1cc46eb71bad1fd2503978d8a97ccfb957fd7f67de04"
+    },
+    {
+      "path": "services/drive-core/src/customers/accounts.ts",
+      "sha256": "55b220fed7c535410f74d2c5656115e7c4a9d65322abb8a05b8bccac6e46b2a1"
+    },
+    {
+      "path": "services/drive-core/src/customers/customer360.ts",
+      "sha256": "7d67c54705bf94af6583f47cb1c5ba03343ccf9d81601d83a00e899a7de431a1"
+    },
+    {
+      "path": "services/drive-core/src/customers/portal.ts",
+      "sha256": "99584c75d51cc6d95759ae556105c7ec6b3cf5df0a1866919a5d9c388ae4b2c2"
+    },
+    {
+      "path": "services/drive-core/src/customers/profiles.ts",
+      "sha256": "2a7d2a10d8ed90dcb12e0edc2607042b5ad33f67de86d6f9a0f5d4b8e427a06b"
+    },
+    {
+      "path": "services/drive-core/src/customers/register.ts",
+      "sha256": "1c5b0223ec3059d773de4b695959daf62176a39db5f722619d6663afe548c796"
+    },
+    {
+      "path": "services/drive-core/src/db/database.ts",
+      "sha256": "53b1440406ef667e12a11c194ecca3894efec4795651134f9f0bda91c603edd0"
+    },
+    {
+      "path": "services/drive-core/src/db/migrate.ts",
+      "sha256": "35a6eab038ba153b9ef725457606644271bf2b647f152c508d0140060e46de77"
+    },
+    {
+      "path": "services/drive-core/src/events/event-log.ts",
+      "sha256": "8bc05a27f250323b327ecfa9fad04a3ce061b4e362f62b4e94a96c4145504d7a"
+    },
+    {
+      "path": "services/drive-core/src/http/errors.ts",
+      "sha256": "aa893aeacb7b3de5c0d9dafb46f3de92326c11f4717c64666a2c4bfeafa5d317"
+    },
+    {
+      "path": "services/drive-core/src/http/idempotency.ts",
+      "sha256": "a5a3c1dc91dd4aa143b4822032f533abef683ecf4c999f8519ce4db0fdc17144"
+    },
+    {
+      "path": "services/drive-core/src/http/router.ts",
+      "sha256": "5c7d060421bbabe7921e39f3171f7230b839dceaa6f9979d9729a70774eb7538"
+    },
+    {
+      "path": "services/drive-core/src/http/server.ts",
+      "sha256": "f555ed391f2bf728643648661502009c3f74eec86da33f62c0ad98b720af49d6"
+    },
+    {
+      "path": "services/drive-core/src/http/validate.ts",
+      "sha256": "67c8a869000ae928ec92187e4e15b11caf07ac2c506f72f663a47c84043d852f"
+    },
+    {
+      "path": "services/drive-core/src/integrations/api-keys.ts",
+      "sha256": "5f093fc19a1d96fb8d43c7cb883acd072f57eb891a2ea5ffd5ef1487b69402f3"
+    },
+    {
+      "path": "services/drive-core/src/integrations/connections.ts",
+      "sha256": "d312c7d34c693e5c8943a94103f615cc5060f14bcc7eb78ecfe3241aad17d445"
+    },
+    {
+      "path": "services/drive-core/src/integrations/webhooks.ts",
+      "sha256": "06ecd4a107f9ddea0aa4cc43cf1e0fbe69f838ca2cdd598f338f4543726c90ec"
+    },
+    {
+      "path": "services/drive-core/src/log.ts",
+      "sha256": "74f5f4deb83d97b15e0f1ba88ec61cb97016a2ff8b169d44615580fff3ef696e"
+    },
+    {
+      "path": "services/drive-core/src/main.ts",
+      "sha256": "458b9601fbb055778c1d5a964c6f283c17cb09b522e5ec4e2e7d9126f8a7cf6d"
+    },
+    {
+      "path": "services/drive-core/src/notifications/catalog.ts",
+      "sha256": "2cb2a7ccd3f277cdba13aa1032dfa1589e79f7cfe4f69f7938ef4d7b58d39432"
+    },
+    {
+      "path": "services/drive-core/src/notifications/email-html.ts",
+      "sha256": "51d5d5e55a0f33c3b6426aea90102d245c1ef2f5f008764c7e05b35ab9314383"
+    },
+    {
+      "path": "services/drive-core/src/notifications/providers/apns.ts",
+      "sha256": "5376af8c5d757055f641777e21fd237f2be28346ac8263b014bdc76f9842204e"
+    },
+    {
+      "path": "services/drive-core/src/notifications/providers/email-sms.ts",
+      "sha256": "b3ab46da912643b9b1a66b7224d681a04a91641a1b99ccb91744f82496a52f8d"
+    },
+    {
+      "path": "services/drive-core/src/notifications/providers/fcm.ts",
+      "sha256": "2294971a88df57dae613abec56afb4b3ab0b685ca2189288b297b706b1fd6149"
+    },
+    {
+      "path": "services/drive-core/src/notifications/providers/simulator.ts",
+      "sha256": "58f9651532eac3bf633f38f49d1fee2e368a9fea29555ea3e34b93bc0a7be710"
+    },
+    {
+      "path": "services/drive-core/src/notifications/service.ts",
+      "sha256": "4d20473292eddc099057026fca35d07ee58b8dcabbb85e7292b0145d1572364d"
+    },
+    {
+      "path": "services/drive-core/src/notifications/types.ts",
+      "sha256": "3e1bbd9ca9a41ef8b7d496f8ef9cc818e6a6b768341b9df0b1af6620b946d8b5"
+    },
+    {
+      "path": "services/drive-core/src/operations/dispatch-engine.ts",
+      "sha256": "0a12dc8afe8bbfd96024c3a2796a59280b84a2f1d959078c89ed40889a08b4bb"
+    },
+    {
+      "path": "services/drive-core/src/operations/dispatch-rules.ts",
+      "sha256": "abcc4b6225c6e9b76b7c786929c7a7e862b774a3ff37d8901554396dfba1be0c"
+    },
+    {
+      "path": "services/drive-core/src/operations/driver-admin.ts",
+      "sha256": "61011e528576bd2d4d4069ded08dffc1b74d21ffd312cbe0c387213d3034527b"
+    },
+    {
+      "path": "services/drive-core/src/operations/drivers.ts",
+      "sha256": "0dacea3e9e009454fecea446e7e69c1f8703f29f08eb9f7e0dcf54569b4f05d8"
+    },
+    {
+      "path": "services/drive-core/src/operations/eta.ts",
+      "sha256": "77e96235b3b44bac9c852a24708384c9fb61085d534f61fef6ab1f4abe3dda2c"
+    },
+    {
+      "path": "services/drive-core/src/operations/fare.ts",
+      "sha256": "57d6cbec0ded14663206e13808edef857bf9d4916479c540e9714bddfc2b3df1"
+    },
+    {
+      "path": "services/drive-core/src/operations/finance.ts",
+      "sha256": "a42ef97cf0d8824abeceaafa7ad4536685fdd1741f6360de1b30375159cdd999"
+    },
+    {
+      "path": "services/drive-core/src/operations/gps-visibility.ts",
+      "sha256": "f3157c924eb8b9e4ba964f0a2bece08f2b2cd671d9cc023f48c4f9972817c4fb"
+    },
+    {
+      "path": "services/drive-core/src/operations/operations.ts",
+      "sha256": "69af84b35e43e52c2d2dc5d05a880cdf9f415490ebaa0207386309471dd4d3e2"
+    },
+    {
+      "path": "services/drive-core/src/operations/overview.ts",
+      "sha256": "89748afd1cc9dcd4b88a17d2d880ed3da349d51a0327e2fece9ce4e887aba4c6"
+    },
+    {
+      "path": "services/drive-core/src/operations/payment-state.ts",
+      "sha256": "eb144595c54c4e1237f4ce04978c765a314cbc19960ac8f1c8cf9d6cc91978c2"
+    },
+    {
+      "path": "services/drive-core/src/operations/positions.ts",
+      "sha256": "e71c2df857c80345cd07cba59c74cea67e51ec26ded9bc30147035565bbef123"
+    },
+    {
+      "path": "services/drive-core/src/operations/shift-summary.ts",
+      "sha256": "b2bf96978e306bef29f00953072d93b0d880a285d1cdf13b0a0627b24df12611"
+    },
+    {
+      "path": "services/drive-core/src/operations/shift.ts",
+      "sha256": "31113714b8364608c1d067c1aeb7e4065b6dbcde524452c8db843313397074f7"
+    },
+    {
+      "path": "services/drive-core/src/operations/solo.ts",
+      "sha256": "e9fc1d5992e05f3a4d10d599e798e21c61eb741778d6e22287ae3f1876db4eb2"
+    },
+    {
+      "path": "services/drive-core/src/operations/vehicles.ts",
+      "sha256": "da4c977c03ee43e2638e19a48f3a9ec335b65e8f03b0cdee29187955fcb1bc98"
+    },
+    {
+      "path": "services/drive-core/src/operations/views.ts",
+      "sha256": "22d6a903fb98fc54ab651024d6f17138bba03b2122ef6e95632ea3ec454a56ab"
+    },
+    {
+      "path": "services/drive-core/src/payments/accounts.ts",
+      "sha256": "b3c6d49d1f1f7c945024c55be4f3c7c9b6b6d1cb06a1bc5a2c427306314cd7d9"
+    },
+    {
+      "path": "services/drive-core/src/payments/providers/klarna.ts",
+      "sha256": "610aea228bd3ff69c82704514be1b1911fd085e5cc0636c02cb489889e105020"
+    },
+    {
+      "path": "services/drive-core/src/payments/providers/simulator.ts",
+      "sha256": "a6d19d7fc22322542b6ed8ec4b3575012beb6761dce2d6ac9ee3a4e25a6581e6"
+    },
+    {
+      "path": "services/drive-core/src/payments/providers/stripe.ts",
+      "sha256": "7147d057fb5bd36d3873ce619fc0e207e2c315eb896b42a38c8c5649fe38f5bf"
+    },
+    {
+      "path": "services/drive-core/src/payments/providers/swish.ts",
+      "sha256": "db2c38b14492db024efd4a11511dd989fc585facf30eb0e7cb7c8d4f2d6d2cb3"
+    },
+    {
+      "path": "services/drive-core/src/payments/providers/zettle.ts",
+      "sha256": "00d70182bf2d56545e68c23be1dc04f2bf52071d2f59e4de6d8e11a731811363"
+    },
+    {
+      "path": "services/drive-core/src/payments/service.ts",
+      "sha256": "5b875d02dcf241720293481cb784fb2327a62e5df913b3524249b6be99de1364"
+    },
+    {
+      "path": "services/drive-core/src/payments/types.ts",
+      "sha256": "c21d390c751963ba409ecc132621ab739c624f65a880724e1283a4dbdc0cc5ff"
+    },
+    {
+      "path": "services/drive-core/src/pricing/config.ts",
+      "sha256": "30ff03de3a559666849f16e1108a4d1284692eaed62673fdc124c7282da1f906"
+    },
+    {
+      "path": "services/drive-core/src/pricing/engine.ts",
+      "sha256": "22e0ef1c0e476206529c3223f382d6c54886e0c58acd6bbb5c85251ad062d01d"
+    },
+    {
+      "path": "services/drive-core/src/pricing/php.ts",
+      "sha256": "75f003cd6dfe6a156a42714241982f5124a901da932834e3a7e3c8c6086f71c6"
+    },
+    {
+      "path": "services/drive-core/src/pricing/price-list.ts",
+      "sha256": "f80e165b19f95d75d85dff65e1cdf231711fee485897bc1bf514913805fe35f0"
+    },
+    {
+      "path": "services/drive-core/src/pricing/route-provider.ts",
+      "sha256": "8c0d8e77cd57c075029e93ea742291e3068bd58b5f265176a5dc67b65e3b66e0"
+    },
+    {
+      "path": "services/drive-core/src/pricing/store.ts",
+      "sha256": "9c639111822cbf4481513026f493701c1136fd182d5847a73cb90ba099ffd6b0"
+    },
+    {
+      "path": "services/drive-core/src/routes/admin-integrations.ts",
+      "sha256": "d8c00edae5a5f89d20a0e42c4828b809bd0b6d7e1ecd6870f4e3b9f266f6f6e1"
+    },
+    {
+      "path": "services/drive-core/src/routes/auth.ts",
+      "sha256": "588261b6460f41525dccef4a529af62e25f2c737f92a4fd9a15b6572a7f1f24c"
+    },
+    {
+      "path": "services/drive-core/src/routes/calendar.ts",
+      "sha256": "4b1be7fc5cc2fa863ce2b49523f78a5a5202abf23d6efbf5090fb5c1676be4c3"
+    },
+    {
+      "path": "services/drive-core/src/routes/callcenter.ts",
+      "sha256": "39e85cc6f7b7f098625ec5259a44c75008819999470d678a8e3464605e901212"
+    },
+    {
+      "path": "services/drive-core/src/routes/communications.ts",
+      "sha256": "07b89a28970c6964a92db27a0d31878090c6dd350e1c5d24a3833744995de4fa"
+    },
+    {
+      "path": "services/drive-core/src/routes/customer.ts",
+      "sha256": "dcc55d696de6ddb3d746303c1eb877cf789e480882e1c519317758167c46b609"
+    },
+    {
+      "path": "services/drive-core/src/routes/customer360.ts",
+      "sha256": "60ba83b81f300fa1ea457453a3aa67ebe6db06bf59465e7e640fff650a93ad67"
+    },
+    {
+      "path": "services/drive-core/src/routes/dispatch-admin.ts",
+      "sha256": "5c0e2960be3d3204ae15594e5c945c0d6ada653d53adf267a2e2c60888de0d9d"
+    },
+    {
+      "path": "services/drive-core/src/routes/dispatch.ts",
+      "sha256": "be88711c656504683ca6d825b96385ae40bec081713f9c9c56bf3a00d0960e92"
+    },
+    {
+      "path": "services/drive-core/src/routes/driver.ts",
+      "sha256": "8a05693ca7fc4093c035ef2787d88b9d261a60abe164b1dcc14c8ed2a33a18c2"
+    },
+    {
+      "path": "services/drive-core/src/routes/email-inbox.ts",
+      "sha256": "56e6630944c4995076bd787eb28860ff320636fff3e249b5d1039310404d35c9"
+    },
+    {
+      "path": "services/drive-core/src/routes/health.ts",
+      "sha256": "8a0721753a881f707ff26aa1e1b45915aba4b5269f832a5d26b53ec019bf3e06"
+    },
+    {
+      "path": "services/drive-core/src/routes/integration.ts",
+      "sha256": "9a64dd3f9846c37b6301a6119d4f11a9601d4a5e1bf5dfba4305cde0cb214ae3"
+    },
+    {
+      "path": "services/drive-core/src/routes/notifications.ts",
+      "sha256": "e96bbd8e523c82d86795515ba57e714070d809da42a39581fc73bf2f7b3daae4"
+    },
+    {
+      "path": "services/drive-core/src/routes/operator-settings.ts",
+      "sha256": "a58c38ca4753c267e33de734a2d1e7bebdc1e3e2f2266a046b41077dd60acea4"
+    },
+    {
+      "path": "services/drive-core/src/routes/overview.ts",
+      "sha256": "876f1deb865cc25dc2c48ec8739c1da868075a10c4b11b71e535c2255f76a22c"
+    },
+    {
+      "path": "services/drive-core/src/routes/payments.ts",
+      "sha256": "d18765ee0a08df2b5ba9732a7fea76acbc1052104d0eaa061a87fc896a9c0fea"
+    },
+    {
+      "path": "services/drive-core/src/routes/pricing.ts",
+      "sha256": "30739f88ec8ff8ba2fe236693b013aa6faeb5f0d1df69980202f00b6e502cb70"
+    },
+    {
+      "path": "services/drive-core/src/routes/public.ts",
+      "sha256": "5f69942d97996080cf94159d6fd9594580afddee517288030aa1e4a68ed8cbb2"
+    },
+    {
+      "path": "services/drive-core/src/routes/roles.ts",
+      "sha256": "7e8155c0aa9fb86f41bc66b626b9c2dea26b96104506939d42ce979c044ae70f"
+    },
+    {
+      "path": "services/drive-core/src/routes/sites.ts",
+      "sha256": "baa490eddc37cb5f921991e3d63cbf5495601a2ff19235b6de7fb05d1648aabf"
+    },
+    {
+      "path": "services/drive-core/src/security/crypto.ts",
+      "sha256": "1337312fbf656b1f8cb6f78ab7a9c1b89d947d4838fe6300048a4694bf850e5e"
+    },
+    {
+      "path": "services/drive-core/src/security/outbound.ts",
+      "sha256": "c191d4133e5566c5b895b1837748372d38353dea29b4a4efad7c7bb54c6083a9"
+    },
+    {
+      "path": "services/drive-core/src/security/passwords.ts",
+      "sha256": "0ce7459f3e48e4d68316a32135f83634ad035fc891990ad6c7fbfa5861b1fb53"
+    },
+    {
+      "path": "services/drive-core/src/security/rate-limit.ts",
+      "sha256": "89abdeb21b053b1c83d65e17c3d8dbba171368b51375ce184c406ea9e2c761ff"
+    },
+    {
+      "path": "services/drive-core/src/services.ts",
+      "sha256": "b9d582995b7a576b8f807739a23e3d27cb442d9c8e45d0814832e0f41880f564"
+    },
+    {
+      "path": "services/drive-core/src/sites/content.ts",
+      "sha256": "c74099e7f6f954e468758ad2aade3343d79dc61369df74b65aadaf748fb5db46"
+    },
+    {
+      "path": "services/drive-core/src/sites/images.ts",
+      "sha256": "66c1d0099b201f0a2a4677556e8330f3a3638fc398f968b59660fc1d1a4c257f"
+    },
+    {
+      "path": "services/drive-core/src/sites/service.ts",
+      "sha256": "29cd329623bb8817400349858495a45f1f4a32b766fe7edde2176b8409217669"
+    },
+    {
+      "path": "services/drive-core/src/staff/invitations.ts",
+      "sha256": "1fcc4c5098b37a04a33ef91c76709604a1d15c8003fcf2a6d64fd14aac1428aa"
+    },
+    {
+      "path": "services/drive-core/src/tenants/entitlements.ts",
+      "sha256": "3974e302531b233627ef3ce4b6ac73682b1eb75f583595be2f80b2e50f61982b"
+    },
+    {
+      "path": "services/drive-core/src/tenants/maps-gps.ts",
+      "sha256": "892df81b630ab5b3a16493931f1d6b6b8b440d90968fc6df95278900da000deb"
+    },
+    {
+      "path": "services/drive-core/src/tenants/tenants.ts",
+      "sha256": "2a5a3c3b6bc7e8864ddb8cb8acd1cb52b73397cfe9b906c2dc5e1e2f02fa17e9"
+    }
+  ],
+  "externalIntegrations": "disabled-until-configured-and-verified",
+  "identity": "trusted-owner-reference-plus-separate-product-activation",
+  "objectStorageQuotaBytes": 1000000000,
+  "priceModel": "unconfigured-no-pilot-fares",
+  "frontendFiles": [
+    {
+      "path": "apps/admin/package.json",
+      "sha256": "107d4c70b6d925d59511c81c7e21e715fc4cf99443ecf4fe7a905e44017111c2"
+    },
+    {
+      "path": "apps/admin/public/apple-touch-icon.png",
+      "sha256": "071ba819d821b670d941201da4a60a1c450b5c8822ab1aecbe299731a056ab44"
+    },
+    {
+      "path": "apps/admin/public/favicon.png",
+      "sha256": "85c4e1319db3f5a6700e17b759dd83dc98c524a2ca350a40ecc2b4129b654c0e"
+    },
+    {
+      "path": "apps/admin/src/App.tsx",
+      "sha256": "b4b3a60e68ee5e049fb76b0c1e9ad5d4e562c2126fe22134ba8360ac1f697fc1"
+    },
+    {
+      "path": "apps/admin/src/Customers.tsx",
+      "sha256": "aca31c8684f8498dfed30763ca03e70b186bb73194b62c7558d6a11ebc2154cb"
+    },
+    {
+      "path": "apps/admin/src/Editor.tsx",
+      "sha256": "97bdee43d33b61c256a30a5cec0385b9ad7c861cef98c53e5cfc2ad50cd601a0"
+    },
+    {
+      "path": "apps/admin/src/Images.tsx",
+      "sha256": "8ca81d91ef960feef8d7f3b9b70444eb95a0336833b2adec12435e08c21d5ff3"
+    },
+    {
+      "path": "apps/admin/src/Integrations.tsx",
+      "sha256": "39ae3df636d5dbfb2bf8804383268272dde2d94ff41e457b24cacea8214307f9"
+    },
+    {
+      "path": "apps/admin/src/MapsGps.tsx",
+      "sha256": "90a20d08106163f7bcb097f17176c68860574cc179b2add3945ed94edfe2903b"
+    },
+    {
+      "path": "apps/admin/src/Notifications.tsx",
+      "sha256": "9e959424175d3a84b569deb169e53c6c2e8a06a142fdeae9e8414d2e8d0ad214"
+    },
+    {
+      "path": "apps/admin/src/Operations.tsx",
+      "sha256": "94b24a4a551ff36da83fbc3fbfe17668066dba67f5db6159d45694e577d5c830"
+    },
+    {
+      "path": "apps/admin/src/OperatorSettings.tsx",
+      "sha256": "b2498fc18360e3c97522d1fab59a5400bca9f368ea34117c2294b50d14970d1d"
+    },
+    {
+      "path": "apps/admin/src/Overview.tsx",
+      "sha256": "fc7b5383f0190c90702caf2a7bbc2cb3a2af89166dfcf129c8a3bf74b9fad5bd"
+    },
+    {
+      "path": "apps/admin/src/Panels.tsx",
+      "sha256": "16ec014d2bb800e4767b8cc1f9a2cbe77c3fc6a74fd9cece7bf78f7a7f95984d"
+    },
+    {
+      "path": "apps/admin/src/Payments.tsx",
+      "sha256": "7d67716759336c7a067a29a79c1396f9657c4f3f21ca063df34f46725a668d70"
+    },
+    {
+      "path": "apps/admin/src/PlatformFactoryEntry.tsx",
+      "sha256": "9df6b4d46a404362348535a59b93e0ddb197976833e447bec891b42a8245c967"
+    },
+    {
+      "path": "apps/admin/src/PlatformTenants.tsx",
+      "sha256": "53dcec7419ff4ee90d7326386346233add01aa73a0e7d3b3f1a9d8b93c51f13b"
+    },
+    {
+      "path": "apps/admin/src/Pricing.tsx",
+      "sha256": "22491333d6c82bf6bfd309297101020b342108e5e7d09e066b3b591e7c06d1a6"
+    },
+    {
+      "path": "apps/admin/src/Publish.tsx",
+      "sha256": "eef81b29e2374fed5f9458f5d32a0e66a15699c3c63608b24cd34e53b2040ce6"
+    },
+    {
+      "path": "apps/admin/src/Reports.tsx",
+      "sha256": "73225ecf68dd802d0e3ec7c67a51048c0124df5bcb09a20a40206316f2247daf"
+    },
+    {
+      "path": "apps/admin/src/Resources.tsx",
+      "sha256": "d37002cb311c30f77e5e3f6c10d0b78c3b97e8f9e94f38d34de3b5d300b52422"
+    },
+    {
+      "path": "apps/admin/src/StaffActivation.tsx",
+      "sha256": "f70052da789af1b278f4df27b7b6e8ff303ad564f6a18250f7300581775d71f7"
+    },
+    {
+      "path": "apps/admin/src/StaffRoles.tsx",
+      "sha256": "f40c64e94c7d2cf02d977544b4035c2020112d5e5df6e6745e03002c81f9ff24"
+    },
+    {
+      "path": "apps/admin/src/Themes.tsx",
+      "sha256": "00ffabb5fee3b21ca2d2c69b10a6c7201c7071f2212499939502106d1809d469"
+    },
+    {
+      "path": "apps/admin/src/api.ts",
+      "sha256": "c45fe45872b7687f7011acdb014932e359d213a707c2b26af430d0764d7cab97"
+    },
+    {
+      "path": "apps/admin/src/assets/qabgo-core.webp",
+      "sha256": "fcd27e1d33abc23be790af6c0a6cfccc23420925abfc0171993426e7b36636af"
+    },
+    {
+      "path": "apps/admin/src/backend.ts",
+      "sha256": "f279c2907275e0090d156920b14a3c28a5491d1040d3d22ae8fc4053fae29d3b"
+    },
+    {
+      "path": "apps/admin/src/fields.tsx",
+      "sha256": "f396dc9deeeb3cac7cd93d6f2f1d7a68c8aabff5c3a14396fbaed14f1e98754c"
+    },
+    {
+      "path": "apps/admin/src/main.tsx",
+      "sha256": "c45b37a4a5a0f11ec3e9243994ca4d263d646acc84afec82149ac0fea37c9330"
+    },
+    {
+      "path": "apps/admin/src/payments-api.ts",
+      "sha256": "ee1ed85529242081f5aacbbdfffc5fd84f34ccd240d4085f3b0433e0f74198fe"
+    },
+    {
+      "path": "apps/admin/src/pricing-api.ts",
+      "sha256": "cf441013a79c4d8d93c64f30b9000bb60e270743c4545abba7944dcb9d4e2f60"
+    },
+    {
+      "path": "apps/admin/src/sites-api.ts",
+      "sha256": "9472d3c3fe19d7a1cecceb7e1d5a443fca0b21ad1e9fcf648e5ca5fdd2573570"
+    },
+    {
+      "path": "apps/admin/src/styles.css",
+      "sha256": "ec22effe39c897ae6096c5808c039bdb84510fc002444bb72487d75e50c62791"
+    },
+    {
+      "path": "apps/admin/tsconfig.app.json",
+      "sha256": "e8a8d18d6e0e2b38871e37e12c9b7341c51e313adf4923dc1c584664db6edc2a"
+    },
+    {
+      "path": "apps/admin/tsconfig.json",
+      "sha256": "ddfbd4be8ba0c63cb46e9ea6d68f68e929f270bc23f2f64ec9aa13dc5057c78c"
+    },
+    {
+      "path": "apps/admin/tsconfig.node.json",
+      "sha256": "a82e7e817f5a3e28732ef7f91cd3240b438f0af1c4bebb801ac062509f524780"
+    },
+    {
+      "path": "apps/customer/android/app/src/androidTest/java/com/getcapacitor/myapp/ExampleInstrumentedTest.java",
+      "sha256": "f2e64983510b1f1489b71721027151f497e71008bf7dcc323c2f26156d64dd2b"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/AndroidManifest.xml",
+      "sha256": "42281de5091726047efc64e11162f84cdbaa0ddbd3495b99114507abb9a74223"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/java/com/onarly/qabgo/MainActivity.java",
+      "sha256": "24ac0ee74c0c7254f823f34b470188e867a403b14c9250c8c0b0ef242a329a14"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/drawable-land-hdpi/splash.png",
+      "sha256": "a7133d50c5cd32aa0c3caad103369d0cbf152ad6e1de0a0a5bba434a8f2d41d2"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/drawable-land-mdpi/splash.png",
+      "sha256": "3a2f9d74e47f5af6f6747332b411cc2977d349e1f15dbf51ae4cee365397315b"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/drawable-land-xhdpi/splash.png",
+      "sha256": "68bef3d6fecd01b1bb5d3a47c41efec021e50e653b192151abaef23adcbe15f2"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/drawable-land-xxhdpi/splash.png",
+      "sha256": "89b8a13ec9c4d72596d4f9ff042ba9ea254b9ec7913dfd6b69e9561a1632773c"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/drawable-land-xxxhdpi/splash.png",
+      "sha256": "21f605a5a7f3ef818e49fcb2fa76767bb00be4b8be9da6785f99f64b039346eb"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/drawable-port-hdpi/splash.png",
+      "sha256": "7a0623750df9f39fce1e6cb352332011cd389984a5ba7868cbdcc49e04c48d29"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/drawable-port-mdpi/splash.png",
+      "sha256": "6c59297dd19eafe4f837866f5cc2912d2d4879d2ab83fba724f9bd961371ec6e"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/drawable-port-xhdpi/splash.png",
+      "sha256": "cb18f44da3c96d4f4609fef1d3f1062cdaa4f7e03f27f997e170160bc6609535"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/drawable-port-xxhdpi/splash.png",
+      "sha256": "be7323e5609e661d25d5a6f74f387abffa509f646fd7ef4e29f30368b8a42503"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/drawable-port-xxxhdpi/splash.png",
+      "sha256": "5e038e20943439aae1620b0e379fcf48478e23d254fb34e82faf5022fc231076"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/drawable-v24/ic_launcher_foreground.xml",
+      "sha256": "fe3c9a470d9dfc34dfefa1cbbaf67f16174cdd3d242a1d4f6bd09483ea38c29b"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/drawable/ic_launcher_background.xml",
+      "sha256": "61acabdec7880108a9850fdc6cea1a6fc974114bae875bdcadc70078bf4e615f"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/drawable/splash.png",
+      "sha256": "3a2f9d74e47f5af6f6747332b411cc2977d349e1f15dbf51ae4cee365397315b"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/layout/activity_main.xml",
+      "sha256": "61e5b7029215a836abe562b61d037bd5e59e68e28cbaab42b9f503ba5bf3ca57"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml",
+      "sha256": "6be9be8d39cb250f663814bc3ac3ba570d9629be22fbebcc95d0c058e2249717"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml",
+      "sha256": "6be9be8d39cb250f663814bc3ac3ba570d9629be22fbebcc95d0c058e2249717"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/mipmap-hdpi/ic_launcher.png",
+      "sha256": "0459f91dacaa7088320d1a4b795001d7e06722ec55aeeda277044ef76493bc36"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png",
+      "sha256": "1c8ad35f0652e66f46796805de758f2160cc4e515be3bf0cb38cdeb0fa6dd7e1"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png",
+      "sha256": "601fec54136ca816c9455eb9708fffc059deb03d970b3786613e8f40bfcb2ed6"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/mipmap-mdpi/ic_launcher.png",
+      "sha256": "6be9bcaba86d6f973632084a85d0f6bff0c3b0d06e6b102ae00c79ba82b09cb1"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/mipmap-mdpi/ic_launcher_foreground.png",
+      "sha256": "a3ac4178a916bda3f1802cf2294366129d362965d55f1bfd325bf689d9f3de1c"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png",
+      "sha256": "fada98c06aed255d9e9a89a4dbafb32043bf9055a5b2abad94b8ba4e0824db53"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/mipmap-xhdpi/ic_launcher.png",
+      "sha256": "a8f6b419071e286feff9e7f19b0f437a59d64f87531afddd8b80ff7d0536af62"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png",
+      "sha256": "25293fb5db824d5a3544a300eddc67fb0f49eea726b8704b2a626010d80a12a9"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png",
+      "sha256": "6df3c0884fea3f6f335b6acd51cd912dca2eea0eb76db1401ca0fa24de246d48"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png",
+      "sha256": "65a558f526af6f6586dcd4f565842bb86bbdc829c74fa546a494da6b993e8b49"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png",
+      "sha256": "bbe0e1762aaf050975e171d29c654d64791b7c3a7bd84321cafee0c03a6ab695"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png",
+      "sha256": "2f2517d15718e56e6eb76907ca42a0f218c068691e120bd56ba2db1e35f882e5"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
+      "sha256": "e2dd41efcabab6f952e579bdf6cb9a020ce4426b7b2361d2048f677d6d9cb215"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png",
+      "sha256": "4731c9584851d5a6f74fa3e5f84e6966a1e8b56f68ffd00be491a2b9ccbb793c"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png",
+      "sha256": "100728780f4ce634fae00f457a2f3c277e37e5ae2266091d12e552a90aaaede7"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/values/ic_launcher_background.xml",
+      "sha256": "50298644b2c485e407836082d36cf2415cf5718a06519b8c6959f3e60a1524af"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/values/strings.xml",
+      "sha256": "54ca43fcb208d2d46a2ed36776b69f0a4d688536f9c92a7b93a0e48595e47910"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/values/styles.xml",
+      "sha256": "8207f1e42dd22d6d2fddb0bdad3ee9e7db9535a0368aae0b4daadead05112655"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/xml/data_extraction_rules.xml",
+      "sha256": "bd5fe0cc521ab90f9467d495404af9bbdd140ace761799d92b6339d4b0198bdd"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/xml/file_paths.xml",
+      "sha256": "a290266da65e30675e410cd8e1c17cde04de40170c9c3b900504e7a24ca79626"
+    },
+    {
+      "path": "apps/customer/android/app/src/main/res/xml/network_security_config.xml",
+      "sha256": "376fe1ed8d845690c7053cb1c1a4b9542dba5ce7d40c14d63945e8c5cf47692a"
+    },
+    {
+      "path": "apps/customer/android/app/src/test/java/com/getcapacitor/myapp/ExampleUnitTest.java",
+      "sha256": "486e7e67ed195d642340a4849575d406c4414e77e21e8bfbe5ef40b796a14557"
+    },
+    {
+      "path": "apps/customer/package.json",
+      "sha256": "2ff47bd26f9168c32dd5c495ba629e01b7dc6d4a623c2c3afa84ab6e34f6ca47"
+    },
+    {
+      "path": "apps/customer/src/App.tsx",
+      "sha256": "6b725cc688d108b343f740310896d1e558be7ede6e7dc9e6e9ddecf21156e55b"
+    },
+    {
+      "path": "apps/customer/src/api/backend.ts",
+      "sha256": "a44a00e6acc9519532fb55ed45a65294f2c5342eb951b3d2bde10087726ba455"
+    },
+    {
+      "path": "apps/customer/src/api/client.ts",
+      "sha256": "55d129897015012193d6fdb055241ddbb7ccbe2bfdf48addabd7a9918ab24059"
+    },
+    {
+      "path": "apps/customer/src/api/types.ts",
+      "sha256": "92dab32d403e0aace613e20906efcc840aa4613c363ffef393543aef69d45283"
+    },
+    {
+      "path": "apps/customer/src/app/AppContext.tsx",
+      "sha256": "7fa5bc9f099246eda8796fb3143c680fd64f2f04f8001e2509a8a8b4eb07e78e"
+    },
+    {
+      "path": "apps/customer/src/app/context.ts",
+      "sha256": "f97ccf018268f852b6c38349ea09f37e3701f315856cf9f3cee5522eb3d7e6a8"
+    },
+    {
+      "path": "apps/customer/src/booking/access.test.ts",
+      "sha256": "300917b5191617e39b2f7b6dd1a2dfb34aace987934d8d9558b1507fb010c4b5"
+    },
+    {
+      "path": "apps/customer/src/booking/access.ts",
+      "sha256": "41b664e75441acf8742f6d07af3b022d233f629d10697ec7981f9cd1af611c2a"
+    },
+    {
+      "path": "apps/customer/src/booking/flow.test.ts",
+      "sha256": "dd3800db073fb82743be08f9fc47492bf05b7314c27abd29f9945f76925fd393"
+    },
+    {
+      "path": "apps/customer/src/booking/flow.ts",
+      "sha256": "b92856eb077e8be1e746c4c109be92e92665cb6b7ca05ba357fd24715ba11d04"
+    },
+    {
+      "path": "apps/customer/src/brand/bundled.test.ts",
+      "sha256": "6c0477953616d6f4981bb43b4ffad15fd65afec0065af8df97c649ce6340d2a2"
+    },
+    {
+      "path": "apps/customer/src/brand/bundled.ts",
+      "sha256": "be33a02d57b3255bddd1f9a5f81e4027c6c190bad281035cda26dcdca3c65670"
+    },
+    {
+      "path": "apps/customer/src/brand/theme.ts",
+      "sha256": "f5d8a78740bbce307c472c4af6ba221f58bfa2afb04b8700138b8cb1a42cac0e"
+    },
+    {
+      "path": "apps/customer/src/components/Icon.tsx",
+      "sha256": "5822c8e098d14a30b39256f9da0811f6490b8eeeada80de92742c0725883f011"
+    },
+    {
+      "path": "apps/customer/src/components/ui.tsx",
+      "sha256": "f4448bc54e7bc0731b5228559c56db64a750fae8b376f96b940c3a43fb4466bf"
+    },
+    {
+      "path": "apps/customer/src/lib/format.test.ts",
+      "sha256": "d904f6ca7f2c582a169bbc55a86712634d7d4d5317c40c9d347deee38e2a5cbc"
+    },
+    {
+      "path": "apps/customer/src/lib/format.ts",
+      "sha256": "934aa5576836e6124a76a943ca305224aee8282c2c5cd84ceb05931a831ea7bb"
+    },
+    {
+      "path": "apps/customer/src/lib/storage.test.ts",
+      "sha256": "f1da9bfbff47978309ce7f587241d10d5b18ab62fb5298ce7dc55f26d7a48581"
+    },
+    {
+      "path": "apps/customer/src/lib/storage.ts",
+      "sha256": "bbe3cd48a38c08b541b1e24275a6b39b91968eb0c24bcffb0fe88caf589eae78"
+    },
+    {
+      "path": "apps/customer/src/main.tsx",
+      "sha256": "bdf1334370948c9ecacb80de29f85d16dc6603ba27c6dbe4d0e8b063acf68ac2"
+    },
+    {
+      "path": "apps/customer/src/maps/navigation.test.ts",
+      "sha256": "e6e4ecd0ded2a17f04c6479f4dac16610ef1a817ea3026ff1c42af8a4c198eab"
+    },
+    {
+      "path": "apps/customer/src/maps/provider.test.ts",
+      "sha256": "f6136a3dc7f4eb6d8ecc5b4398bcd467912a7fb1f7f9a4d25a654b15ba05e6f2"
+    },
+    {
+      "path": "apps/customer/src/maps/provider.ts",
+      "sha256": "74f978b5504cb7c817085b30f8c05a4f56060d30f3d30e0351eb86ae00382a1f"
+    },
+    {
+      "path": "apps/customer/src/native/mobile.ts",
+      "sha256": "0159b24e0fb2a21d89b66e1bf7a625e61df672dc18a8b377f719062b3472eaa2"
+    },
+    {
+      "path": "apps/customer/src/realtime/bookingFeed.ts",
+      "sha256": "550471783843bdbc691e71a5005ae2f3b8547c34a6f542d5ca81b8bcd2e36584"
+    },
+    {
+      "path": "apps/customer/src/screens/AccountLinkScreens.tsx",
+      "sha256": "fabc700adbfb1b42fa97bd5f2c2f2edcf60918a497c2d236b606125a934c2c70"
+    },
+    {
+      "path": "apps/customer/src/screens/AccountScreens.tsx",
+      "sha256": "3673568b9d6703f3c443e499b2f3f85e54ef9bf03ddfc663c5d5791d290936b9"
+    },
+    {
+      "path": "apps/customer/src/screens/BookingFlowScreens.tsx",
+      "sha256": "7fbe1afde0844769ac2a5769336b5c950df2c5e2cb9cf4a635d7237d5c7ee52f"
+    },
+    {
+      "path": "apps/customer/src/screens/BookingScreens.tsx",
+      "sha256": "5ea66b36ba274b836fe9d249f91d8ff2309cc8e542a920e7ac3f25aa1af72ada"
+    },
+    {
+      "path": "apps/customer/src/screens/ChatScreens.tsx",
+      "sha256": "101d289d64b19bf19cfa11cd8e744bc72f4d2e1fc5c2c3ede32ceadd00a35cd1"
+    },
+    {
+      "path": "apps/customer/src/screens/HomeScreen.tsx",
+      "sha256": "2c00816bd3bb3419d7bdf6ff843b08d8412c29b9729adc350b7863a671f4c6a0"
+    },
+    {
+      "path": "apps/customer/src/screens/NotificationsScreen.tsx",
+      "sha256": "7c573c5dfc396915612b72a2f78ad6151b06431c26911d73925c4b9b077fc88f"
+    },
+    {
+      "path": "apps/customer/src/screens/PaymentCard.tsx",
+      "sha256": "08e6a0a17951a1f1518d909dac5037511001b51b8ee1401d004518ff5d831b1a"
+    },
+    {
+      "path": "apps/customer/src/screens/PlaceScreens.tsx",
+      "sha256": "f8498eb9b7fd6a04b83b049abb027db0a6ee768ac330de76f9fb7e476abc057a"
+    },
+    {
+      "path": "apps/customer/src/screens/PortalScreens.tsx",
+      "sha256": "8c1094cf6055f6918162eae8bf44f2f3beb5938ee49d2fbb3ec4de8d94a91d86"
+    },
+    {
+      "path": "apps/customer/src/styles.css",
+      "sha256": "92bceed884480d727b386566b4bd07daf0eaf3883bef91605981aac4eb517135"
+    },
+    {
+      "path": "apps/customer/tsconfig.app.json",
+      "sha256": "b3a9a3c593a104d5d28cc313456ec8cdb68112a45636a3850dfc42a989d7d4b0"
+    },
+    {
+      "path": "apps/customer/tsconfig.json",
+      "sha256": "ddfbd4be8ba0c63cb46e9ea6d68f68e929f270bc23f2f64ec9aa13dc5057c78c"
+    },
+    {
+      "path": "apps/customer/tsconfig.node.json",
+      "sha256": "a82e7e817f5a3e28732ef7f91cd3240b438f0af1c4bebb801ac062509f524780"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/androidTest/java/com/getcapacitor/myapp/ExampleInstrumentedTest.java",
+      "sha256": "f2e64983510b1f1489b71721027151f497e71008bf7dcc323c2f26156d64dd2b"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/AndroidManifest.xml",
+      "sha256": "42281de5091726047efc64e11162f84cdbaa0ddbd3495b99114507abb9a74223"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/java/com/onarly/callcenter/MainActivity.java",
+      "sha256": "5e7437cacb8783298ae52d51a1790c8aa4d2582d2e37dd2f9cd1ac0b1b0b786c"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/drawable-land-hdpi/splash.png",
+      "sha256": "5c8da142d88bbd2d054302a32677c26a8d12149ae6789d2448e15f364e5adb31"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/drawable-land-mdpi/splash.png",
+      "sha256": "b631a33f31aa96c272b27b947f18a6ad0e768aa0d1db0e6056f6778134a3a72f"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/drawable-land-xhdpi/splash.png",
+      "sha256": "ac7ec43a23d9f119b0a696b751bd9522f5c25527de929c89df5ca18c774b888a"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/drawable-land-xxhdpi/splash.png",
+      "sha256": "46bc77f46c9691c918004decd392dea93cec6de8188108a2a73c0dddf813fee0"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/drawable-land-xxxhdpi/splash.png",
+      "sha256": "bc20e1c863c5d377facd569bc5b64cfd7c2a170d7d2d8424a4ce98434fd7b10f"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/drawable-port-hdpi/splash.png",
+      "sha256": "faf79a9ae93e59fc935efbe5f787276ffd783344fb33e31ec7fcfc6273599851"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/drawable-port-mdpi/splash.png",
+      "sha256": "ac662d531ccf5f23a06915eed10d27c6dc693c2511cdfd18a7ac36c91f3db849"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/drawable-port-xhdpi/splash.png",
+      "sha256": "2bbf73199253691a363df1ef436f6d40d083b69f7b7476081ac4a05127aaa802"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/drawable-port-xxhdpi/splash.png",
+      "sha256": "1320302ed95c5243e728d6cd3854dc55f476486ea05f0ca3777046b24aacf099"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/drawable-port-xxxhdpi/splash.png",
+      "sha256": "39497951036b4f24d66fb1fd1ec53b57817a02f7e495e91cf5d87b0860e07bbb"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/drawable-v24/ic_launcher_foreground.xml",
+      "sha256": "fe3c9a470d9dfc34dfefa1cbbaf67f16174cdd3d242a1d4f6bd09483ea38c29b"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/drawable/ic_launcher_background.xml",
+      "sha256": "61acabdec7880108a9850fdc6cea1a6fc974114bae875bdcadc70078bf4e615f"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/drawable/splash.png",
+      "sha256": "b631a33f31aa96c272b27b947f18a6ad0e768aa0d1db0e6056f6778134a3a72f"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/layout/activity_main.xml",
+      "sha256": "61e5b7029215a836abe562b61d037bd5e59e68e28cbaab42b9f503ba5bf3ca57"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml",
+      "sha256": "6be9be8d39cb250f663814bc3ac3ba570d9629be22fbebcc95d0c058e2249717"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml",
+      "sha256": "6be9be8d39cb250f663814bc3ac3ba570d9629be22fbebcc95d0c058e2249717"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/mipmap-hdpi/ic_launcher.png",
+      "sha256": "3a025fcdc5f8cb243423e4b3d5c69fde3423151cf8f6e327076518303ecc01fb"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png",
+      "sha256": "bf6051495e4fcff22c154fef0acf251690c2f3841d314f89d784e1925b9ae0dd"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png",
+      "sha256": "29ea41686f5adee2f96381cf23e8df6ababd8cd1e113331b553c381e5085c8a6"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/mipmap-mdpi/ic_launcher.png",
+      "sha256": "c3c045cf5f484e8a0186911a076dc12db49e9a90acdf30f2cc4b9dbc444e9636"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/mipmap-mdpi/ic_launcher_foreground.png",
+      "sha256": "83617bd6183a42a78d9346d99b2b66da039514c568fa82fb93195d8bb011ce6f"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png",
+      "sha256": "5b060f04e1e3f9bbecf73c20b70d0cce828583f255210b2af342842cd15e3930"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/mipmap-xhdpi/ic_launcher.png",
+      "sha256": "79b35ca0feb5d38f96ae0c26824ed70cfe0c90fb52bc2365c5077974d37a2742"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png",
+      "sha256": "051aff779bedfe8c957425f9c01f447107be5811d4c6ea3ba4049e238fee5b7a"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png",
+      "sha256": "1e62b2461a24824b265bb546ed8a25af4fccd5af15ec5116088638f80270a158"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png",
+      "sha256": "aa7a78437a1928e75c1b55e99602f7a7538db2787d85436841f6819625244391"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png",
+      "sha256": "5286670557a8c9c90c41e7364a6e8654c4b07c898ee75f933a6a132475e5247f"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png",
+      "sha256": "ba28d8df599444c2d586cb18922d0a42f14f848f79e21baf4cc571805d34da92"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
+      "sha256": "d8d83c86767150944355c815910fe868415549436fb6d024bc26fc5bca11355e"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png",
+      "sha256": "952be2ad5e638fa8a100838972923f9d06ce7bd388d79835867a21569dcbd866"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png",
+      "sha256": "f81b1cf380114d00223730580436764b0e306db396b7fa9f226852d32beee1e3"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/values/ic_launcher_background.xml",
+      "sha256": "50298644b2c485e407836082d36cf2415cf5718a06519b8c6959f3e60a1524af"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/values/strings.xml",
+      "sha256": "0f3821c5dd932a0a15504baccf8eb203965865b419708b5fd11f2859d1b0a3f6"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/values/styles.xml",
+      "sha256": "8207f1e42dd22d6d2fddb0bdad3ee9e7db9535a0368aae0b4daadead05112655"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/xml/data_extraction_rules.xml",
+      "sha256": "bd5fe0cc521ab90f9467d495404af9bbdd140ace761799d92b6339d4b0198bdd"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/xml/file_paths.xml",
+      "sha256": "a290266da65e30675e410cd8e1c17cde04de40170c9c3b900504e7a24ca79626"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/main/res/xml/network_security_config.xml",
+      "sha256": "376fe1ed8d845690c7053cb1c1a4b9542dba5ce7d40c14d63945e8c5cf47692a"
+    },
+    {
+      "path": "apps/dispatch/android/app/src/test/java/com/getcapacitor/myapp/ExampleUnitTest.java",
+      "sha256": "486e7e67ed195d642340a4849575d406c4414e77e21e8bfbe5ef40b796a14557"
+    },
+    {
+      "path": "apps/dispatch/package.json",
+      "sha256": "a9f7c205ad55cb852397fb1c2c26a9392276e6bd23342802e2d5425746fd1edb"
+    },
+    {
+      "path": "apps/dispatch/public/apple-touch-icon.png",
+      "sha256": "09d83f8525f3add06ad8be07c5a47fac037b4f40fae6b0d4657bbd9c9e8aae5c"
+    },
+    {
+      "path": "apps/dispatch/public/favicon.png",
+      "sha256": "d8d83c86767150944355c815910fe868415549436fb6d024bc26fc5bca11355e"
+    },
+    {
+      "path": "apps/dispatch/src/Alerts.tsx",
+      "sha256": "2b780eb83c4bbf6d2b63cd941eb83408fa81a0ec77ee74cb145feebcb07d2474"
+    },
+    {
+      "path": "apps/dispatch/src/App.tsx",
+      "sha256": "661c1bd57e0d49fa9f2b4ede794aede4f8a2ee14be560b41f5dc5731bc80db21"
+    },
+    {
+      "path": "apps/dispatch/src/Calendar.tsx",
+      "sha256": "2843168419f589ac6a810040fcf8d44d3260651622645040eaac0de080c585b9"
+    },
+    {
+      "path": "apps/dispatch/src/Customers.tsx",
+      "sha256": "d6419b3e0b14853878c0b6e3805a39f6ce86dc4e2f44d892b9654c65fe046568"
+    },
+    {
+      "path": "apps/dispatch/src/EditBooking.tsx",
+      "sha256": "d6dab7f8785103b96d4750b92d538032708434b26af3e7443a098375e59e96a9"
+    },
+    {
+      "path": "apps/dispatch/src/EmailInbox.tsx",
+      "sha256": "39dbf861093c267ad3e3c8b3f89f9bd229c471258dc3534ae85eeedde2e7f426"
+    },
+    {
+      "path": "apps/dispatch/src/FleetMap.tsx",
+      "sha256": "548e3d1a26d3985dda3f23b4be90f45da16722b52eb103dc2263d7dc69cd089f"
+    },
+    {
+      "path": "apps/dispatch/src/Insight.tsx",
+      "sha256": "af7c43ab8f6047c8f80b162a7531b21c27d2b66647f0506e9b9dfb975c1870f4"
+    },
+    {
+      "path": "apps/dispatch/src/Library.tsx",
+      "sha256": "3f74e9377382cfd29ff22002c29bdbb817127333e9086ff5948ab1d2bd7a9f37"
+    },
+    {
+      "path": "apps/dispatch/src/Manage.tsx",
+      "sha256": "25eec1ad5aff6149acebf849f41da186dcf2ca7a8eff98dd225b6c5e81c39c99"
+    },
+    {
+      "path": "apps/dispatch/src/Messages.tsx",
+      "sha256": "60e4171734e69f05cfdb7967754dfb4f331e84b179ecbde4a6ecd6ba888609ce"
+    },
+    {
+      "path": "apps/dispatch/src/Payments.tsx",
+      "sha256": "c3770e8bf467f14606b4f5db20d3ea4b44ba864dc792263280c50490215f1e0f"
+    },
+    {
+      "path": "apps/dispatch/src/Phone.tsx",
+      "sha256": "ac0d93f10d3af528862ddc4594fc315250ae4f71c41bc12e35932e0d3cbda3be"
+    },
+    {
+      "path": "apps/dispatch/src/Reports.tsx",
+      "sha256": "e2ab2625392dca776e4df540becdcf2ce3977ba4015cf98679ca00d17a1fcdde"
+    },
+    {
+      "path": "apps/dispatch/src/SoloDashboard.tsx",
+      "sha256": "67fea0d47ea81462ae02d56cc7fa6de07464f40428c144e7f1b301ada3a5b97d"
+    },
+    {
+      "path": "apps/dispatch/src/Suggestions.tsx",
+      "sha256": "040ce7790caf50ff34ec8b2b542b51f6c895aec984482c14d9c8e6bac8f9e787"
+    },
+    {
+      "path": "apps/dispatch/src/Tariffs.tsx",
+      "sha256": "7d46e80b8f64a20bb02684604aeb4dff7f41ff69c9c4da95e69225b5611030ba"
+    },
+    {
+      "path": "apps/dispatch/src/TripForm.tsx",
+      "sha256": "5908cbad29f52eb7dfece04785c5a4e5df9eafc0a19b2897c938d2f385f2adff"
+    },
+    {
+      "path": "apps/dispatch/src/api.ts",
+      "sha256": "23fb9d5fb1137f52b25f67524294e312a8f08fec3639097159f53cc6c492cf69"
+    },
+    {
+      "path": "apps/dispatch/src/assets/qabgo-call-center.webp",
+      "sha256": "2c78c9fdf6df8057d0f744fc482e6f90c8241ff7a1e0fd17893a8ceffaf8114a"
+    },
+    {
+      "path": "apps/dispatch/src/backend.ts",
+      "sha256": "e23cd2585e1f16ff2248b597a071e52d01cfef13a8ced3a74516c48fa4265138"
+    },
+    {
+      "path": "apps/dispatch/src/calendar-api.ts",
+      "sha256": "c5fc9910312d5f7f0451691c21fef2a306c1376c9b78a4c7929f8fc39ec5aef7"
+    },
+    {
+      "path": "apps/dispatch/src/calendar-pages.ts",
+      "sha256": "4fb79ec8d5bf63f025af225877f77f6d259fb0e4e7ff0f80fc231f5dc88ad90b"
+    },
+    {
+      "path": "apps/dispatch/src/callcenter-api.ts",
+      "sha256": "979c6aebd44a19d35434bc68d920f620a5720bbad38d776c3d785894e27a1d95"
+    },
+    {
+      "path": "apps/dispatch/src/email-api.ts",
+      "sha256": "f6dffaf284fe470f1454741a4ab7a34f41f0adfa27708204450b6a044eb67ce8"
+    },
+    {
+      "path": "apps/dispatch/src/email-inbox.css",
+      "sha256": "ed9184faeea334f9d4993ec482871569a5ab7a6ed7dc1d987870ac8c79d2ad72"
+    },
+    {
+      "path": "apps/dispatch/src/fleet-state.ts",
+      "sha256": "4a389a2337f92aeee666ee1f0fd33576f1d78291258a655bdcc2b252501b6c2b"
+    },
+    {
+      "path": "apps/dispatch/src/insight-text.ts",
+      "sha256": "b78c5f423c4c5ca4889b184b10b9a909602eae831cd3993a00765f4b28d900f2"
+    },
+    {
+      "path": "apps/dispatch/src/live.ts",
+      "sha256": "8c15ea550feef6817f26eb0a3baa8a6f1001ecec6ff48d423d08bab6218eed12"
+    },
+    {
+      "path": "apps/dispatch/src/main.tsx",
+      "sha256": "a773c854d56a46193c154a69d7d82ffe936d900681ac0dbb9b6914e492dcab3f"
+    },
+    {
+      "path": "apps/dispatch/src/native.ts",
+      "sha256": "d25e888395e2b2470e6cba88f2ed27adc657e1801b6ecbb554689779aef653d8"
+    },
+    {
+      "path": "apps/dispatch/src/solo.css",
+      "sha256": "6a9a0f952ba1664c6926f94ea8ed19d027efc77e365ae6782d3c0710c21eedee"
+    },
+    {
+      "path": "apps/dispatch/src/styles.css",
+      "sha256": "ffb14c7a834de298f4180a1ae0be408dbf3239ce373c7890f591bf1eed02c49a"
+    },
+    {
+      "path": "apps/dispatch/src/tariffs-api.ts",
+      "sha256": "cb29e709dcf28e339ac05d721200db8e37f582ba5bf17a8b3a531c457c24906a"
+    },
+    {
+      "path": "apps/dispatch/src/tariffs.css",
+      "sha256": "0280c9c75c6dc98e1f33cce01c4b291f3c1afe2f50c48ff33ef769f314675702"
+    },
+    {
+      "path": "apps/dispatch/tsconfig.app.json",
+      "sha256": "b3a9a3c593a104d5d28cc313456ec8cdb68112a45636a3850dfc42a989d7d4b0"
+    },
+    {
+      "path": "apps/dispatch/tsconfig.json",
+      "sha256": "ddfbd4be8ba0c63cb46e9ea6d68f68e929f270bc23f2f64ec9aa13dc5057c78c"
+    },
+    {
+      "path": "apps/dispatch/tsconfig.node.json",
+      "sha256": "a82e7e817f5a3e28732ef7f91cd3240b438f0af1c4bebb801ac062509f524780"
+    },
+    {
+      "path": "apps/driver/android/app/src/androidTest/java/com/getcapacitor/myapp/ExampleInstrumentedTest.java",
+      "sha256": "f2e64983510b1f1489b71721027151f497e71008bf7dcc323c2f26156d64dd2b"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/AndroidManifest.xml",
+      "sha256": "42281de5091726047efc64e11162f84cdbaa0ddbd3495b99114507abb9a74223"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/java/com/onarly/driver/MainActivity.java",
+      "sha256": "8c4b5b5c0733e440692fe2cef117e39c768f463efc27bb329f8cb2fc96ac6861"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/drawable-land-hdpi/splash.png",
+      "sha256": "d322dc041317f57bbe181c251b6b63dd5d1d00bab90fb5c4e68956d37ca2888d"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/drawable-land-mdpi/splash.png",
+      "sha256": "41f3d6ad96b6e70ac024f706931a2aa1ac2dfc4cc4ea00a5b5230289f36097ab"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/drawable-land-xhdpi/splash.png",
+      "sha256": "d50c7c633c802b9b2bb09aebe906a03bb2ca6a7e95d565918a1ad10af7b33364"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/drawable-land-xxhdpi/splash.png",
+      "sha256": "38d92574c94b8501612c791f370b8deb253c3a83bbfcce1fd3b0165604190d49"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/drawable-land-xxxhdpi/splash.png",
+      "sha256": "655560d1bbb2cb7ed76cee91467aa904fb0b6622add04f837db22d63289e23bd"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/drawable-port-hdpi/splash.png",
+      "sha256": "79cac89c068e4ca7e563469ea8b74f7c181de3741808acebb2a9acbaa537dbbd"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/drawable-port-mdpi/splash.png",
+      "sha256": "66292eac819d469970dede48d27440a06b0bfafc0bcc712392268c18c76f9b19"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/drawable-port-xhdpi/splash.png",
+      "sha256": "c2af9ac400e645a9306ff8c36157b6d1b86bf2c14b1540c14d28cfead301686c"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/drawable-port-xxhdpi/splash.png",
+      "sha256": "ad326ec7e4bdb3113832c3dd9fa3d67abdbbed18beb4324ed8caf5761ef5c223"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/drawable-port-xxxhdpi/splash.png",
+      "sha256": "03bb11d4f53f33b20603f335e08a6c98f4eac2b6c7a99d3381f853c4a715ec39"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/drawable-v24/ic_launcher_foreground.xml",
+      "sha256": "fe3c9a470d9dfc34dfefa1cbbaf67f16174cdd3d242a1d4f6bd09483ea38c29b"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/drawable/ic_launcher_background.xml",
+      "sha256": "61acabdec7880108a9850fdc6cea1a6fc974114bae875bdcadc70078bf4e615f"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/drawable/splash.png",
+      "sha256": "41f3d6ad96b6e70ac024f706931a2aa1ac2dfc4cc4ea00a5b5230289f36097ab"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/layout/activity_main.xml",
+      "sha256": "61e5b7029215a836abe562b61d037bd5e59e68e28cbaab42b9f503ba5bf3ca57"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml",
+      "sha256": "6be9be8d39cb250f663814bc3ac3ba570d9629be22fbebcc95d0c058e2249717"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml",
+      "sha256": "6be9be8d39cb250f663814bc3ac3ba570d9629be22fbebcc95d0c058e2249717"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/mipmap-hdpi/ic_launcher.png",
+      "sha256": "75d74953a65008b92a8734dd41e2c7f025a8a7190ffa1e9eafda29ee65d5edd6"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png",
+      "sha256": "0146ad44e66a86fe129bd9851dbbd4496e0dc3015f4c9f1e5c51a75aeb0d3d1b"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png",
+      "sha256": "c318d7509aa0e54debdac5e224e6efd0d6c1f0ea3242f3d9c17a82a5fea50a2b"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/mipmap-mdpi/ic_launcher.png",
+      "sha256": "5babde155e1c7dd98ce99f4fc918653ff7a169fd4940274f339500d39367c8a4"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/mipmap-mdpi/ic_launcher_foreground.png",
+      "sha256": "22d28f158aa443f530daf85d3d3c3746e6f9a02057ecfd4efe2888ea1f3ddc2f"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png",
+      "sha256": "895b58d796f1f9781a9863c2902294fcf2ce5ce1ad2f2d13b554848949784dcb"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/mipmap-xhdpi/ic_launcher.png",
+      "sha256": "d99475261ca7649283fea4d9e414c1de9b417370900cfd2d37f067380629ae23"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png",
+      "sha256": "961285da18382783cfd3751f105a52a41d2571c7b8b511fd64440bc6a1619407"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png",
+      "sha256": "b8a9a72050ee3f6d248bf86d9b1c5b39923fd7f9931563b48f3ede671eea9bdd"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png",
+      "sha256": "b6315b7efada84fc4a8b65a1812953e996104a6f38ba097c5cfe4a08a3181db7"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png",
+      "sha256": "a6cf427c880166359556883491f88dc89651fa6b1d439f37cf06ecbfe4ffd448"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png",
+      "sha256": "584a1c695804a576b3fd5c368428ac1702452c4abdde7680325cf1f3a9491e43"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
+      "sha256": "0b9c91d3fecbb4fb5d778667ad247ad7216bcdec633a442c3f73a874b94f1d73"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png",
+      "sha256": "1bb6da160638c05340a2b014e2efd543c4cd51cfe5dd2e507d00f9290af269af"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png",
+      "sha256": "43a3b3905333d50a0b9c5b10e78cd535cb87450888613a1f0f5736c34b35e1f0"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/values/ic_launcher_background.xml",
+      "sha256": "50298644b2c485e407836082d36cf2415cf5718a06519b8c6959f3e60a1524af"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/values/strings.xml",
+      "sha256": "753b790d8c6095aab632360d63a6a1e45d05df05fed0c0bfcf2873b477cd7d8d"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/values/styles.xml",
+      "sha256": "8207f1e42dd22d6d2fddb0bdad3ee9e7db9535a0368aae0b4daadead05112655"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/xml/data_extraction_rules.xml",
+      "sha256": "bd5fe0cc521ab90f9467d495404af9bbdd140ace761799d92b6339d4b0198bdd"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/xml/file_paths.xml",
+      "sha256": "a290266da65e30675e410cd8e1c17cde04de40170c9c3b900504e7a24ca79626"
+    },
+    {
+      "path": "apps/driver/android/app/src/main/res/xml/network_security_config.xml",
+      "sha256": "376fe1ed8d845690c7053cb1c1a4b9542dba5ce7d40c14d63945e8c5cf47692a"
+    },
+    {
+      "path": "apps/driver/android/app/src/test/java/com/getcapacitor/myapp/ExampleUnitTest.java",
+      "sha256": "486e7e67ed195d642340a4849575d406c4414e77e21e8bfbe5ef40b796a14557"
+    },
+    {
+      "path": "apps/driver/package.json",
+      "sha256": "7dc4d90471e1a0723ff402e608b2db76cafae31305ce9fd912b5bcefb6bef33e"
+    },
+    {
+      "path": "apps/driver/public/apple-touch-icon.png",
+      "sha256": "2ffa7437fc363c2d3164029945644f3b752a5242bad8ab183fcf17c41286ee68"
+    },
+    {
+      "path": "apps/driver/public/favicon.png",
+      "sha256": "0b9c91d3fecbb4fb5d778667ad247ad7216bcdec633a442c3f73a874b94f1d73"
+    },
+    {
+      "path": "apps/driver/src/App.tsx",
+      "sha256": "767a6c857701c6ef7d283888fa53d1aacec94392bc815916e0b397794d4dbae8"
+    },
+    {
+      "path": "apps/driver/src/Bookings.tsx",
+      "sha256": "07b061346f0dc9c762343f7780ef8b1a3c0704da9ba1af40cc05e349d01c06d2"
+    },
+    {
+      "path": "apps/driver/src/Calculator.tsx",
+      "sha256": "66c133f79bddde471dae84ec517379b2a7c4dc98f4af14bf622160c998f038d7"
+    },
+    {
+      "path": "apps/driver/src/DriverBottomNav.tsx",
+      "sha256": "4d2cef3e65f2215bf268afc5d7008ceef55fae03bb5c5cc48b1761d1b25b1c3b"
+    },
+    {
+      "path": "apps/driver/src/Earnings.tsx",
+      "sha256": "4833249d6284af348159a35c2876f34ea86c77118907ad02c6959013a24b67a4"
+    },
+    {
+      "path": "apps/driver/src/Messages.tsx",
+      "sha256": "55e62ac6cc6c8004857911963b34a94690fb14106872d1c91f064234d8e6a93c"
+    },
+    {
+      "path": "apps/driver/src/Payment.tsx",
+      "sha256": "8c1c1c8c6c40952b4bf3b7c5c067b069816d72754f591f2e16901e5a105566d4"
+    },
+    {
+      "path": "apps/driver/src/QrCode.tsx",
+      "sha256": "cfb7bcb2b33e0e703cc05b6cf1933565e42e0785822e065e2b0abbfb05053dec"
+    },
+    {
+      "path": "apps/driver/src/Sheet.tsx",
+      "sha256": "b679665a70193d60fc472fd7d23b3de75803fd0290f4b88feb9a44c643f49c08"
+    },
+    {
+      "path": "apps/driver/src/Shift.tsx",
+      "sha256": "c3d4c0596164254ca04c2cce1dd9f4373741beb99b260efc93cb63e686aa72c8"
+    },
+    {
+      "path": "apps/driver/src/SosSheet.tsx",
+      "sha256": "a718ce2ea9ef356165829e34706ea5b8c15e58a09b644e7716e4271eeb3eb0f0"
+    },
+    {
+      "path": "apps/driver/src/Tariffs.tsx",
+      "sha256": "e3a9448d84182272d9e16d5e3bc581be05e663b66a81a6a4da6337d63899df55"
+    },
+    {
+      "path": "apps/driver/src/api.ts",
+      "sha256": "e5b9d9ba449b8bf56163c75a72ebf360f8e1f1fb1c56db402e25d2d30be65583"
+    },
+    {
+      "path": "apps/driver/src/assets/qabgo-driver.webp",
+      "sha256": "0ffaa6a9a85bc974d7ee23081f464f200502824e72ce93b3cf4e5f6039f66f7b"
+    },
+    {
+      "path": "apps/driver/src/backend.ts",
+      "sha256": "bd51b410ab1040ca7738cf87802dfc782d7f57032e127103cd71ed665cfd9e0e"
+    },
+    {
+      "path": "apps/driver/src/calendar-days.ts",
+      "sha256": "91ae8b22b059c67e4f64f00eec1704ef0476d147ace90eeb7097261bb9f5af3f"
+    },
+    {
+      "path": "apps/driver/src/driver-v2.css",
+      "sha256": "0991097dc92d512b972fcf06cfab7935d6e8003b114fef9eb01a43a7d61dbaba"
+    },
+    {
+      "path": "apps/driver/src/gps.ts",
+      "sha256": "5db5df9bd2690bff68a25044d6ab63fe9fd3c051167729ff4b5f24f8e8e29c63"
+    },
+    {
+      "path": "apps/driver/src/main.tsx",
+      "sha256": "e89051bd46e89de252610f61432c7e3ae720282b1c70544dd24b756f25a616c7"
+    },
+    {
+      "path": "apps/driver/src/native.ts",
+      "sha256": "47ba6845ba5e381d92c50be29e1f59947c4e65e857dacf8f46cd730d49236d1f"
+    },
+    {
+      "path": "apps/driver/src/sheet-model.ts",
+      "sha256": "2399b49b92da1ecefaf3c9926207e745ccfd41075f8a75c10389155f742579ec"
+    },
+    {
+      "path": "apps/driver/src/sos-rules.ts",
+      "sha256": "87037f0261e6fe07c241f6f77b5ea7046063cad814fbccf68520b254ec8a7ee3"
+    },
+    {
+      "path": "apps/driver/src/styles.css",
+      "sha256": "2567e545b3e2efe737022d9b8f8e80aedb561dd3644204dad57738a4ece4349d"
+    },
+    {
+      "path": "apps/driver/src/tariffs.css",
+      "sha256": "37f24d77933dac21837d7093a80e147a42b50ef2f692098dd984f4e64c2eb552"
+    },
+    {
+      "path": "apps/driver/tsconfig.app.json",
+      "sha256": "f7e2bf663e4b2fa602123bae6bde72fd4e5917e4f0a6909a744484b1f370f64a"
+    },
+    {
+      "path": "apps/driver/tsconfig.json",
+      "sha256": "ddfbd4be8ba0c63cb46e9ea6d68f68e929f270bc23f2f64ec9aa13dc5057c78c"
+    },
+    {
+      "path": "apps/driver/tsconfig.node.json",
+      "sha256": "a82e7e817f5a3e28732ef7f91cd3240b438f0af1c4bebb801ac062509f524780"
+    },
+    {
+      "path": "packages/maps/src/google.ts",
+      "sha256": "88877c6fb0c5462bd5be68cf836299d66019150c77b86f6daed3772743a90656"
+    },
+    {
+      "path": "packages/mobile-shell/src/communications.ts",
+      "sha256": "8fe3c33a8bb341c2e6f1f2aed1c43eea1cd06ff95403dc1210b18acc4e2642b0"
+    },
+    {
+      "path": "packages/mobile-shell/src/deadline.ts",
+      "sha256": "ec5e8a35cc26b6a2eb9dc215b938cb5496412b2d183fb9cf7fa7a09f53d8678c"
+    },
+    {
+      "path": "packages/mobile-shell/src/index.ts",
+      "sha256": "018d8b59d11f011b103a13e3b55bf2f6ad16612dd6b88a913232b2364daa84d1"
+    },
+    {
+      "path": "packages/mobile-shell/src/poll.ts",
+      "sha256": "dd985c81796961105685780bb9ad112f637555231b5403a21ecb512bf81ca8eb"
+    }
+  ],
+  "localReviewOverlay": {
+    "approval": "LOCAL_REVIEW_ONLY",
+    "baseCommit": "01d27b5ccd9e669d8dfb8e3fe9f785332a35d397",
+    "paths": [
+      "apps/admin/src/PlatformTenants.tsx",
+      "apps/admin/src/PlatformFactoryEntry.tsx"
+    ],
+    "liveApproved": false
+  }
+}

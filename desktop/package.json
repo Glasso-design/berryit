@@ -1,6 +1,6 @@
 {
   "name": "berryit-control-center",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "description": "BERRYiT Control Center – Windows-desktop för IT-support och administration.",
   "type": "module",
@@ -13,8 +13,10 @@
     "test": "vitest run",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build",
-    "package": "node scripts/package.mjs"
+    "tauri:build": "node scripts/package.mjs --owner",
+    "package": "node scripts/package.mjs",
+    "package:owner": "node scripts/package.mjs --owner",
+    "package:generic": "node scripts/package.mjs --generic"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.3",

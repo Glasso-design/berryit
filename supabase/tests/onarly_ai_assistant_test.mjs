@@ -34,8 +34,9 @@ const bad = (name, error = "") => {
 
 const db = await PGlite.create({ extensions: { pgcrypto } });
 await db.exec(read(path.join(testsDir, "local_bootstrap.sql")));
-for (const migration of migrations) {
+for (const [index,migration] of migrations.entries()) {
   await db.exec(read(path.join(migrationsDir, migration)));
+  if(index===0)await db.exec(read(path.join(testsDir,'local_storage_bootstrap.sql')));
 }
 
 await db.exec(`

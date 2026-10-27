@@ -18,6 +18,7 @@ export const accessActionSchema=z.discriminatedUnion('action',[
  z.object({action:z.literal('unlink'),id:uuid,reason}),
  z.object({action:z.literal('userActive'),user:uuid,active:z.boolean(),reason}),
  z.object({action:z.literal('review'),project:uuid,body:z.string().trim().min(1).max(20000),reason}),
+ z.object({action:z.literal('registerProjects'),org:uuid,names:z.array(z.string().trim().min(2).max(120)).min(1).max(30),reason}).strict(),
 ]);
 export type AccessAction=z.infer<typeof accessActionSchema>;
 export type ProjectRecord={id:string;organization_id:string;name:string;description:string;status:string;environment:string;website_url:string|null;repository_url:string|null;contact_id:string|null;archived_at:string|null;source:string;revision:number};
@@ -36,7 +37,7 @@ export type AccessCatalog={
  statusChecks:{service_id:string;status_key:'ok'|'degraded'|'down'|'unknown';checked_at:string;source:string}[];
  audit:{id:number;actor_id:string|null;action:string;target_id:string;reason:string|null;created_at:string}[];
 };
-export type RepositoryRequest={project:string;kind:'branches'|'commits'|'pulls'|'files';path?:string;ref?:string;page?:number};
+export type RepositoryRequest={project:string;integration?:string;kind:'branches'|'commits'|'pulls'|'files'|'issues'|'releases'|'runs'|'deployments';path?:string;ref?:string;page?:number};
 export type RepositoryResult={repository:string;kind:RepositoryRequest['kind'];entries:Record<string,unknown>[];page:number;mayHaveMore:boolean;readOnly:true};
 export type AccessClient={request:<T>(input:AccessAction)=>Promise<T>;repository?:(input:RepositoryRequest)=>Promise<RepositoryResult>};
 
@@ -87,6 +88,7 @@ export async function executeAccessAction(actor:SupabaseClient,input:unknown):Pr
  case 'unlink':return rpc('unlink_project_identity',{p_id:p.id,p_reason:p.reason});
  case 'userActive':return rpc('set_support_user_active',{p_user:p.user,p_active:p.active,p_reason:p.reason});
  case 'review':return rpc('save_repository_review',{p_project:p.project,p_body:p.body,p_reason:p.reason});
+ case 'registerProjects':return rpc('register_project_names',{p_org:p.org,p_names:p.names,p_reason:p.reason});
  }
 }
 export function createAccessClient(actor:SupabaseClient,repository?:AccessClient['repository']):AccessClient{return {request:async<T>(input:AccessAction)=>executeAccessAction(actor,input) as Promise<T>,repository};}

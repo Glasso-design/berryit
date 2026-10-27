@@ -15,6 +15,7 @@ const eslintConfig = defineConfig([
     // Desktopappen har en egen verktygskedja (Vite, Tauri, Rust) och granskas
     // med sina egna kommandon. Byggutdata ska aldrig lintas.
     "desktop/**",
+    "test-results/**",
   ]),
 ]);
 

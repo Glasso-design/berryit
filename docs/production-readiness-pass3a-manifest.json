@@ -1,0 +1,416 @@
+{
+  "status": "BLOCKED",
+  "readyForProduction": false,
+  "executionApproved": false,
+  "sourceCommit": "dabecfe34e71a1ffc7e98fd1be6968a23fd91df2",
+  "observedAt": "2026-10-17T21:52:43.496670+00:00",
+  "productionHost": "prod-node-01",
+  "composeProject": "berryit-support",
+  "expectedLedger": [
+    "20261013080000_platform_bootstrap.sql",
+    "20261013090000_support_desk_core.sql",
+    "20261013090100_support_desk_rls.sql",
+    "20261013090200_support_desk_storage.sql",
+    "20261013090300_support_authority.sql",
+    "20261013091000_support_authority_hardening.sql"
+  ],
+  "serverBaselineFiles": [
+    {
+      "name": "20261013080000_platform_bootstrap.sql",
+      "sha256": "5f2c17a8ba9bb9c330024cb5e8a82cb4e305832c6c97dfec1e89e724e01d737e"
+    },
+    {
+      "name": "20261013090000_support_desk_core.sql",
+      "sha256": "86b79d0399074ff7819588c6ad8a382b930f1afdad5a1d4d6a93ab82dc5d6cbd"
+    },
+    {
+      "name": "20261013090100_support_desk_rls.sql",
+      "sha256": "c2562efd40c8ce444513b96a5a6c49bf2d465d279c5a8e4e0e262e0a98717a6e"
+    },
+    {
+      "name": "20261013090200_support_desk_storage.sql",
+      "sha256": "90949b07235b3aa2780e43b55c891d4111e1845fa045d229f1483697b1f42be9"
+    },
+    {
+      "name": "20261013090300_support_authority.sql",
+      "sha256": "425637a96bd3ebc1bffbcd031dec53ec3582273c9eba6b587717aee9759e9cf3"
+    },
+    {
+      "name": "20261013091000_support_authority_hardening.sql",
+      "sha256": "ec8041ed727ba0dc73e354dd34e0fe998ca8a70cbcd60d4d40b5ddca01df0e5a"
+    }
+  ],
+  "expectedServerConfigSha256": {
+    "compose.yaml": "06617eaa6745924c63dd57b74e6340d8d4983d7aa9043c565d4e2118f6975e6c",
+    "gateway/Caddyfile": "83cee0b698b1ca01fde9ad50e44292a4d9fa3772e60889addf52c8b11c7f4ddd",
+    "backup.sh": "383e0c79c297248d3a6dc8d5d446f659f7ac78fc08cc63518c47c3212bf0ea90",
+    "restore-test.sh": "40215371496f8365d286f1ea0659ce5e1556ded8424ef602df0663fe87eee9ca",
+    "migrate.sh": "e3be182d82d4d57c3774bc35bf2f591ce803d85ac6dd263f2833e2858e5d98b1",
+    "security-gate.sh": "968563bc77e89744b336c4989048b6d8b10065ed74a877bb941568732f45ab18"
+  },
+  "migrationOrder": [
+    {
+      "order": 1,
+      "name": "20261013110000_support_mfa_enforcement.sql",
+      "state": "pending",
+      "predecessor": "20261013091000_support_authority_hardening.sql",
+      "sha256": "5f28773e21b9daa1872d63e7f14e9d9d40512b2d08f43d273e0837c2880d75c8"
+    },
+    {
+      "order": 2,
+      "name": "20261013120000_onarly_ai_assistant.sql",
+      "state": "pending",
+      "predecessor": "20261013110000_support_mfa_enforcement.sql",
+      "sha256": "c0debfb1733a48f7506be319b8ca79b86e3d7d68dbf22be084d2b7dd85cb9242"
+    },
+    {
+      "order": 3,
+      "name": "20261013130000_connector_engine.sql",
+      "state": "pending",
+      "predecessor": "20261013120000_onarly_ai_assistant.sql",
+      "sha256": "4a8a3de2c65fe5ccedc919fed6ed42d3885d02493772c353b28dd894a6701b90"
+    },
+    {
+      "order": 4,
+      "name": "20261013140000_infrastructure_monitoring.sql",
+      "state": "pending",
+      "predecessor": "20261013130000_connector_engine.sql",
+      "sha256": "356260b2088ee5089c2118f1c525fc9216a78c0e02434b4be38a8cfc60983620"
+    },
+    {
+      "order": 5,
+      "name": "20261013150000_communications.sql",
+      "state": "pending",
+      "predecessor": "20261013140000_infrastructure_monitoring.sql",
+      "sha256": "37ef2ef982729fa8406169e0549d67a6172f70495a98649372154842f43649ea"
+    },
+    {
+      "order": 6,
+      "name": "20261014110000_onarly_desk_integration.sql",
+      "state": "pending",
+      "predecessor": "20261013150000_communications.sql",
+      "sha256": "2374a67de4615bd61223fe9ca79990128a665b11dc03c684cc5ca0fe0973abe0"
+    },
+    {
+      "order": 7,
+      "name": "20261014190857_security_ci_repair.sql",
+      "state": "pending",
+      "predecessor": "20261014110000_onarly_desk_integration.sql",
+      "sha256": "27f0a674e8365f13120fd4f368c45dc6e9eaabbc72c8369bffa91066db91379e"
+    },
+    {
+      "order": 8,
+      "name": "20261014235633_complete_support_workflow.sql",
+      "state": "pending",
+      "predecessor": "20261014190857_security_ci_repair.sql",
+      "sha256": "60b1ddc6d6d0f53c1746d74dd8c054f3f5e67439f38077f966cc876eee335bb1"
+    },
+    {
+      "order": 9,
+      "name": "20261016090000_project_access.sql",
+      "state": "pending",
+      "predecessor": "20261014235633_complete_support_workflow.sql",
+      "sha256": "0677a549a50503898c26ea5d7edc17276a6dbf22435cc392d5dfdb74d7601940"
+    },
+    {
+      "order": 10,
+      "name": "20261016150000_ai_diagnostics.sql",
+      "state": "pending",
+      "predecessor": "20261016090000_project_access.sql",
+      "sha256": "4c398813ab0520c1577261f69e1c5ee89a0d9ab41df6b3ac09ead390abc69c1d"
+    }
+  ],
+  "allMigrations": [
+    {
+      "name": "20261013080000_platform_bootstrap.sql",
+      "state": "deployed_baseline",
+      "predecessor": null,
+      "sha256": "5f2c17a8ba9bb9c330024cb5e8a82cb4e305832c6c97dfec1e89e724e01d737e"
+    },
+    {
+      "name": "20261013090000_support_desk_core.sql",
+      "state": "deployed_baseline",
+      "predecessor": "20261013080000_platform_bootstrap.sql",
+      "sha256": "86b79d0399074ff7819588c6ad8a382b930f1afdad5a1d4d6a93ab82dc5d6cbd"
+    },
+    {
+      "name": "20261013090100_support_desk_rls.sql",
+      "state": "deployed_baseline",
+      "predecessor": "20261013090000_support_desk_core.sql",
+      "sha256": "c2562efd40c8ce444513b96a5a6c49bf2d465d279c5a8e4e0e262e0a98717a6e"
+    },
+    {
+      "name": "20261013090200_support_desk_storage.sql",
+      "state": "deployed_baseline",
+      "predecessor": "20261013090100_support_desk_rls.sql",
+      "sha256": "90949b07235b3aa2780e43b55c891d4111e1845fa045d229f1483697b1f42be9"
+    },
+    {
+      "name": "20261013090300_support_authority.sql",
+      "state": "deployed_baseline",
+      "predecessor": "20261013090200_support_desk_storage.sql",
+      "sha256": "425637a96bd3ebc1bffbcd031dec53ec3582273c9eba6b587717aee9759e9cf3"
+    },
+    {
+      "name": "20261013091000_support_authority_hardening.sql",
+      "state": "deployed_baseline",
+      "predecessor": "20261013090300_support_authority.sql",
+      "sha256": "ec8041ed727ba0dc73e354dd34e0fe998ca8a70cbcd60d4d40b5ddca01df0e5a"
+    },
+    {
+      "name": "20261013110000_support_mfa_enforcement.sql",
+      "state": "pending",
+      "predecessor": "20261013091000_support_authority_hardening.sql",
+      "sha256": "5f28773e21b9daa1872d63e7f14e9d9d40512b2d08f43d273e0837c2880d75c8"
+    },
+    {
+      "name": "20261013120000_onarly_ai_assistant.sql",
+      "state": "pending",
+      "predecessor": "20261013110000_support_mfa_enforcement.sql",
+      "sha256": "c0debfb1733a48f7506be319b8ca79b86e3d7d68dbf22be084d2b7dd85cb9242"
+    },
+    {
+      "name": "20261013130000_connector_engine.sql",
+      "state": "pending",
+      "predecessor": "20261013120000_onarly_ai_assistant.sql",
+      "sha256": "4a8a3de2c65fe5ccedc919fed6ed42d3885d02493772c353b28dd894a6701b90"
+    },
+    {
+      "name": "20261013140000_infrastructure_monitoring.sql",
+      "state": "pending",
+      "predecessor": "20261013130000_connector_engine.sql",
+      "sha256": "356260b2088ee5089c2118f1c525fc9216a78c0e02434b4be38a8cfc60983620"
+    },
+    {
+      "name": "20261013150000_communications.sql",
+      "state": "pending",
+      "predecessor": "20261013140000_infrastructure_monitoring.sql",
+      "sha256": "37ef2ef982729fa8406169e0549d67a6172f70495a98649372154842f43649ea"
+    },
+    {
+      "name": "20261014110000_onarly_desk_integration.sql",
+      "state": "pending",
+      "predecessor": "20261013150000_communications.sql",
+      "sha256": "2374a67de4615bd61223fe9ca79990128a665b11dc03c684cc5ca0fe0973abe0"
+    },
+    {
+      "name": "20261014190857_security_ci_repair.sql",
+      "state": "pending",
+      "predecessor": "20261014110000_onarly_desk_integration.sql",
+      "sha256": "27f0a674e8365f13120fd4f368c45dc6e9eaabbc72c8369bffa91066db91379e"
+    },
+    {
+      "name": "20261014235633_complete_support_workflow.sql",
+      "state": "pending",
+      "predecessor": "20261014190857_security_ci_repair.sql",
+      "sha256": "60b1ddc6d6d0f53c1746d74dd8c054f3f5e67439f38077f966cc876eee335bb1"
+    },
+    {
+      "name": "20261016090000_project_access.sql",
+      "state": "pending",
+      "predecessor": "20261014235633_complete_support_workflow.sql",
+      "sha256": "0677a549a50503898c26ea5d7edc17276a6dbf22435cc392d5dfdb74d7601940"
+    },
+    {
+      "name": "20261016150000_ai_diagnostics.sql",
+      "state": "pending",
+      "predecessor": "20261016090000_project_access.sql",
+      "sha256": "4c398813ab0520c1577261f69e1c5ee89a0d9ab41df6b3ac09ead390abc69c1d"
+    }
+  ],
+  "configValidation": {
+    "current_compose_exit": 0,
+    "target_compose_exit": 0,
+    "added_services": [
+      "ai-adapter"
+    ],
+    "removed_services": [],
+    "existing_service_differences": {},
+    "network_changes": false,
+    "volume_changes": false,
+    "target_caddy_parse_exit": 0,
+    "note": "Parsing only; no start, reload, image pull, validation provisioning or file write performed."
+  },
+  "unresolved": [
+    "encrypted offsite database+storage+configuration backup and full restore evidence",
+    "legacy global technician grants and protected owner recovery approved scope",
+    "secure reachable gateway HTTPS transport and server credential decision",
+    "approved registry adapter image digest and supply chain verification",
+    "Vercel automatic deployments verified disabled, including production and hooks",
+    "private Control Center API runtime and stable Desktop transport",
+    "outstanding real HTTP/concurrency acceptance evidence and dependency advisories",
+    "explicit production change approval"
+  ],
+  "files": [
+    {
+      "path": "supabase/migrations/20261013110000_support_mfa_enforcement.sql",
+      "sha256": "5f28773e21b9daa1872d63e7f14e9d9d40512b2d08f43d273e0837c2880d75c8",
+      "bytes": 14911,
+      "sourceCommit": "dabecfe34e71a1ffc7e98fd1be6968a23fd91df2",
+      "purpose": "reviewed_source_only_not_authorized_for_execution"
+    },
+    {
+      "path": "supabase/migrations/20261013120000_onarly_ai_assistant.sql",
+      "sha256": "c0debfb1733a48f7506be319b8ca79b86e3d7d68dbf22be084d2b7dd85cb9242",
+      "bytes": 13598,
+      "sourceCommit": "dabecfe34e71a1ffc7e98fd1be6968a23fd91df2",
+      "purpose": "reviewed_source_only_not_authorized_for_execution"
+    },
+    {
+      "path": "supabase/migrations/20261013130000_connector_engine.sql",
+      "sha256": "4a8a3de2c65fe5ccedc919fed6ed42d3885d02493772c353b28dd894a6701b90",
+      "bytes": 23490,
+      "sourceCommit": "dabecfe34e71a1ffc7e98fd1be6968a23fd91df2",
+      "purpose": "reviewed_source_only_not_authorized_for_execution"
+    },
+    {
+      "path": "supabase/migrations/20261013140000_infrastructure_monitoring.sql",
+      "sha256": "356260b2088ee5089c2118f1c525fc9216a78c0e02434b4be38a8cfc60983620",
+      "bytes": 20826,
+      "sourceCommit": "dabecfe34e71a1ffc7e98fd1be6968a23fd91df2",
+      "purpose": "reviewed_source_only_not_authorized_for_execution"
+    },
+    {
+      "path": "supabase/migrations/20261013150000_communications.sql",
+      "sha256": "37ef2ef982729fa8406169e0549d67a6172f70495a98649372154842f43649ea",
+      "bytes": 27804,
+      "sourceCommit": "dabecfe34e71a1ffc7e98fd1be6968a23fd91df2",
+      "purpose": "reviewed_source_only_not_authorized_for_execution"
+    },
+    {
+      "path": "supabase/migrations/20261014110000_onarly_desk_integration.sql",
+      "sha256": "2374a67de4615bd61223fe9ca79990128a665b11dc03c684cc5ca0fe0973abe0",
+      "bytes": 16451,
+      "sourceCommit": "dabecfe34e71a1ffc7e98fd1be6968a23fd91df2",
+      "purpose": "reviewed_source_only_not_authorized_for_execution"
+    },
+    {
+      "path": "supabase/migrations/20261014190857_security_ci_repair.sql",
+      "sha256": "27f0a674e8365f13120fd4f368c45dc6e9eaabbc72c8369bffa91066db91379e",
+      "bytes": 13087,
+      "sourceCommit": "dabecfe34e71a1ffc7e98fd1be6968a23fd91df2",
+      "purpose": "reviewed_source_only_not_authorized_for_execution"
+    },
+    {
+      "path": "supabase/migrations/20261014235633_complete_support_workflow.sql",
+      "sha256": "60b1ddc6d6d0f53c1746d74dd8c054f3f5e67439f38077f966cc876eee335bb1",
+      "bytes": 22478,
+      "sourceCommit": "dabecfe34e71a1ffc7e98fd1be6968a23fd91df2",
+      "purpose": "reviewed_source_only_not_authorized_for_execution"
+    },
+    {
+      "path": "supabase/migrations/20261016090000_project_access.sql",
+      "sha256": "0677a549a50503898c26ea5d7edc17276a6dbf22435cc392d5dfdb74d7601940",
+      "bytes": 60857,
+      "sourceCommit": "dabecfe34e71a1ffc7e98fd1be6968a23fd91df2",
+      "purpose": "reviewed_source_only_not_authorized_for_execution"
+    },
+    {
+      "path": "supabase/migrations/20261016150000_ai_diagnostics.sql",
+      "sha256": "4c398813ab0520c1577261f69e1c5ee89a0d9ab41df6b3ac09ead390abc69c1d",
+      "bytes": 14824,
+      "sourceCommit": "dabecfe34e71a1ffc7e98fd1be6968a23fd91df2",
+      "purpose": "reviewed_source_only_not_authorized_for_execution"
+    },
+    {
+      "path": "deploy/berryit-support/compose.yaml",
+      "sha256": "673e3a49897f5abad73dd497869116c1696d58e98aff9e65c8bffda2f56a336c",
+      "bytes": 5866,
+      "sourceCommit": "dabecfe34e71a1ffc7e98fd1be6968a23fd91df2",
+      "purpose": "reviewed_source_only_not_authorized_for_execution"
+    },
+    {
+      "path": "deploy/berryit-support/gateway/Caddyfile",
+      "sha256": "533bfc02d0ae09f79ab185e7dff310fa13b33b9187a81763b934250960fe3651",
+      "bytes": 630,
+      "sourceCommit": "dabecfe34e71a1ffc7e98fd1be6968a23fd91df2",
+      "purpose": "reviewed_source_only_not_authorized_for_execution"
+    },
+    {
+      "path": "deploy/berryit-support/backup.sh",
+      "sha256": "881fd3d7979aaebdfb67f726af858c5632e78aef9794ac6f36fe213062c7639a",
+      "bytes": 1638,
+      "sourceCommit": "dabecfe34e71a1ffc7e98fd1be6968a23fd91df2",
+      "purpose": "reviewed_source_only_not_authorized_for_execution"
+    },
+    {
+      "path": "deploy/berryit-support/migrate.sh",
+      "sha256": "a05dc18f046072b52f3ef1797f6163f5b0110d8dd479cbc13ee2f53ef15ba0f5",
+      "bytes": 1935,
+      "sourceCommit": "dabecfe34e71a1ffc7e98fd1be6968a23fd91df2",
+      "purpose": "reviewed_source_only_not_authorized_for_execution"
+    },
+    {
+      "path": "deploy/berryit-support/restore-test.sh",
+      "sha256": "01e3b167ce80389297e8e29724f9610a38b2d45b37c2414905deb18bad80dacb",
+      "bytes": 2913,
+      "sourceCommit": "dabecfe34e71a1ffc7e98fd1be6968a23fd91df2",
+      "purpose": "reference_only_not_a_full_isolated_restore"
+    },
+    {
+      "path": "deploy/berryit-support/security-gate.sh",
+      "sha256": "9f2f59366ec36edd3dc338c9831431ef917d2771649db56a9a08569d960aab52",
+      "bytes": 8741,
+      "sourceCommit": "dabecfe34e71a1ffc7e98fd1be6968a23fd91df2",
+      "purpose": "isolated_tests_only_never_production"
+    },
+    {
+      "path": "deploy/berryit-support/security-gate-safety.sh",
+      "sha256": "7871d6d72e827e3d11df8d284a7c7e41ee5e94211b47168c785a6455a1acc677",
+      "bytes": 4521,
+      "sourceCommit": "dabecfe34e71a1ffc7e98fd1be6968a23fd91df2",
+      "purpose": "isolated_tests_only_never_production"
+    },
+    {
+      "path": "deploy/berryit-support/security-gate-safety.test.sh",
+      "sha256": "158993c42c643cdcdb3d7a72579ecb5bb3050faf96298d6ee5ba201dcaf53ca0",
+      "bytes": 6497,
+      "sourceCommit": "dabecfe34e71a1ffc7e98fd1be6968a23fd91df2",
+      "purpose": "isolated_tests_only_never_production"
+    },
+    {
+      "path": "deploy/berryit-support/upgrade-safety.test.sh",
+      "sha256": "b73cc9fd5f92564cc7a924b8785934202d67a20b4e34e26fac0a6da60b5fa175",
+      "bytes": 3505,
+      "sourceCommit": "dabecfe34e71a1ffc7e98fd1be6968a23fd91df2",
+      "purpose": "reviewed_source_only_not_authorized_for_execution"
+    },
+    {
+      "path": "deploy/berryit-support/onarly-ai.env.example",
+      "sha256": "47a1afa0a0f9c90c093850f2debed284c2525bc59c16186fbfd21d4624b6f70e",
+      "bytes": 232,
+      "sourceCommit": "dabecfe34e71a1ffc7e98fd1be6968a23fd91df2",
+      "purpose": "reviewed_source_only_not_authorized_for_execution"
+    },
+    {
+      "path": "services/onarly-ai-adapter/Dockerfile",
+      "sha256": "4c518dc4cc28f53156eba4b3b0bba3dd1bfc64296783f4f3aa5906dd01874629",
+      "bytes": 179,
+      "sourceCommit": "dabecfe34e71a1ffc7e98fd1be6968a23fd91df2",
+      "purpose": "reviewed_source_only_not_authorized_for_execution"
+    },
+    {
+      "path": "services/onarly-ai-adapter/server.mjs",
+      "sha256": "5be833bae09b4785f4987a8c6246b0ede4aa1aa116ec3affbf79ddf20dfac5da",
+      "bytes": 30587,
+      "sourceCommit": "dabecfe34e71a1ffc7e98fd1be6968a23fd91df2",
+      "purpose": "reviewed_source_only_not_authorized_for_execution"
+    },
+    {
+      "path": "services/onarly-ai-adapter/diagnostics.mjs",
+      "sha256": "40bc868c78b3336d2df687a0f6673f1dd3d29e82758b11eb1b3df7c4b54753b8",
+      "bytes": 3060,
+      "sourceCommit": "dabecfe34e71a1ffc7e98fd1be6968a23fd91df2",
+      "purpose": "reviewed_source_only_not_authorized_for_execution"
+    }
+  ],
+  "exclusions": [
+    "secrets/stack.env",
+    "all real credentials and tokens",
+    "production database/storage data",
+    "test identities and sessions",
+    "installer binaries",
+    "server configuration copies"
+  ],
+  "noAutoRun": true
+}

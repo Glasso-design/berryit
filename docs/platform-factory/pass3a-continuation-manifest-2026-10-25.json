@@ -1,0 +1,127 @@
+{
+  "date": "2026-10-25",
+  "observedAt": "2026-10-25T09:01:31.757Z",
+  "status": "LOCAL_COMPATIBILITY_PASS_SERVER_APPROVAL_PENDING",
+  "branch": "feat/support-desk",
+  "head": "dabecfe34e71a1ffc7e98fd1be6968a23fd91df2",
+  "priorManifest": "docs/platform-factory/pass3a-delivery-manifest.json",
+  "prior116PathsPreserved": true,
+  "priorProtected27AndPass2Files30Preserved": true,
+  "files": [
+    {
+      "file": "docs/platform-factory/pass3a-isolated-schema-gate-2026-10-25.md",
+      "sha256": "b321c2e85f75d3b2772ce128fb460278c885a44d823b0ee81b2d2741613a4f90",
+      "new": true
+    },
+    {
+      "file": "services/platform-factory/preflight/broker-hash-compatibility.sql",
+      "sha256": "a982cc863507088a996e0d079bfa85ed48eee039cf121133d5852c8989adaba3",
+      "new": true
+    },
+    {
+      "file": "services/platform-factory/tests/broker-hash-compatibility.test.mjs",
+      "sha256": "bc2007d60234134504e9833e395185f4855527859aac25b5efd3739ef2c18abd",
+      "new": true
+    }
+  ],
+  "manifestSelfHashExcluded": true,
+  "newFilesIncludingManifest": 4,
+  "totalDirtyPaths": 120,
+  "serverReadOnlyPrerequisite": {
+    "target": "core-node-01/berryit-iso-83a2f62f-db/postgres",
+    "factorySchemaPresent": false,
+    "pgcryptoSchema": "extensions",
+    "publicDigest": false,
+    "extensionsDigest": true,
+    "catalogSha256": true
+  },
+  "tests": {
+    "brokerCompatibility": {
+      "classification": "ISOLATED_LOCAL_PGLITE",
+      "pass": 8,
+      "fail": 0
+    },
+    "atomicBundle": {
+      "classification": "ISOLATED_LOCAL_PGLITE",
+      "checksPassed": 3
+    },
+    "providerRegression": {
+      "classification": "LOCAL_MOCK_SYNTHETIC_HTTP",
+      "pass": 86,
+      "fail": 0
+    },
+    "initialRestrictedProviderRun": {
+      "pass": 75,
+      "fail": 11,
+      "reason": "Loopback HTTP blocked by restricted execution; unchanged suite passed with local network allowed"
+    },
+    "lint": "PASS",
+    "typecheck": "PASS",
+    "newServerHttpTests": "NOT_RUN",
+    "newBuilds": "NOT_RUN_SQL_TEST_DOC_ONLY"
+  },
+  "reviewBundle": {
+    "status": "NOT_EXECUTED_ON_SERVER",
+    "target": {
+      "host": "core-node-01",
+      "project": "berryit-iso-83a2f62f",
+      "container": "berryit-iso-83a2f62f-db",
+      "database": "postgres",
+      "containerId": "1ea52edd800810ecb1e48aa743a99ceaf95a09b3a3da45a4ae4fcd490722988b"
+    },
+    "inputs": [
+      {
+        "file": "services/platform-factory/db/001_factory.sql",
+        "sha256": "35d7b8de6a84336b1b34dc7d5b3fec201f1e28dd3f2ecab0de796b82b6f24830"
+      },
+      {
+        "file": "services/platform-factory/db/002_provider_broker.sql",
+        "sha256": "8318d1b9a7b330e69ccee7ca64b314e0e155fd31630e8b1fe467df5eef5de2bc"
+      },
+      {
+        "file": "services/platform-factory/preflight/broker-hash-compatibility.sql",
+        "sha256": "a982cc863507088a996e0d079bfa85ed48eee039cf121133d5852c8989adaba3"
+      }
+    ],
+    "bundleSha256": "4405959248600b1dd3f50d72645d825cc94fcd77f11205487d5227ecaee04fed",
+    "approvalPending": true
+  },
+  "evidence": [
+    {
+      "file": "test-results/platform-factory-pass3a-20261025/broker-hash-compatibility.log",
+      "sha256": "84c309f74ecea164b4693aa002ea04fb2fc3ccd5cb4ec1f02c521d3e63fdf3c7"
+    },
+    {
+      "file": "test-results/platform-factory-pass3a-20261025/review-bundle-check.log",
+      "sha256": "3c4aa8f7822dca196eae947c05e2c5182e600df2fcc8a88ff2212a1584da87ad"
+    },
+    {
+      "file": "test-results/platform-factory-pass3a-20261025/continuation-provider-regression.log",
+      "sha256": "d23f60c423fa181fea3e325ee7e33c591bba037a1c73ea5ed0d6e564cc21c728"
+    },
+    {
+      "file": "test-results/platform-factory-pass3a-20261025/continuation-provider-regression-unrestricted.log",
+      "sha256": "051c3f0c64098cd60eef76082140a89eededd68ec058b0dedd18698d6fafd740"
+    },
+    {
+      "file": "test-results/platform-factory-pass3a-20261025/continuation-lint.log",
+      "sha256": "d7eac031d8e51b47afa54c0c13c39243ad809614964b37024b60cdeef0ef744d"
+    },
+    {
+      "file": "test-results/platform-factory-pass3a-20261025/continuation-typecheck.log",
+      "sha256": "26e5098a337ee9b57b2f1cac340a7ac12b89e4470d862888c2d65e89cebba3cf"
+    }
+  ],
+  "productionChanged": false,
+  "serverSchemaChanged": false,
+  "toolsInstalled": false,
+  "committed": false,
+  "pushed": false,
+  "pendingApproval": "Only existing isolated-stack Factory 001,002,compatibility SQL and scoped synthetic verification; production remains prohibited",
+  "remainingBlockers": [
+    "ISOLATED_SCHEMA_APPROVAL",
+    "CLOUDFLARE_CREDENTIALS",
+    "ONARLY_QABGO_SSO_NOT_INTEGRATED",
+    "EXTERNAL_BACKUP_RESTORE_NOT_VERIFIED"
+  ]
+}

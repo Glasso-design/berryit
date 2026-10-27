@@ -1,0 +1,365 @@
+{
+  "sourceCommit": "dabecfe34e71a1ffc7e98fd1be6968a23fd91df2",
+  "branch": "feat/support-desk",
+  "remoteHeadVerified": "dabecfe34e71a1ffc7e98fd1be6968a23fd91df2",
+  "reportDate": "2026-10-21",
+  "executionApproved": false,
+  "readyForProduction": false,
+  "status": {
+    "coreDestination": "BLOCKED_PENDING_DISK_HEALTH_AND_CONFIGURATION",
+    "capacity": "PASS_WITH_DOCUMENTED_BUDGET",
+    "syntheticEncryption": "PASS",
+    "productionAppendOnlyAccess": "BLOCKED_NOT_CONFIGURED_OR_TESTED",
+    "syntheticOfflinePostgresStorageConfigRestore": "PASS",
+    "fullColdSupabaseHttpMfaRestore": "BLOCKED",
+    "realProductionBackup": "NOT_PERFORMED"
+  },
+  "production": {
+    "observedAt": "2026-10-21T07:59:12.961542+00:00",
+    "databaseBytes": 12520595,
+    "storageLogicalBytes": 52,
+    "storageFiles": 4,
+    "storageAllocatedBytes": 86016,
+    "gatewayAllocatedKiB": 20,
+    "ledger": [
+      "20261013080000_platform_bootstrap.sql",
+      "20261013090000_support_desk_core.sql",
+      "20261013090100_support_desk_rls.sql",
+      "20261013090200_support_desk_storage.sql",
+      "20261013090300_support_authority.sql",
+      "20261013091000_support_authority_hardening.sql"
+    ],
+    "helperBodyMd5": "7046b3ef55adcf0b7ec7a454d43c106c",
+    "anonymousHelperExecute": true,
+    "anonymousRankExecute": true,
+    "existingBackups": [
+      {
+        "name": "berryit-support-storage-20261013T083332Z.tar.gz",
+        "bytes": 743,
+        "mode": "0o600",
+        "directory": "/home/ubuntu/berryit-support/deploy/berryit-support/backups"
+      },
+      {
+        "name": "berryit-support-db-20261013T083332Z.dump",
+        "bytes": 344949,
+        "mode": "0o600",
+        "directory": "/home/ubuntu/berryit-support/deploy/berryit-support/backups"
+      }
+    ],
+    "configuration": [
+      {
+        "path": "/home/ubuntu/berryit-support/deploy/berryit-support/compose.yaml",
+        "bytes": 4734,
+        "mode": "0o644",
+        "sha256": "06617eaa6745924c63dd57b74e6340d8d4983d7aa9043c565d4e2118f6975e6c"
+      },
+      {
+        "path": "/home/ubuntu/berryit-support/deploy/berryit-support/gateway/Caddyfile",
+        "bytes": 575,
+        "mode": "0o644",
+        "sha256": "83cee0b698b1ca01fde9ad50e44292a4d9fa3772e60889addf52c8b11c7f4ddd"
+      },
+      {
+        "path": "/home/ubuntu/berryit-support/deploy/berryit-support/db/init/00-berryit-roles.sql",
+        "bytes": 957,
+        "mode": "0o644",
+        "sha256": "16ec7ac10fced64d65664ee07f3cc8728b314885666f5a2ff1188a7695f1fa02"
+      },
+      {
+        "path": "/home/ubuntu/berryit-support/deploy/berryit-support/db/init/99-berryit-jwt.sql",
+        "bytes": 412,
+        "mode": "0o644",
+        "sha256": "79477e81b6644602d93ca1ffdf72a93baa8e07dc3d714c27931322a242e33d21"
+      },
+      {
+        "path": "/home/ubuntu/berryit-support/deploy/berryit-support/secrets/stack.env",
+        "bytes": 901,
+        "mode": "0o600",
+        "sha256": null
+      },
+      {
+        "path": "/home/ubuntu/berryit-support/deploy/berryit-support/backup.sh",
+        "bytes": 1412,
+        "mode": "0o755",
+        "sha256": "383e0c79c297248d3a6dc8d5d446f659f7ac78fc08cc63518c47c3212bf0ea90"
+      },
+      {
+        "path": "/home/ubuntu/berryit-support/deploy/berryit-support/restore-test.sh",
+        "bytes": 2197,
+        "mode": "0o755",
+        "sha256": "40215371496f8365d286f1ea0659ce5e1556ded8424ef602df0663fe87eee9ca"
+      },
+      {
+        "path": "/home/ubuntu/berryit-support/deploy/berryit-support/migrate.sh",
+        "bytes": 1361,
+        "mode": "0o755",
+        "sha256": "e3be182d82d4d57c3774bc35bf2f591ce803d85ac6dd263f2833e2858e5d98b1"
+      },
+      {
+        "path": "/home/ubuntu/berryit-support/deploy/berryit-support/security-gate.sh",
+        "bytes": 8258,
+        "mode": "0o755",
+        "sha256": "968563bc77e89744b336c4989048b6d8b10065ed74a877bb941568732f45ab18"
+      }
+    ],
+    "health": {
+      "/health": 200,
+      "/auth/v1/health": 200,
+      "/storage/v1/status": 200,
+      "/ai/v1/health": 404
+    },
+    "tailscalePathToCore": {
+      "success": true,
+      "transport": "direct"
+    }
+  },
+  "core": {
+    "observedAt": "2026-10-21T07:59:16.246859+00:00",
+    "availableFilesystemBytes": 45100326912,
+    "physicalDiskBytes": 1000170586112,
+    "running": 21,
+    "notRunning": 47,
+    "memory": {
+      "MemTotal": 8235499520,
+      "MemAvailable": 5693231104,
+      "SwapTotal": 4012896256,
+      "SwapFree": 3300409344
+    },
+    "load": [
+      0.3720703125,
+      0.38330078125,
+      0.43017578125
+    ],
+    "smartService": "failed",
+    "smartVerified": false,
+    "smartReadAccess": {
+      "exit": 1,
+      "passed": false,
+      "failed": false,
+      "permissionDenied": true,
+      "unsupported": false,
+      "attributes": {}
+    },
+    "tools": {
+      "resticInstalled": false,
+      "borgInstalled": false,
+      "gpgPresent": true
+    },
+    "proposedPath": "/srv/berryit-backup/berryit-prod",
+    "pathCreated": false
+  },
+  "capacity": {
+    "basis": "Conservative planning envelope; production serialized backup NOT measured",
+    "dailyFullBudgetBytes": 104857600,
+    "thirtyDaysNoDedupBytes": 3145728000,
+    "thirtyFiveDaysNoDedupBytes": 3670016000,
+    "proposedRepositoryLimitBytes": 8589934592,
+    "proposedBoundedFilesystemBytes": 10737418240,
+    "proposedHostReserveBytes": 26843545600,
+    "growthRateMeasured": false,
+    "quotasConfigured": false
+  },
+  "design": {
+    "recommended": "Restic + append-only rest-server on core loopback over restricted SSH/Tailscale",
+    "configured": false,
+    "retentionDaysProposed": 35,
+    "maintenanceCredentialOnProduction": false,
+    "offlineRecoveryMaterialVerified": false,
+    "thirdCopyDestination": null,
+    "alarmDestination": null,
+    "productionCompromiseRisks": [
+      "poisoned new snapshots",
+      "quota exhaustion",
+      "historical data disclosure with known encryption key"
+    ],
+    "coreLossRisks": [
+      "all backup history lost without independent third copy",
+      "core root compromise can erase repository"
+    ],
+    "newVpsOrCloudOrder": false
+  },
+  "syntheticTest": {
+    "runId": "5ebfe50634ca45c7b2260cefef4261c3",
+    "host": "core-node-01",
+    "source": "berryit-iso-83a2f62f",
+    "syntheticOnly": true,
+    "workDirectory": "/home/glasso/berryit-iso-83a2f62f/recovery-5ebfe50634ca45c7b2260cefef4261c3",
+    "restoreDatabase": "berryit_3c_5ebfe50634ca45c7",
+    "checks": [
+      {
+        "name": "real pg_dump custom format + Storage files + configuration encrypted with GPG",
+        "status": "PASS"
+      },
+      {
+        "name": "interrupted synthetic transfer: exit 23, partial rejected, good ciphertext unchanged",
+        "status": "PASS"
+      },
+      {
+        "name": "tampered encrypted payload cannot pass signature verification",
+        "status": "PASS"
+      },
+      {
+        "name": "ciphertext, approved signer and all component checksums verified before restore",
+        "status": "PASS"
+      },
+      {
+        "name": "pg_restore exit 0: all public/Auth/Storage tables, ledger, audit, RLS and helper ACL match",
+        "status": "PASS"
+      },
+      {
+        "name": "Storage archive stable; actual files, configuration and synthetic secret restored byte-for-byte",
+        "status": "PASS"
+      },
+      {
+        "name": "all existing containers retain IDs, state, start times and restart counts",
+        "status": "PASS"
+      }
+    ],
+    "timingSeconds": {
+      "keyPreparation": 0.364,
+      "backupAndEncryption": 0.972,
+      "pgRestore": 1.443,
+      "restoreAndVerification": 17.223
+    },
+    "productionDataTransferred": false,
+    "deletedFiles": false,
+    "createdContainers": false,
+    "restoredHttpServices": false,
+    "sizes": {
+      "database.dump": 798252,
+      "globals.sql": 5217,
+      "storage.tar": 12288,
+      "configuration.tar": 20480,
+      "encryptedBundle": 176872
+    },
+    "verifiedTables": 81,
+    "verifiedStorageFiles": 2,
+    "status": "PASS_FOR_SYNTHETIC_OFFLINE_COMPONENT_RESTORE",
+    "notVerified": [
+      "Restic/Borg not installed or exercised",
+      "prod-to-core backup identity/transport",
+      "append-only deletion protection",
+      "independent globals/role restoration into a fresh cluster",
+      "complete Auth signing/config secrets restoration",
+      "HTTP login/MFA/Storage against restored database",
+      "actual production backup and restore",
+      "independent offsite copy after loss of core-node-01"
+    ],
+    "completedAt": "2026-10-21T08:06:46.560531+00:00",
+    "containerStatesUnchanged": true,
+    "localGuards": 3
+  },
+  "priorBlockers": {
+    "helperHotfixApplied": false,
+    "tenProductionMigrationsApplied": false,
+    "legacyScopeDecided": false,
+    "aiHealthRoute": 404,
+    "vercelPreviewDisablement": "UNVERIFIED_NOT_RECHECKED",
+    "otherPass3aGates": "UNCHANGED_REQUIREMENTS_NOT_CLOSED"
+  },
+  "nextApprovals": [
+    "A: disk-health evidence, version-pinned tools, bounded filesystem/repository, restricted identities, recovery escrow, synthetic append-only/restore tests and alarm decisions",
+    "B after A PASS: coherent encrypted production backup and explicit protected production-data restore approval",
+    "C after backup gate PASS: active_support_grants hotfix",
+    "D later: ten remaining migrations"
+  ],
+  "preservedFiles": [
+    {
+      "file": "deploy/berryit-support/hotfixes/active-support-grants/apply.sql",
+      "sha256": "77729427994d4706af0cf8767eeeeb03f36a7cb7f8931996cd30da9887c961cc"
+    },
+    {
+      "file": "deploy/berryit-support/hotfixes/active-support-grants/containment.sql",
+      "sha256": "42701362fd17f9b414fde0d6c0fb1ca474abf5d177ee023d072d306fd82604ad"
+    },
+    {
+      "file": "deploy/berryit-support/hotfixes/active-support-grants/README.md",
+      "sha256": "a746e73c396f63b67ac01986974e00818b57d8376b6282e05995ce6383fb4b71"
+    },
+    {
+      "file": "supabase/tests/active-grants-hotfix.test.mjs",
+      "sha256": "9ef606b4b9b63a8fdd1e99d16b7de712ea4680fbd2221d9975aaf20e0d859d34"
+    },
+    {
+      "file": "deploy/berryit-support/backup-gate/README.md",
+      "sha256": "6477571bea67f3c073db8777261885e9573e5de4cb985af2771822b763e6fef2"
+    },
+    {
+      "file": "deploy/berryit-support/backup-gate/synthetic-restore.test.mjs",
+      "sha256": "bd794b2aa00e17bbb66dddb5982ff08406455e363b1785425d88b4777750148a"
+    },
+    {
+      "file": "docs/security-backup-gates-pass3b-2026-10-18.md",
+      "sha256": "8bc315d8251424e054d797ca201212d1ead282af1eb522d768ecadcedc2fbdec"
+    },
+    {
+      "file": "docs/production-readiness-pass3a-2026-10-17.md",
+      "sha256": "665b24bc7d25e07e780b3648a4559a391826373d298c03694ce6644751cdcc3d"
+    },
+    {
+      "file": "docs/production-readiness-pass3a-manifest.json",
+      "sha256": "572bddea1e5b29aa15952edea8960745e3f8e72acd502356c2944ed5c5bc49da"
+    },
+    {
+      "file": "docs/security-backup-gates-pass3b-manifest.json",
+      "sha256": "827a84edda1db8e3887251618716e9a0146711e5aaf9c975afc00f9d1f4550e0"
+    }
+  ],
+  "files": [
+    {
+      "file": "docs/backup-recovery-pass3c-2026-10-21.md",
+      "sha256": "dbc8653b700fb118d79a22ddc7a243615741c3516b43ee0472ba036758c45477",
+      "bytes": 26313
+    },
+    {
+      "file": "deploy/berryit-support/backup-gate/isolated-postgres-recovery.py",
+      "sha256": "d792567c06012ef4693f8cf349ac73d72214e7e94d9a0fe9195ad1b8b268427c",
+      "bytes": 13503
+    }
+  ],
+  "evidenceHashes": [
+    {
+      "file": "test-results/pass3c/prod-observation.json",
+      "sha256": "d0823167aa2ba23637244f893e4908ce4ab4fdc2560dd010e9097a147b768969"
+    },
+    {
+      "file": "test-results/pass3c/core-observation.json",
+      "sha256": "79f53347b54292cacdf0644c81524d6feb5dae6be8ca9d22fde637a6cce154e5"
+    },
+    {
+      "file": "test-results/pass3c/core-test-details.json",
+      "sha256": "56ddcb410a3a436ba833a5af058093ce485d006961e70bd660a8abe9db304c07"
+    },
+    {
+      "file": "test-results/pass3c/core-final.json",
+      "sha256": "fc64e969959650fb9da69c90be2c421fe9af7d2649eb9822b0a7d9f31115e53c"
+    },
+    {
+      "file": "test-results/pass3c/prod-sizes.json",
+      "sha256": "308379f69f617a6b4dabea82bef67e81e1aedee1c18ee2384476fe32549848af"
+    },
+    {
+      "file": "test-results/pass3c/recovery-test.json",
+      "sha256": "37dfd3b721ffc590d07feffa327fac0f9fdeb1b4febff6e812b41ead45754525"
+    },
+    {
+      "file": "test-results/pass3c/local-verification.json",
+      "sha256": "0a231d488e0be279b1c00fdd74f761da0812e3227361c054afe2f6cd515822f5"
+    }
+  ],
+  "git": {
+    "trackedFilesChanged": 0,
+    "stagedFiles": 0,
+    "priorUntracked": 10,
+    "newUntracked": 3,
+    "totalUntracked": 13,
+    "committed": false,
+    "pushed": false
+  },
+  "productionChangesPerformed": false,
+  "productionDataTransferred": false,
+  "existingServicesRestarted": false,
+  "filesDeleted": false,
+  "packagesInstalled": false,
+  "newContainersCreated": false
+}

@@ -1,6 +1,6 @@
 [package]
 name = "berryit-control-center"
-version = "0.1.1"
+version = "0.1.2"
 description = "BERRYiT Control Center"
 authors = ["BERRYiT"]
 edition = "2021"

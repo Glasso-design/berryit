@@ -2,6 +2,9 @@
 import { cloneElement,useCallback,useEffect,useId,useState,type ReactElement } from 'react';
 import type { AccessAction,AccessCatalog,AccessClient,ProjectRecord,RoleRecord,RepositoryRequest,RepositoryResult } from '../project-access';
 import {statusLabel,lastCheckedLabel,isStale} from '../connectors';
+import {ProjectControlWorkspace} from './ProjectControlWorkspace';
+import type {ProjectControlClient} from '../project-control';
+import {requestedProjectNames} from '../project-candidates';
 
 type Person={id:string;name:string|null;email:string|null;is_active:boolean};
 type Impact={fingerprint:string;assignments:{grant_id:string;user_id:string;organization_id:string|null;project_id:string|null}[]};
@@ -13,7 +16,7 @@ const optional=(data:FormData,key:string)=>value(data,key)||null;
 const message=(error:unknown)=>error instanceof Error?error.message:typeof error==='object'&&error&&'message'in error?String(error.message):'Begäran kunde inte slutföras.';
 
 /** Presentation only: database RPC/RLS authorizes every request independently. */
-export function ProjectAccessWorkspace({client,initialTab='projects'}:{client:AccessClient;initialTab?:'projects'|'roles'}){
+export function ProjectAccessWorkspace({client,initialTab='projects',control,onOpenTicket,onOpenFactory,onOpenAi}:{client:AccessClient;initialTab?:'projects'|'roles';control?:ProjectControlClient;onOpenTicket?:(reference:string)=>void;onOpenFactory?:(project:string,product:string)=>void;onOpenAi?:(project:string,organization:string)=>void}){
  const [catalog,setCatalog]=useState<AccessCatalog|null>(null);
  const [tab,setTab]=useState(initialTab);
  const [selected,setSelected]=useState<ProjectRecord|null>(null);
@@ -53,10 +56,17 @@ export function ProjectAccessWorkspace({client,initialTab='projects'}:{client:Ac
   {notice&&<p role="status" className="text-sm text-signal">{notice}</p>}
   {!catalog?<p>Hämtar serverns register…</p>:tab==='projects'?<>
    {catalog.authority.permissions.includes('projects.manage')&&<button className={buttonClass} onClick={()=>{setSelected(null);setEditing(true);setDetails(null);}}>+ Lägg till projekt</button>}
+   {control&&catalog.authority.permissions.includes('projects.manage')&&<details><summary>Registrera önskade projekt i samma register</summary><p className="text-sm text-muted">Välj faktisk ansvarig organisation. Namnen är användarens önskemål; teknik, adresser, avtal och affärsägande är inte verifierade. Befintliga namn återanvänds, inga externa resurser skapas.</p>
+    <form className="space-y-3" onSubmit={e=>{e.preventDefault();const form=e.currentTarget,f=new FormData(form);void run({action:'registerProjects',org:value(f,'registrationOrg'),names:f.getAll('candidate').map(String),reason:value(f,'reason')});}}>
+     <Field label="Ansvarig organisation för registreringen"><select name="registrationOrg" required className={inputClass}><option value="">Välj befintlig organisation</option>{catalog.organizations.map(o=><option key={o.id} value={o.id}>{o.name}</option>)}</select></Field>
+     <fieldset><legend>Projektnamn utan tekniska antaganden</legend>{requestedProjectNames.map(name=><label className="block" key={name}><input type="checkbox" name="candidate" value={name} defaultChecked/> {name}</label>)}</fieldset><Reason/><button className={buttonClass} disabled={busy}>Registrera valda projekt / återanvänd befintliga</button>
+    </form></details>}
    <div className="grid gap-4 md:grid-cols-2">{[true,false].map(internal=><section key={String(internal)} className="space-y-3"><h2 className="font-display text-lg">{internal?'Interna projekt':'Kundprojekt'}</h2>
     {catalog.projects.filter(p=>catalog.organizations.find(o=>o.id===p.organization_id)?.is_internal===internal).map(p=><button key={p.id} className="block w-full rounded-xl border border-line bg-ink-2 p-4 text-left" onClick={()=>void openProject(p)}><strong>{p.name}</strong><span className="block text-xs text-muted">{orgName(p.organization_id)} · {p.environment} · {p.archived_at?'Arkiverat':p.status} · källa: {p.source}</span><span className="text-sm text-muted">{p.description}</span></button>)}
    </section>)}</div>
-   {selected&&!editing&&<section className="space-y-4 rounded-2xl border border-line p-5"><h2 className="font-display text-xl">{selected.name}</h2>
+   {selected&&!editing&&<section className="space-y-4 rounded-2xl border border-line p-5">{!control&&<h2 className="font-display text-xl">{selected.name}</h2>}
+    {control&&<ProjectControlWorkspace key={selected.id} client={control} project={selected.id} onOpenTicket={onOpenTicket} onOpenFactory={onOpenFactory} onOpenAi={onOpenAi}/>}
+    <details open={!control}><summary>Projektadministration, tilldelningar och resurskopplingar</summary><div className="mt-4 space-y-4">
     <p>{selected.description}</p><p className="text-sm text-muted">{selected.repository_url??'Inget repository'} · {selected.website_url??'Ingen webbadress'}</p>
     <p className="text-xs text-muted">Registrerad projektstatus är ingen verifierad driftstatus. Mätningar visas i Infrastruktur/Monitoring.</p>
     {catalog.authority.permissions.includes('repositories.read')&&<section className="space-y-3"><h3 className="font-semibold">Kodgranskning via serverns läsanslutning</h3>
@@ -91,6 +101,7 @@ export function ProjectAccessWorkspace({client,initialTab='projects'}:{client:Ac
      </form><p className="text-xs text-muted">Registreringen startar eller driftsätter ingenting.</p>
     </>}
     <h3 className="font-semibold">Projektaktiviteter</h3><ul>{details?.activity.map((a,n)=><li key={n} className="text-sm">{a.created_at} · {a.actor_id??"System"} · {a.action} · {a.reason}</li>)}</ul>
+    </div></details>
    </section>}
    {editing&&<form key={selected?.id??'new'} className="space-y-4 rounded-2xl border border-line p-5" onSubmit={async e=>{
     e.preventDefault();const f=new FormData(e.currentTarget);const values:Record<string,unknown>={name:value(f,'name'),description:value(f,'description'),status:value(f,'status'),environment:value(f,'environment'),website_url:optional(f,'website'),repository_url:optional(f,'repo'),contact_id:optional(f,'contact')};

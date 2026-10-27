@@ -26,6 +26,8 @@ jobs:
       - run: bash deploy/berryit-support/upgrade-safety.test.sh
       - run: npm run db:test
       - run: npm run db:access-test
+      - run: npm run db:project-control-test
+      - run: npm run test:project-control-review
       - run: node supabase/tests/onarly_ai_assistant_test.mjs
       - run: npm run db:upgrade-test
       - run: npm run db:master-upgrade-test
@@ -33,9 +35,13 @@ jobs:
       - run: npm run db:repair-test
       - run: npm run test:support-workflow
       - run: npm run test:project-access
+      - run: npm run test:project-control
       - run: npm run test:ai-diagnostics
+      - run: npm run test:factory
+      - run: npm run test:factory-ui
       - run: node --test services/connector-engine/engine.test.mjs services/connector-engine/monitoring.test.mjs services/connector-engine/pilot.test.mjs services/communications/email-adapter.test.mjs services/onarly-ai-adapter/server.test.mjs
       - run: node --test services/connector-engine/repository-access.test.mjs
+      - run: node --test services/connector-engine/project-issues.test.mjs services/onarly-ai-adapter/project-context.test.mjs
       - run: node --test services/connector-engine/project-discovery.test.mjs
       - run: node --test services/onarly-ai-adapter/diagnostics.test.mjs services/onarly-ai-adapter/diagnostic-http.test.mjs
       - run: npm run lint

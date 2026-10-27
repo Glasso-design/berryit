@@ -1,0 +1,217 @@
+{
+  "date": "2026-10-25",
+  "at": "2026-10-25T09:43:14.141Z",
+  "overall": "BLOCKED_REAL_PROVIDER_SSO_BACKUP",
+  "isolatedSchemaAuthFactory": "PASS",
+  "branch": "feat/support-desk",
+  "head": "dabecfe34e71a1ffc7e98fd1be6968a23fd91df2",
+  "userApproval": "Explicit approval for Factory001,002,compatibility and synthetic HTTP/RLS verification in existing test stack only",
+  "preserved": {
+    "count": 120,
+    "allUnchanged": true,
+    "protected27AndPass2Files30Unchanged": true,
+    "baselineSha256": "66295bde69c119f193d038ba3bd4a8223bffa8f3ad053393e9678a0b10315e6c"
+  },
+  "files": [
+    {
+      "file": "docs/platform-factory/pass3a-approved-execution-2026-10-25.md",
+      "sha256": "b94352cb0b2270d23f72bc3b301654c66ce5af983a9bf842e076d54f210cf243",
+      "new": true
+    },
+    {
+      "file": "services/platform-factory/tests/existing-isolated-http.mjs",
+      "sha256": "09eac3620750b035fb486d0631ff0d55b7c1eb6002d614c99514e27927155fab",
+      "new": true
+    }
+  ],
+  "manifestSelfHashExcluded": true,
+  "newFilesIncludingManifest": 3,
+  "totalDirtyConcretePaths": 123,
+  "indexEmpty": true,
+  "historicalMigrationsUnchanged": true,
+  "tests": {
+    "realExistingIsolatedHttp": {
+      "pass": 21,
+      "fail": 0,
+      "blocked": 5
+    },
+    "firstAbortedRun": {
+      "pass": 16,
+      "fail": 1,
+      "blocked": 5,
+      "reason": "Operator helper did not ignore psql DO command tag; fixed; first evidence retained"
+    },
+    "directTableRls": "PASS",
+    "browser": {
+      "status": "PASS",
+      "renderer": "CHROMIUM_HEADLESS",
+      "transport": "LOCAL_TEST_PROXY_TO_REAL_POSTGREST",
+      "nativeWindowsVerified": false
+    },
+    "lint": "PASS",
+    "typecheck": "PASS",
+    "previousUnchangedProviderContracts": {
+      "pass": 86,
+      "notRerunAfterSchemaApply": true
+    },
+    "previousHashCompatibility": {
+      "pass": 8
+    },
+    "previousAtomicBundleChecks": 3,
+    "full15CaseIdentityGate": {
+      "status": "BLOCKED",
+      "verified": 9,
+      "ssoBlocked": 5,
+      "storageObjectAclNotRun": 1
+    },
+    "newProductionBuilds": "NOT_RUN_NO_PRODUCT_SOURCE_CHANGE"
+  },
+  "schema": {
+    "target": "core-node-01/berryit-iso-83a2f62f-db/postgres",
+    "containerId": "1ea52edd800810ecb1e48aa743a99ceaf95a09b3a3da45a4ae4fcd490722988b",
+    "bundleSha256": "4405959248600b1dd3f50d72645d825cc94fcd77f11205487d5227ecaee04fed",
+    "committed": true,
+    "tablesWithRls": 16,
+    "postgrestSchemaReload": "NOTIFY_ONLY_NO_RESTART"
+  },
+  "catalog": {
+    "products": 29,
+    "liveApproved": 0,
+    "sha256": "6d645ab937fc05ad833bd971355a4b406fa81d154c3383e367e302a57d773553"
+  },
+  "fixtures": {
+    "users": 4,
+    "organizations": 4,
+    "projects": 6,
+    "roles": 4,
+    "grants": 4,
+    "jobs": 4,
+    "instances": 4,
+    "resources": 0,
+    "providerStatusRows": 2,
+    "classification": "SYNTHETIC_HTTP_BLOCKED_FIXTURE_ONLY",
+    "allTestGrantsRevoked": true,
+    "newUserSessionsRemaining": 0,
+    "deletedRows": 0
+  },
+  "securityReadback": {
+    "tablesWithoutRls": 0,
+    "anonExecutableFunctions": 0,
+    "unsafeDefinerPaths": 0,
+    "instances": 4,
+    "nonMockInstances": 0,
+    "liveProducts": 0,
+    "resources": 0,
+    "providerStatusRows": 2,
+    "falselyVerifiedProviders": 0,
+    "testUserSessions": 0,
+    "activeTestGrants": 0
+  },
+  "containers": {
+    "before": 68,
+    "after": 68,
+    "idsStatesStartTimesRestartsUnchanged": true
+  },
+  "cloudflare": {
+    "status": "BLOCKED_CREDENTIALS",
+    "verification": "NOT_RUN",
+    "apiRequests": 0,
+    "mutations": 0,
+    "accountTypes": "UNVERIFIED"
+  },
+  "backup": {
+    "path": "/srv/berryit-backup",
+    "exists": true,
+    "capacityBytes": 20957446144,
+    "availableBytes": 19866902528,
+    "repositoryConfigPresent": false,
+    "repositoryDirectories": 0,
+    "restServerRunning": false,
+    "status": "BLOCKED",
+    "externalRestoreVerified": false,
+    "physicalFailureDomainVerified": false
+  },
+  "remainingBlockers": [
+    "CLOUDFLARE_APPROVED_CREDENTIALS_AND_REAL_READONLY_PREFLIGHT",
+    "ONARLY_CENTRAL_SSO_AND_QABGO_FOUR_APPS",
+    "STORAGE_INTERNAL_OBJECT_HTTP_ACL_CASE",
+    "EXTERNAL_ENCRYPTED_BACKUP_REPOSITORY_AND_RESTORE",
+    "PRODUCTION_COMPOSITION_RELEASE_AND_EXPLICIT_FIRST_LIVE_JOURNEY_APPROVAL"
+  ],
+  "evidence": [
+    {
+      "file": "test-results/platform-factory-pass3a-20261025/approved-target-before.json",
+      "sha256": "04a63d56740a116dd68309ece8eb8304e1dcc705a5091d7d99923804e297cf36"
+    },
+    {
+      "file": "test-results/platform-factory-pass3a-20261025/approved-schema-result.json",
+      "sha256": "61fce777a6abdc7f9a4aa10bff9f5bc6b1e24b5a6e76b2d124d787f68cc65066"
+    },
+    {
+      "file": "test-results/platform-factory-pass3a-20261025/approved-catalog-result.json",
+      "sha256": "874ba3c563f8c9175482014084e39d58cc50895ec1b498ee900a3d0535f6638c"
+    },
+    {
+      "file": "test-results/platform-factory-pass3a-20261025/approved-schema-verify.json",
+      "sha256": "b5517a7fd2394913ca6e63b51caa0b3716a7987602c7bd7e47c8e16cd70251b5"
+    },
+    {
+      "file": "test-results/platform-factory-pass3a-20261025/approved-http.log",
+      "sha256": "1e6f776458a2b24b30415b29086b6638f8ed0ee31640abd5f39a560a79837749"
+    },
+    {
+      "file": "test-results/platform-factory-pass3a-20261025/approved-http-results.json",
+      "sha256": "a6274e67c2517f0c2700c56f96e60de53ced4210dcac6e38398ed801ca9c02ec"
+    },
+    {
+      "file": "test-results/platform-factory-pass3a-20261025/approved-http-2.log",
+      "sha256": "57cdd1f4ae47147f2be75c0699f7bbe477f15defb863fc4b80729dce3b3e0ed5"
+    },
+    {
+      "file": "test-results/platform-factory-pass3a-20261025/approved-http-results-2.json",
+      "sha256": "dc36a407fa00a44b73a0f681c0750368d7eb67c36ea436140c17693f661f4d89"
+    },
+    {
+      "file": "test-results/platform-factory-pass3a-20261025/approved-real-http-factory-view.png",
+      "sha256": "02b92314af77dc073c80c43647c0c2b52965ead389679f9bd778d4253299f992"
+    },
+    {
+      "file": "test-results/platform-factory-pass3a-20261025/approved-test-grants-final.json",
+      "sha256": "d9d0d0f9a31d40c874bacb6e6ff8c21b3a163b50c2404d215bcda1ff67b94294"
+    },
+    {
+      "file": "test-results/platform-factory-pass3a-20261025/approved-final-server.json",
+      "sha256": "e68b21b982c714d6d90fa4308c0ea269492f7de4f9b39bbb28cf04bec7a44a87"
+    },
+    {
+      "file": "test-results/platform-factory-pass3a-20261025/approved-tunnel-final.json",
+      "sha256": "224ada14638900c3e7eca2ef075db11ff59c140ea18f7fe79633a0aca0f80738"
+    },
+    {
+      "file": "test-results/platform-factory-pass3a-20261025/approved-cloudflare-readonly.json",
+      "sha256": "3919265f96cf4540073dcb91a7f1eec22cd78bdbdbc2460063cf5fad4d82e9a8"
+    },
+    {
+      "file": "test-results/platform-factory-pass3a-20261025/approved-lint-final.log",
+      "sha256": "d7eac031d8e51b47afa54c0c13c39243ad809614964b37024b60cdeef0ef744d"
+    },
+    {
+      "file": "test-results/platform-factory-pass3a-20261025/approved-typecheck.log",
+      "sha256": "26e5098a337ee9b57b2f1cac340a7ac12b89e4470d862888c2d65e89cebba3cf"
+    }
+  ],
+  "noProductionChanges": true,
+  "noProductionMigrations": true,
+  "noProductionAiInference": true,
+  "noCloudflareResourcesCreated": true,
+  "noMailSent": true,
+  "noContainersRestarted": true,
+  "noNewStack": true,
+  "noToolsInstalled": true,
+  "noCommits": true,
+  "noPush": true,
+  "noMerge": true,
+  "noDeployment": true,
+  "onlyApprovedIsolatedSchemaAndFixturesChanged": true,
+  "tunnelFinal": "OWNED_TEST_TUNNEL_CLOSED"
+}

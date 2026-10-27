@@ -16,9 +16,9 @@ const customer = "10000000-0000-0000-0000-000000000001";
 const admin = "10000000-0000-0000-0000-000000000003";
 const quote = name => { assert.match(name, /^[a-z_][a-z_0-9]*$/); return '"' + name + '"'; };
 
-test("reviewed 6+8 upgrade, retained fixture data and existing registry pilot", async t => {
+test("reviewed migration inventory, retained fixture data and existing registry pilot", async t => {
   const manifest = upgradeManifest();
-  assert.equal(manifest.filter(m => m.state === "pending").length, 10);
+  assert.equal(manifest.filter(m => m.state === "pending").length, 12);
   const db = await PGlite.create({ extensions: { pgcrypto } });
   try {
     await db.exec(sql("local_bootstrap.sql"));
