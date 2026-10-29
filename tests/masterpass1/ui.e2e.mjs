@@ -178,21 +178,25 @@ function desktopServer(root, target) {
   });
 }
 
+async function desktopAskOnarly(page) {
+  await page.goto("http://127.0.0.1:3602/");
+  await page.getByRole("heading", { name: "Logga in" }).waitFor();
+  await page.getByRole("status").filter({ hasText: "Ansluten till BERRYiT." }).waitFor({ timeout: 15000 });
+  await page.getByLabel("E-post").fill("techa@mp1.example.test");
+  await page.getByLabel("Lösenord").fill(fx.password);
+  await page.getByRole("button", { name: "Logga in", exact: true }).click();
+  await page.getByRole("button", { name: /Ask ONARLY AI/ }).first().click({ timeout: 20000 });
+  await page.getByRole("heading", { name: "Ask ONARLY AI" }).waitFor();
+  await page.getByText("Gateway serverkonfigurerad").waitFor({ timeout: 15000 });
+}
+
 test("U5 desktop Ask ONARLY AI: answer rendered; provider down then retry reuses ONE conversation", async () => {
   const server = desktopServer(resolve("desktop/dist"), fx.gateway);
   await new Promise((r) => server.listen(3602, "127.0.0.1", r));
   const context = await browser.newContext({ viewport: { width: 1366, height: 900 } });
   const page = await context.newPage();
   try {
-    await page.goto("http://127.0.0.1:3602/");
-    await page.getByRole("heading", { name: "Logga in" }).waitFor();
-    await page.getByRole("status").filter({ hasText: "Ansluten till BERRYiT." }).waitFor({ timeout: 15000 });
-    await page.getByLabel("E-post").fill("techa@mp1.example.test");
-    await page.getByLabel("Lösenord").fill(fx.password);
-    await page.getByRole("button", { name: "Logga in", exact: true }).click();
-    await page.getByRole("button", { name: /Ask ONARLY AI/ }).first().click({ timeout: 20000 });
-    await page.getByRole("heading", { name: "Ask ONARLY AI" }).waitFor();
-    await page.getByText("Gateway serverkonfigurerad").waitFor({ timeout: 15000 });
+    await desktopAskOnarly(page);
     const ask = async (question) => {
       await page.getByPlaceholder("Fråga om ett fel, kod, drift eller ett supportärende…").fill(question);
       await page.getByLabel(/Jag har granskat texten/).check();
@@ -218,7 +222,62 @@ test("U5 desktop Ask ONARLY AI: answer rendered; provider down then retry reuses
     evidence(`INFO desktop retry conversations: ${JSON.stringify(convs)}`);
     await page.screenshot({ path: `${shots}/desktop-ai-retry.png`, fullPage: true });
     assert.equal(convs.length, 1, `retry after provider failure created ${convs.length} conversations`);
+    // MASTER PASS 2 (M7): the retry is the same attempt, so the question is stored once.
+    assert.deepEqual(convs.map((c) => [c.questions, c.answers]), [[1, 1]], `retry must store the question once: ${JSON.stringify(convs)}`);
     evidence("PASS U5 desktop AI flow");
+  } finally {
+    await context.close();
+    await new Promise((r) => server.close(r));
+  }
+});
+
+// MASTER PASS 2 (M7): the history reload right after "create conversation" fails
+// (backend hiccup). Before the fix the conversation was then not selected and
+// the retry created a second one. The retry must continue the SAME conversation.
+test("U5b desktop: history reload fails right after the new conversation is created; still ONE conversation, ONE question", async () => {
+  const server = desktopServer(resolve("desktop/dist"), fx.gateway);
+  await new Promise((r) => server.listen(3602, "127.0.0.1", r));
+  const context = await browser.newContext({ viewport: { width: 1366, height: 900 } });
+  const page = await context.newPage();
+  try {
+    await desktopAskOnarly(page);
+    stub.mode("ok");
+    await page.getByRole("button", { name: "Ny chatt" }).click();
+    let failNextList = false; let injected = 0;
+    page.on("request", (req) => { if (req.method() === "POST" && new URL(req.url()).pathname === "/ai/v1/conversations") failNextList = true; });
+    await page.route((url) => url.pathname === "/ai/v1/conversations" && url.searchParams.has("organizationId"), async (r) => {
+      if (failNextList && r.request().method() === "GET") {
+        failNextList = false; injected++;
+        return r.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ error: { code: "BACKEND_UNAVAILABLE" } }) });
+      }
+      return r.continue();
+    });
+    const title = `MP2 reload-fel ${run}`;
+    const box = page.getByPlaceholder("Fråga om ett fel, kod, drift eller ett supportärende…");
+    await box.fill(title);
+    await page.getByLabel(/Jag har granskat texten/).check();
+    await page.getByRole("button", { name: "Fråga ONARLY AI" }).click();
+    const outcome = await Promise.race([
+      page.getByRole("heading", { name: "Hypoteser" }).first().waitFor({ timeout: 30000 }).then(() => "answered"),
+      // aiErrorMessage("BACKEND_UNAVAILABLE"): the message a failed history reload shows
+      page.getByRole("alert").filter({ hasText: "AI-anropet misslyckades" }).first().waitFor({ timeout: 30000 }).then(() => "error"),
+    ]);
+    let retried = false;
+    if (outcome === "error") {
+      // what a user does: press the button again (question and consent are still filled in)
+      retried = true;
+      if (!(await box.inputValue())) await box.fill(title);
+      if (!(await page.getByLabel(/Jag har granskat texten/).isChecked())) await page.getByLabel(/Jag har granskat texten/).check();
+      await page.getByRole("button", { name: "Fråga ONARLY AI" }).click();
+      // Do not stop here if no answer comes: the database state below is the verdict.
+      await page.getByRole("heading", { name: "Hypoteser" }).first().waitFor({ timeout: 30000 }).catch(() => { retried = "no answer"; });
+    }
+    const convs = sql(`select (select count(*) from public.ai_messages m where m.conversation_id=c.id and m.role='user')::int questions, (select count(*) from public.ai_messages m where m.conversation_id=c.id and m.role='assistant')::int answers from public.ai_conversations c where c.title='${title}'`);
+    evidence(`INFO U5b reload failure injected=${injected} first=${outcome} retried=${retried} conversations=${JSON.stringify(convs)}`);
+    await page.screenshot({ path: `${shots}/desktop-ai-reload-failure.png`, fullPage: true });
+    assert.ok(injected >= 1, "the history reload failure was injected");
+    assert.deepEqual(convs, [{ questions: 1, answers: 1 }], `expected one conversation with one question and one answer, got ${JSON.stringify(convs)}`);
+    evidence("PASS U5b desktop reload failure");
   } finally {
     await context.close();
     await new Promise((r) => server.close(r));

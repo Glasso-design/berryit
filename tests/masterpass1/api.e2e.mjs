@@ -4,6 +4,7 @@
 // Nothing here talks to a shared environment; lib.mjs refuses non-loopback targets.
 import test from "node:test";
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { fx, G, WEB, sql, sqlExec, stub, json, login, loginAal2, rest, ai, route, evidence } from "./lib.mjs";
 
 const T = {}; // tokens
@@ -212,9 +213,15 @@ test("B8 customer registration via /api/control/customers (GoTrue admin + DB tri
   const deniedAal1 = await route(T.saapiAal1, null, { full_name: "Nekad Kund 2", email: `nekad2.${run}@mp1.example.test`, phone: "", organization_id: fx.orgs.a }, "/api/control/customers");
   assert.equal(deniedAal1.status, 400, "Super Admin at aal1 must be refused");
   assert.equal(sql(`select count(*)::int n from auth.users where email like 'nekad%.${run}@mp1.example.test'`)[0].n, 0, "no auth user created on refusal");
+  // MASTER PASS 2 (M1): count ALL audit rows written while the registration runs.
+  const auditBefore = sql("select coalesce(max(id),0)::bigint m from public.support_admin_audit")[0].m;
   const r = await route(T.saapi, null, { full_name: "MP1 Registrerad Kund", email: mail, phone: "070-000 00 00", organization_id: fx.orgs.a }, "/api/control/customers");
   const body = await json(r);
   assert.equal(r.status, 201, JSON.stringify(body));
+  const written = sql(`select action, actor_id, target_id, reason from public.support_admin_audit where id > ${auditBefore} order by id`);
+  evidence(`INFO B8 audit rows written by one registration: ${JSON.stringify(written.map((w) => [w.action, w.actor_id ? "actor" : "NO-ACTOR"]))}`);
+  assert.deepEqual(written, [{ action: "customer_registered", actor_id: fx.users.saapi, target_id: body.id, reason: "Manuell kundregistrering" }],
+    "a registration must write exactly one attributed audit row (no anonymous profiles_update)");
   const profile = sql(`select p.role, p.organization_id, p.login_activation_pending, p.registered_by, p.full_name from public.profiles p where p.id='${body.id}'`)[0];
   evidence(`INFO registration profile: ${JSON.stringify(profile)}`);
   assert.equal(profile.role, "customer");
@@ -228,6 +235,53 @@ test("B8 customer registration via /api/control/customers (GoTrue admin + DB tri
   const loginNew = await fetch(`${G}/auth/v1/token?grant_type=password`, { method: "POST", headers: { apikey: fx.anonKey, "Content-Type": "application/json" }, body: JSON.stringify({ email: mail, password: "gissning-123-ABC" }) });
   assert.notEqual(loginNew.status, 200);
   ok("customer registration", JSON.stringify(profile));
+});
+
+// MASTER PASS 2 (M5): REAL GoTrue admin create, called directly with the service
+// key like the route does, but with a marker the trigger must refuse. GoTrue's
+// own transaction must roll back: zero rows in auth.users, profiles and audit.
+test("B8b REAL GoTrue admin create refused by the DB trigger leaves zero rows (aal1 / forged session / unknown org)", async () => {
+  const claims = (token) => JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString());
+  const aal2Session = claims(T.saapi).session_id;
+  const aal1 = await login("saapi"); // fresh password-only session: aal1
+  assert.equal(aal1.status, 200);
+  assert.equal(claims(aal1.token).aal, "aal1");
+  const aal1Session = claims(aal1.token).session_id;
+  const create = (email, marker) => fetch(`${G}/auth/v1/admin/users`, {
+    method: "POST",
+    headers: { apikey: fx.serviceKey, Authorization: `Bearer ${fx.serviceKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password: `Mp2-${randomUUID()}!`, email_confirm: false, ban_duration: "876000h",
+      user_metadata: { full_name: "MP2 B8b" }, app_metadata: { berryit_manual_customer: marker } }),
+  });
+  const results = {};
+  for (const [label, marker] of [
+    ["aal1-session", { actor_id: fx.users.saapi, session_id: aal1Session, organization_id: fx.orgs.a }],
+    ["forged-session", { actor_id: fx.users.saapi, session_id: randomUUID(), organization_id: fx.orgs.a }],
+    ["unknown-organisation", { actor_id: fx.users.saapi, session_id: aal2Session, organization_id: randomUUID() }],
+    ["technician-registrar", { actor_id: fx.users.techa, session_id: claims(T.techa).session_id, organization_id: fx.orgs.a }],
+  ]) {
+    const mail = `mp2.b8b.${label}.${run}@mp1.example.test`;
+    const auditBefore = sql("select coalesce(max(id),0)::bigint m from public.support_admin_audit")[0].m;
+    const r = await create(mail, marker);
+    const left = sql(`select (select count(*) from auth.users where email='${mail}')::int users,
+      (select count(*) from public.profiles where email='${mail}')::int profiles,
+      (select count(*) from public.support_admin_audit where id > ${auditBefore})::int audit`)[0];
+    results[label] = { status: r.status, ...left };
+    assert.ok(r.status >= 400, `${label}: GoTrue must refuse, got ${r.status}`);
+    assert.deepEqual(left, { users: 0, profiles: 0, audit: 0 }, `${label}: refused registration left rows behind`);
+  }
+  // Positive control with the same request shape: a live aal2 session of the registrar.
+  const okMail = `mp2.b8b.ok.${run}@mp1.example.test`;
+  const auditBefore = sql("select coalesce(max(id),0)::bigint m from public.support_admin_audit")[0].m;
+  const ok2 = await create(okMail, { actor_id: fx.users.saapi, session_id: aal2Session, organization_id: fx.orgs.a });
+  const created = await json(ok2);
+  results.control = { status: ok2.status };
+  assert.ok(ok2.status === 200 || ok2.status === 201, `control: ${ok2.status} ${JSON.stringify(created).slice(0, 200)}`);
+  const profile = sql(`select organization_id, login_activation_pending, registered_by from public.profiles where id='${created.id}'`)[0];
+  assert.deepEqual(profile, { organization_id: fx.orgs.a, login_activation_pending: true, registered_by: fx.users.saapi });
+  const written = sql(`select action, actor_id from public.support_admin_audit where id > ${auditBefore} order by id`);
+  assert.deepEqual(written, [{ action: "customer_registered", actor_id: fx.users.saapi }], "control: exactly one attributed audit row");
+  ok("REAL GoTrue refusal via trigger", JSON.stringify(results));
 });
 
 test("B9 revocation is immediate for an already issued JWT", async () => {
@@ -383,4 +437,47 @@ test("C8 AI rate limit (20/min per user) answers 429 without calling the gateway
   assert.equal(statuses.at(-1), 429, JSON.stringify(statuses));
   assert.equal(stub.requests().length, before);
   ok("ai rate limit", `last=${statuses.at(-1)}`);
+});
+
+// MASTER PASS 2 (M7): the Desktop sends one client id per attempt. A retry with
+// the same ids must reuse the conversation, store the question once and, once
+// answered, return the stored answer without a second gateway call.
+test("C9 AI retry idempotency: client ids dedupe conversation and question (failure, retry, replay, conflict)", async () => {
+  const conversationId = randomUUID();
+  const messageId = randomUUID();
+  const title = `MP2 idempotent ${run}`;
+  const create = (token, extra = {}) => ai(token, "/conversations", { method: "POST", body: JSON.stringify({ id: conversationId, organizationId: fx.orgs.a, title, ...extra }) });
+  const first = await create(T.techa);
+  const firstBody = await json(first);
+  const second = await create(T.techa);
+  const secondBody = await json(second);
+  assert.equal(first.status, 201, JSON.stringify(firstBody));
+  assert.equal(firstBody.conversation.id, conversationId, "client id is the conversation id");
+  assert.equal(second.status, 201);
+  assert.equal(secondBody.conversation.id, conversationId, "replayed create returns the same conversation");
+  const otherContext = await create(T.techa, { serviceKey: "natverk" });
+  assert.equal(otherContext.status, 409); assert.equal((await json(otherContext)).error.code, "IDEMPOTENCY_CONFLICT");
+  const otherUser = await create(T.saapi);
+  assert.equal(otherUser.status, 409, "another user cannot adopt the conversation by replaying its id");
+  assert.equal(sql(`select count(*)::int n from public.ai_conversations where title='${title}'`)[0].n, 1);
+  const ask = (text = "MP2 samma fråga vid omförsök?") => ai(T.techa, `/conversations/${conversationId}/messages`, { method: "POST", body: JSON.stringify({ text, approvedForAi: true, messageId }) });
+  stub.mode("http503");
+  const failed = await ask();
+  assert.equal(failed.status, 503);
+  stub.mode("ok");
+  const gatewayBefore = stub.requests().length;
+  const retried = await ask();
+  const retriedBody = await json(retried);
+  assert.equal(retried.status, 201, JSON.stringify(retriedBody).slice(0, 300));
+  const replayed = await ask();
+  const replayedBody = await json(replayed);
+  assert.equal(replayed.status, 200, JSON.stringify(replayedBody).slice(0, 300));
+  assert.equal(replayedBody.message.id, retriedBody.message.id, "replay returns the stored answer");
+  assert.equal(stub.requests().length, gatewayBefore + 1, "replay of an answered attempt must not call the gateway");
+  const conflict = await ask("En annan fråga med samma id");
+  assert.equal(conflict.status, 409); assert.equal((await json(conflict)).error.code, "IDEMPOTENCY_CONFLICT");
+  const rows = sql(`select role from public.ai_messages where conversation_id='${conversationId}' order by created_at`).map((m) => m.role);
+  evidence(`INFO C9 idempotency: conversations=1 statuses create=${first.status}/${second.status} ask=${failed.status}/${retried.status}/${replayed.status} messages=${JSON.stringify(rows)}`);
+  assert.deepEqual(rows, ["user", "assistant"], "one question and one answer after failure + retry + replay");
+  ok("ai idempotency", `messages=${rows.join(",")}`);
 });

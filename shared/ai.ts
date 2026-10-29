@@ -158,6 +158,7 @@ export function aiErrorMessage(code: string): string {
     NO_VERIFIED_SOLUTION: "Det finns ingen verifierad lösning att spara.",
     CONTEXT_CHANGED: "Underlaget har ändrats, godkännandet har gått ut eller redan använts. Förhandsgranska och godkänn igen.",
     DIAGNOSTIC_PREVIEW_REQUIRED: "Incidentanalys kräver förhandsgranskat underlag genom Sök felet.",
+    IDEMPOTENCY_CONFLICT: "Försöket matchar inte det som redan sparats. Starta en ny chatt och ställ frågan igen.",
   };
   return known[code] ?? "AI-anropet misslyckades säkert. Försök igen eller samla mer diagnostik.";
 }

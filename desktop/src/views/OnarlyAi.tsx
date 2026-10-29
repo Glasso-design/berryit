@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   AiContext,
   AiConversation,
@@ -16,6 +16,14 @@ function errorText(error: unknown): string {
       ? error.message
       : "Ett oväntat fel inträffade.";
 }
+
+// One attempt = one question in one chat context. Its ids are generated once on
+// the client and reused for every retry of that attempt (gateway down, timeout,
+// lost response, failed history reload): the adapter deduplicates on them, so a
+// retry continues the same conversation and stores the question only once.
+type AskAttempt = { draft: string; conversationId: string; text: string; messageId: string };
+type DiagnosticAttempt = { draft: string; conversationId: string };
+const newAttemptId = () => crypto.randomUUID();
 
 function ResponseSections({ response }: { response: AiStructuredResponse }) {
   return (
@@ -151,6 +159,15 @@ export function OnarlyAi({ onOpenTicket }: { onOpenTicket: (reference: string) =
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const askAttempt = useRef<AskAttempt | null>(null);
+  const diagnosticAttempt = useRef<DiagnosticAttempt | null>(null);
+
+  // Select a conversation the adapter just returned without a second network
+  // call: a failed history reload must never make the retry lose it.
+  const rememberConversation = useCallback((conversation: AiConversation) => {
+    setConversations((rows) => [conversation, ...rows.filter((row) => row.id !== conversation.id)]);
+    setConversationId(conversation.id);
+  }, []);
 
   const loadConversations = useCallback(
     async (org: string) => {
@@ -225,32 +242,51 @@ export function OnarlyAi({ onOpenTicket }: { onOpenTicket: (reference: string) =
   const latestQuestion = [...messages].reverse().find((message) => message.role === "user")?.body ?? "";
 
   const ask = async () => {
-    if (!client || !organizationId || !question.trim()) return;
+    const text = question.trim();
+    if (!client || !organizationId || !text) return;
     setBusy("ask");
     setError(null);
     setNotice(null);
+    // Same chat context + same question = the same attempt (same ids). The
+    // conversation id is kept for a new chat even if the selection was lost.
+    const draft = [organizationId, projectId, incidentId, serviceKey].join("|");
+    const previous = askAttempt.current;
+    const conversationKey =
+      selectedConversation?.id ??
+      (previous && previous.draft === draft ? previous.conversationId : newAttemptId());
+    const attempt: AskAttempt = {
+      draft,
+      conversationId: conversationKey,
+      text,
+      messageId:
+        previous && previous.conversationId === conversationKey && previous.text === text
+          ? previous.messageId
+          : newAttemptId(),
+    };
+    askAttempt.current = attempt;
     let active = selectedConversation;
     try {
       if (!active) {
         active = await client.createConversation({
+          id: attempt.conversationId,
           organizationId,
           projectId: projectId || null,
           incidentId: incidentId || null,
           serviceKey: serviceKey || null,
-          title: question.trim().slice(0, 160),
+          title: text.slice(0, 160),
         });
-        setConversationId(active.id);
-        // Select the new conversation in the history right away. Otherwise a
-        // failed first question (gateway down, timeout) leaves it unselected
-        // and the retry silently creates a duplicate conversation.
-        await loadConversations(organizationId);
+        attempt.conversationId = active.id;
+        rememberConversation(active);
       }
-      await client.ask(active.id, question.trim(), approved);
+      await client.ask(active.id, text, approved, attempt.messageId);
+      askAttempt.current = null;
       setQuestion("");
       setApproved(false);
+      // The answer is stored; refreshing the views must not turn it into an error.
+      const answered = active.id;
       await Promise.all([
-        client.messages(active.id).then(setMessages),
-        loadConversations(organizationId),
+        client.messages(answered).then(setMessages).catch(() => undefined),
+        loadConversations(organizationId).catch(() => undefined),
       ]);
     } catch (caught) {
       setError(errorText(caught));
@@ -420,8 +456,13 @@ export function OnarlyAi({ onOpenTicket }: { onOpenTicket: (reference: string) =
        </label>
        {!selectedConversation&&(projectId||incidentId)&&<button type="button" disabled={busy!==null} onClick={()=>{
         if(!client)return;setBusy('diagnostic');setError(null);
-        void client.createConversation({organizationId,projectId:projectId||null,incidentId:incidentId||null,serviceKey:null,title:'Sök felet'}).then(async conversation=>{
-         await loadConversations(organizationId);setConversationId(conversation.id);
+        // Same target = same attempt id, so a retry never creates a second conversation.
+        const draft=[organizationId,projectId,incidentId].join('|');
+        const attempt=diagnosticAttempt.current?.draft===draft?diagnosticAttempt.current:{draft,conversationId:newAttemptId()};
+        diagnosticAttempt.current=attempt;
+        void client.createConversation({id:attempt.conversationId,organizationId,projectId:projectId||null,incidentId:incidentId||null,serviceKey:null,title:'Sök felet'}).then(async conversation=>{
+         rememberConversation(conversation);diagnosticAttempt.current=null;
+         await loadConversations(organizationId).catch(()=>undefined);
         }).catch(e=>setError(errorText(e))).finally(()=>setBusy(null));
        }} className="rounded-full border border-line px-4 py-2 text-sm">Sök felet för valt mål</button>}
        {client&&selectedConversation&&(selectedConversation.project_id||selectedConversation.incident_id)&&<DiagnosticPanel
@@ -436,6 +477,9 @@ export function OnarlyAi({ onOpenTicket }: { onOpenTicket: (reference: string) =
             <button
               type="button"
               onClick={() => {
+                // An explicit new chat is a new attempt, never a retry.
+                askAttempt.current = null;
+                diagnosticAttempt.current = null;
                 setConversationId("");
                 setMessages([]);
               }}

@@ -5,9 +5,11 @@ name: masterpass1-berryit
 # Support Desk stack (deploy/berryit-support/compose.yaml) with freshly
 # generated keys, the Next.js Control Center (next start), the Desktop UI build
 # and a SIM ONARLY AI gateway. No repository secrets, no external backends.
+# MASTER PASS 2: also on fix/masterpass2-** (review fixes) with the ops step
+# (M2 lock_timeout via migrate.sh, M4 registration check, M3 GoTrue upgrade).
 on:
   push:
-    branches: ["fix/masterpass1-**"]
+    branches: ["fix/masterpass1-**", "fix/masterpass2-**"]
 
 permissions:
   contents: read
@@ -20,6 +22,10 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      # M3 upgrade target: the GoTrue image pinned by the supabase CLI v2.122.0
+      # (apps/cli/src/shared/services/Dockerfile), one release after compose.yaml's v2.196.0.
+      MP2_GOTRUE_UPGRADE_IMAGE: supabase/gotrue:v2.197.0
     steps:
       - name: Paths
         run: |
@@ -42,7 +48,7 @@ jobs:
           set +e
           mkdir -p "$MP1_DIR"
           # Runbook regression: the README tells operators to run these directly.
-          for f in generate-secrets.sh migrate.sh stack.sh backup.sh restore-test.sh security-gate.sh; do
+          for f in generate-secrets.sh migrate.sh stack.sh backup.sh restore-test.sh security-gate.sh registration-check.sh; do
             [ -x "deploy/berryit-support/$f" ] || echo "::error title=runbook script not executable::deploy/berryit-support/$f (git mode 100644)"
           done
           bash tests/masterpass1/stack-up.sh > "$MP1_DIR/stack-up.log" 2>&1
@@ -95,6 +101,14 @@ jobs:
           MP1_REPO="$PWD" MP1_SUITE=ui-real node --test --test-reporter=./tests/masterpass1/annotate-reporter.mjs --test-reporter-destination=stdout tests/masterpass1/ui.e2e.mjs
           s=$?; echo "ui $s" >> "$MP1_STATUS"
 
+      - name: REAL ops tests (M4 registration check, M2 lock_timeout via migrate.sh, M3 GoTrue upgrade)
+        if: ${{ !cancelled() }}
+        timeout-minutes: 10
+        run: |
+          set +e
+          MP1_REPO="$PWD" MP1_SUITE=ops-real node --test --test-reporter=./tests/masterpass1/annotate-reporter.mjs --test-reporter-destination=stdout tests/masterpass1/ops.e2e.mjs
+          s=$?; echo "ops $s" >> "$MP1_STATUS"
+
       - name: Regression (repo's own suites)
         if: ${{ !cancelled() }}
         run: |
@@ -119,7 +133,7 @@ jobs:
         run: |
           set +e
           if [ -f "$MP1_DIR/evidence.log" ]; then
-            split -l 12 "$MP1_DIR/evidence.log" "$MP1_DIR/ev-"
+            split -l 16 "$MP1_DIR/evidence.log" "$MP1_DIR/ev-"
             n=0; for f in "$MP1_DIR"/ev-*; do n=$((n+1)); [ $n -le 9 ] && echo "::notice title=evidence $n::$(sed ':a;N;$!ba;s/\n/%0A/g' "$f" | cut -c1-3900)"; done
           fi
           export MP1_GATEWAY_TOKEN=unused-for-logs MP1_REPO="$GITHUB_WORKSPACE"

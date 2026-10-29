@@ -41,10 +41,16 @@ for file in "${files[@]}"; do
   echo "  applicerar $version"
   # SQL and ledger entry must commit together. A crash between two transactions
   # must not cause a non-idempotent migration to be replayed.
-  {
+  # --single-transaction also wraps SQL read from stdin (verified psql 16/17), so
+  # a migration's SET LOCAL lock_timeout/statement_timeout applies to all of it.
+  if ! {
     cat "$file"
     printf "\ninsert into public.schema_migrations (version) values ('%s');\n" "$version"
-  } | docker exec -i "$container" psql -v ON_ERROR_STOP=1 -U "$db_user" -d postgres --single-transaction
+  } | docker exec -i "$container" psql -v ON_ERROR_STOP=1 -U "$db_user" -d postgres --single-transaction; then
+    echo "  $version avbröts och rullades tillbaka – ingenting av den är applicerat." >&2
+    echo "  Vid 'lock timeout': se README.md, avsnittet \"Migrering med låsgräns\", och kör migrate.sh igen." >&2
+    exit 1
+  fi
   applied=$((applied + 1))
 done
 

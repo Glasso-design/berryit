@@ -207,16 +207,40 @@ export function createPostgrestBoundary({
       return row;
     },
 
+    // Idempotent when the client sends its own id for the attempt (M7): the id is
+    // the primary key, so a retry after a lost response, a gateway failure or a
+    // failed list reload gets the SAME conversation instead of a duplicate. A
+    // replay only matches the caller's own conversation with the same context.
     async createConversation(identity, input) {
-      const rows = await userInsert("ai_conversations", identity.token, {
-        organization_id: input.organizationId,
-        project_id: input.projectId,
-        incident_id: input.incidentId ?? null,
-        service_key: input.serviceKey,
-        created_by: identity.userId,
-        title: input.title,
-      });
-      return first(rows) ?? fail(502, "BACKEND_ERROR");
+      try {
+        const rows = await userInsert("ai_conversations", identity.token, {
+          ...(input.id ? { id: input.id } : {}),
+          organization_id: input.organizationId,
+          project_id: input.projectId,
+          incident_id: input.incidentId ?? null,
+          service_key: input.serviceKey,
+          created_by: identity.userId,
+          title: input.title,
+        });
+        return first(rows) ?? fail(502, "BACKEND_ERROR");
+      } catch (error) {
+        if (!input.id || !(error instanceof ApiError) || error.status !== 409) throw error;
+        const existing = first(await call(
+          `/ai_conversations?select=id,organization_id,project_id,incident_id,service_key,created_by,title,created_at,updated_at&id=eq.${encode(input.id)}&limit=1`,
+          identity.token,
+        ));
+        if (!existing) throw error;
+        if (
+          existing.created_by !== identity.userId ||
+          existing.organization_id !== input.organizationId ||
+          (existing.project_id ?? null) !== input.projectId ||
+          (existing.incident_id ?? null) !== (input.incidentId ?? null) ||
+          (existing.service_key ?? null) !== input.serviceKey
+        ) {
+          fail(409, "IDEMPOTENCY_CONFLICT");
+        }
+        return existing;
+      }
     },
 
     async messages(identity, conversationId) {
@@ -227,15 +251,33 @@ export function createPostgrestBoundary({
       );
     },
 
-    async addUserMessage(identity, conversation, text) {
-      const rows = await userInsert("ai_messages", identity.token, {
-        conversation_id: conversation.id,
-        organization_id: conversation.organization_id,
-        actor_id: identity.userId,
-        role: "user",
-        body: text,
-      });
-      return first(rows) ?? fail(502, "BACKEND_ERROR");
+    // With a client id for the attempt (M7) a retry stores the question once.
+    // A replay returns { replayed: true, answer } where answer is the assistant
+    // message that already followed this question (null if none yet).
+    async addUserMessage(identity, conversation, text, messageId = null) {
+      try {
+        const rows = await userInsert("ai_messages", identity.token, {
+          ...(messageId ? { id: messageId } : {}),
+          conversation_id: conversation.id,
+          organization_id: conversation.organization_id,
+          actor_id: identity.userId,
+          role: "user",
+          body: text,
+        });
+        return { ...(first(rows) ?? fail(502, "BACKEND_ERROR")), replayed: false, answer: null };
+      } catch (error) {
+        if (!messageId || !(error instanceof ApiError) || error.status !== 409) throw error;
+        const messages = await this.messages(identity, conversation.id);
+        const index = messages.findIndex((message) => message.id === messageId);
+        if (index < 0) throw error;
+        const stored = messages[index];
+        if (stored.role !== "user" || stored.actor_id !== identity.userId || stored.body !== text) {
+          fail(409, "IDEMPOTENCY_CONFLICT");
+        }
+        // messages are ordered by created_at; the answer, if any, is the next row.
+        const next = messages[index + 1];
+        return { ...stored, replayed: true, answer: next?.role === "assistant" ? next : null };
+      }
     },
 
     async sourceContext(identity, conversation) {
@@ -636,6 +678,7 @@ export function createAiHandler({
       if (req.method === "POST" && route === "/conversations") {
         const body = await readBody(req);
         const input = {
+          id: optionalUuid(body.id),
           organizationId: requiredUuid(body.organizationId),
           projectId: optionalUuid(body.projectId),
           incidentId: optionalUuid(body.incidentId),
@@ -683,9 +726,15 @@ export function createAiHandler({
         const body = await readBody(req);
         if (body.approvedForAi !== true) fail(400, "CONSENT_REQUIRED");
         const text = safeText(body.text, 2, 8_000);
+        const messageId = optionalUuid(body.messageId);
         conversation = await boundary.conversation(identity, requiredUuid(messagesMatch[1]));
         if(conversation.incident_id)fail(400,'DIAGNOSTIC_PREVIEW_REQUIRED');
-        await boundary.addUserMessage(identity, conversation, text);
+        const question = await boundary.addUserMessage(identity, conversation, text, messageId);
+        // Replay of an attempt that was already answered (e.g. the response was
+        // lost): return the stored answer, never a second gateway call/answer.
+        if (question?.replayed && question.answer) {
+          return reply(res, 200, { message: question.answer, response: question.answer.structured_response });
+        }
         const context = await boundary.sourceContext(identity, conversation);
         const controller = new AbortController();
         req.once("aborted", () => controller.abort());
