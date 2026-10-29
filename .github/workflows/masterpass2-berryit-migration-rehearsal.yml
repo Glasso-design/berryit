@@ -30,6 +30,10 @@ jobs:
             up: supabase/migrations/20261029090000_registration_gotrue_metadata.sql
             down: docs/release/rollback/20261029090000_registration_gotrue_metadata.down.sql
             m1_fixed: "0"
+          - name: "review-fixes c64ed10 (migration as changed in place, 902bea5)"
+            up: tests/masterpass2/migration-rehearsal/candidates/review-fixes-c64ed10.up.sql
+            down: docs/release/rollback/20261029090000_registration_gotrue_metadata.review-fixes.down.sql
+            m1_fixed: "1"
     name: rehearsal ${{ matrix.candidate.name }}
     env:
       MP2_CANDIDATE: ${{ matrix.candidate.up }}

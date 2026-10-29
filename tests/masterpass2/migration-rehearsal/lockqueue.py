@@ -13,6 +13,7 @@ import json, os, subprocess, sys, threading, time
 PSQL = json.loads(os.environ['MP2_PSQL'])
 mig, a_sql, c_spec = open(sys.argv[1]).read(), sys.argv[2], sys.argv[3]
 b_timeout = sys.argv[4] if len(sys.argv) > 4 else None
+HOLD = float(os.environ.get('MP2_A_HOLD', '6'))  # seconds session A keeps its transaction open
 T0 = time.time()
 res = {}
 
@@ -30,7 +31,7 @@ def shell(name, cmd):
     res[name] = (round(t - T0, 2), round(time.time() - T0, 2), round(time.time() - t, 2), f'exit {p.returncode}', [p.stdout.strip()[-160:]])
 
 
-A = threading.Thread(target=psql, args=('A holder', f"set application_name='mp2-A';\nbegin;\n{a_sql};\nselect pg_sleep(6);\nrollback;\n"))
+A = threading.Thread(target=psql, args=('A holder', f"set application_name='mp2-A';\nbegin;\n{a_sql};\nselect pg_sleep({HOLD});\nrollback;\n"))
 B = threading.Thread(target=psql, args=('B migration', "set application_name='mp2-B';\n\\set ON_ERROR_STOP 1\nbegin;\n" + (f"set local lock_timeout = '{b_timeout}';\n" if b_timeout else '') + mig + "\nrollback;\n"))
 if c_spec.startswith('sh:'):
     C = threading.Thread(target=shell, args=('C client', c_spec[3:]))

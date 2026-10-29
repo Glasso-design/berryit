@@ -73,7 +73,9 @@ locks)
   pre=$(eval "$login")
   { echo "baseline REAL GoTrue login with nothing blocking: $pre"
     python3 -I "$H/lockqueue.py" "$repo/$MP2_CANDIDATE" "update auth.users set updated_at = now() where id = '$ca'" "sh:$login"
-    python3 -I "$H/lockqueue.py" "$repo/$MP2_CANDIDATE" "update auth.users set updated_at = now() where id = '$ca'" "sh:$login" 2s; } > "$E/lockqueue-up.txt" 2>&1
+    python3 -I "$H/lockqueue.py" "$repo/$MP2_CANDIDATE" "update auth.users set updated_at = now() where id = '$ca'" "sh:$login" 2s
+    echo "-- A holds 10 s (longer than any lock_timeout inside the candidate):"
+    MP2_A_HOLD=10 python3 -I "$H/lockqueue.py" "$repo/$MP2_CANDIDATE" "update auth.users set updated_at = now() where id = '$ca'" "sh:$login"; } > "$E/lockqueue-up.txt" 2>&1
   note "M2 lock queue: A open writer tx, B migration, C REAL GoTrue login" "$(cat "$E/lockqueue-up.txt")" ;;
 up)
   mig_dirs
@@ -81,7 +83,8 @@ up)
   t0=$(date +%s%N); "$here/migrate.sh" "$MP2_DIR/mig-all" > "$E/up-1.log" 2>&1; rc=$?; t1=$(date +%s%N)
   "$here/migrate.sh" "$MP2_DIR/mig-all" > "$E/up-2.log" 2>&1; rc2=$?
   dump "$E/schema-1-after-up.sql"; checksum "$E/checksum-1-after-up.txt"
-  t2=$(date +%s%N); sql -f - < "$repo/$MP2_CANDIDATE" > "$E/up-3-raw.log" 2>&1; rc3=$?; t3=$(date +%s%N)
+  # The SQL a second time outside the ledger, in one transaction as migrate.sh runs it (a candidate may refuse to run outside one).
+  t2=$(date +%s%N); sql --single-transaction -f - < "$repo/$MP2_CANDIDATE" > "$E/up-3-raw.log" 2>&1; rc3=$?; t3=$(date +%s%N)
   dump "$E/schema-2-after-up-twice.sql"
   d12=$(diff "$E/schema-1-after-up.sql" "$E/schema-2-after-up-twice.sql" | grep -c '^[<>]')
   diff "$E/schema-0-baseline.sql" "$E/schema-1-after-up.sql" > "$E/schema-diff-baseline-vs-up.diff"
