@@ -1,0 +1,133 @@
+name: masterpass1-berryit
+
+# MASTER PASS 1 functional test run. Push-only on fix/masterpass1-** branches.
+# Everything runs on this throwaway ubuntu runner: the repo's own self-hosted
+# Support Desk stack (deploy/berryit-support/compose.yaml) with freshly
+# generated keys, the Next.js Control Center (next start), the Desktop UI build
+# and a SIM ONARLY AI gateway. No repository secrets, no external backends.
+on:
+  push:
+    branches: ["fix/masterpass1-**"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: masterpass1-berryit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      MP1_DIR: ${{ runner.temp }}/mp1
+      MP1_STATUS: ${{ runner.temp }}/mp1-status.txt
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install (web + desktop + Chromium)
+        run: |
+          set +e
+          npm ci --no-audit --no-fund && npm ci --prefix desktop --no-audit --no-fund && npx playwright install --with-deps chromium
+          s=$?; echo "install $s" >> "$MP1_STATUS"; [ $s -eq 0 ] || echo "::error title=install::npm ci / playwright install failed ($s)"
+
+      - name: Stack up (REAL GoTrue/PostgREST/Storage/Postgres + AI adapter + SIM gateway)
+        if: ${{ !cancelled() }}
+        run: |
+          set +e
+          mkdir -p "$MP1_DIR"
+          bash tests/masterpass1/stack-up.sh > "$MP1_DIR/stack-up.log" 2>&1
+          s=$?; echo "stack $s" >> "$MP1_STATUS"
+          grep '^::' "$MP1_DIR/stack-up.log"
+          if [ $s -ne 0 ]; then
+            msg=$(tail -c 2800 "$MP1_DIR/stack-up.log" | sed ':a;N;$!ba;s/\n/%0A/g')
+            echo "::error title=stack-up failed::$msg"
+          fi
+
+      - name: Build + start web Control Center (next build --webpack, next start)
+        if: ${{ !cancelled() }}
+        run: |
+          set +e
+          export NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:8700 NEXT_PUBLIC_SUPABASE_ANON_KEY="$MP1_ANON_KEY" NEXT_PUBLIC_SITE_URL=http://localhost:3501
+          npm run build > "$MP1_DIR/next-build.log" 2>&1; b=$?
+          SUPABASE_SERVICE_ROLE_KEY="$MP1_SERVICE_ROLE_KEY" nohup npx next start -p 3501 > "$MP1_DIR/next.log" 2>&1 &
+          for i in $(seq 1 60); do curl -s -o /dev/null -w '%{http_code}' http://localhost:3501/control/login | grep -q 200 && break; sleep 1; done
+          code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3501/control/login)
+          s=$(( b != 0 || code != 200 )); echo "web $s" >> "$MP1_STATUS"
+          if [ $s -ne 0 ]; then echo "::error title=web build/start::build=$b login=$code%0A$(tail -c 2500 "$MP1_DIR/next-build.log" | sed ':a;N;$!ba;s/\n/%0A/g')"; else echo "::notice title=web::next build ok, next start serving /control/login (HTTP $code)"; fi
+
+      - name: Build Desktop UI (Vite) against same-origin test proxy
+        if: ${{ !cancelled() }}
+        run: |
+          set +e
+          BERRYIT_PUBLIC_BACKEND_URL=http://127.0.0.1:3602 BERRYIT_PUBLIC_ANON_KEY="$MP1_ANON_KEY" BERRYIT_PUBLIC_CONTROL_URL="" npm run build --prefix desktop > "$MP1_DIR/desktop-build.log" 2>&1
+          s=$?; echo "desktop-build $s" >> "$MP1_STATUS"
+          [ $s -eq 0 ] || echo "::error title=desktop build::$(tail -c 2500 "$MP1_DIR/desktop-build.log" | sed ':a;N;$!ba;s/\n/%0A/g')"
+
+      - name: REAL API chain tests (route handlers, RLS, Storage, AI adapter, SIM gateway)
+        if: ${{ !cancelled() }}
+        run: |
+          set +e
+          MP1_REPO="$PWD" MP1_SUITE=api-real node --test --test-reporter=./tests/masterpass1/annotate-reporter.mjs --test-reporter-destination=stdout tests/masterpass1/api.e2e.mjs
+          s=$?; echo "api $s" >> "$MP1_STATUS"
+
+      - name: REAL browser tests (web Control Center + Desktop UI, 390 px)
+        if: ${{ !cancelled() }}
+        run: |
+          set +e
+          MP1_REPO="$PWD" MP1_SUITE=ui-real node --test --test-reporter=./tests/masterpass1/annotate-reporter.mjs --test-reporter-destination=stdout tests/masterpass1/ui.e2e.mjs
+          s=$?; echo "ui $s" >> "$MP1_STATUS"
+
+      - name: Regression (repo's own suites)
+        if: ${{ !cancelled() }}
+        run: |
+          set +e
+          out=""
+          for cmd in "npm run lint" "npm run typecheck" "npm test --prefix desktop" "npm run db:test" "npm run test:support-workflow" "npm run test:ai-diagnostics" "node --test services/onarly-ai-adapter/server.test.mjs services/onarly-ai-adapter/diagnostics.test.mjs services/onarly-ai-adapter/diagnostic-http.test.mjs"; do
+            env -u NEXT_PUBLIC_SUPABASE_URL $cmd > "$MP1_DIR/regression.log" 2>&1; c=$?
+            out="$out [$cmd]=$c"
+            if [ $c -ne 0 ]; then echo "::error title=regression $cmd::$(tail -c 2500 "$MP1_DIR/regression.log" | sed ':a;N;$!ba;s/\n/%0A/g')"; fi
+          done
+          echo "::notice title=regression::$out"
+          echo "$out" | grep -q '=[1-9]' && echo "regression 1" >> "$MP1_STATUS" || echo "regression 0" >> "$MP1_STATUS"
+
+      - name: Evidence + diagnostics as annotations
+        if: ${{ !cancelled() }}
+        run: |
+          set +e
+          if [ -f "$MP1_DIR/evidence.log" ]; then
+            split -l 12 "$MP1_DIR/evidence.log" "$MP1_DIR/ev-"
+            n=0; for f in "$MP1_DIR"/ev-*; do n=$((n+1)); [ $n -le 9 ] && echo "::notice title=evidence $n::$(sed ':a;N;$!ba;s/\n/%0A/g' "$f" | cut -c1-3900)"; done
+          fi
+          export MP1_GATEWAY_TOKEN=unused-for-logs MP1_REPO="$GITHUB_WORKSPACE"
+          cd deploy/berryit-support
+          if grep -q ' [1-9]' "$MP1_STATUS"; then
+            for svc in ai-adapter auth rest storage; do
+              echo "::warning title=logs $svc::$(docker compose --project-directory . --env-file secrets/stack.env -f compose.yaml -f ../../tests/masterpass1/compose.override.yaml --profile onarly-ai logs --no-color --tail 25 $svc 2>/dev/null | grep -v -i 'key\|secret\|password' | tail -c 2500 | sed ':a;N;$!ba;s/\n/%0A/g')"
+            done
+            echo "::warning title=next.log::$(tail -c 2500 "$MP1_DIR/next.log" | grep -v -i 'key\|secret' | sed ':a;N;$!ba;s/\n/%0A/g')"
+          fi
+          echo "::notice title=status::$(tr '\n' ' ' < "$MP1_STATUS")"
+
+      - name: Upload evidence (screenshots, logs without keys)
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: masterpass1-berryit-evidence
+          path: |
+            ${{ runner.temp }}/mp1/screenshots
+            ${{ runner.temp }}/mp1/evidence.log
+            ${{ runner.temp }}/mp1/stub/requests.jsonl
+            ${{ runner.temp }}/mp1/stack-ps.txt
+          retention-days: 14
+
+      - name: Teardown + verdict
+        if: ${{ always() }}
+        run: |
+          (export MP1_GATEWAY_TOKEN=unused-for-teardown MP1_REPO="$GITHUB_WORKSPACE"; cd deploy/berryit-support && docker compose --project-directory . --env-file secrets/stack.env -f compose.yaml -f ../../tests/masterpass1/compose.override.yaml --profile onarly-ai down -v >/dev/null 2>&1 || true)
+          cat "$MP1_STATUS" 2>/dev/null
+          ! grep -q ' [1-9]' "$MP1_STATUS"
