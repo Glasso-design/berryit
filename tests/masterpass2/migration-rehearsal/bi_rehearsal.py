@@ -110,6 +110,15 @@ def checksum(path=None):
             print(f'{name}[seeded rows]: ' + (out.splitlines()[-1] if rc == 0 else f'ERR {err}'))
 
 
+def rowhash(path):
+    """Per-row md5 of every pre-existing (seeded) account in auth.users and public.profiles: '<table> <key> <md5>'."""
+    I = json.load(open(path))
+    for table, q in (('auth.users', TABLES['auth.users']), ('public.profiles', TABLES['public.profiles'])):
+        for key, uid in sorted(I['users'].items()):
+            rc, out, err, _ = psql(f"select coalesce(md5(t::text), 'missing') from ({q}) t where id = '{uid}'", end='rollback')
+            print(f"{table} {key} {out.splitlines()[-1] if rc == 0 and out else 'missing'}")
+
+
 PRECHECK = {
     'half_registered_accounts (marker in app_metadata, profile never registered)':
         "select count(*) || ': ' || coalesce(string_agg(u.email, ', '), '-') from auth.users u join public.profiles p on p.id = u.id "
@@ -239,6 +248,8 @@ if __name__ == '__main__':
         seed(sys.argv[2])
     elif cmd == 'checksum':
         checksum(sys.argv[2] if len(sys.argv) > 2 else None)
+    elif cmd == 'rowhash':
+        rowhash(sys.argv[2])
     elif cmd == 'precheck':
         precheck()
     elif cmd == 'verify':

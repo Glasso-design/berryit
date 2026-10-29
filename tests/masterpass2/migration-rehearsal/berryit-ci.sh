@@ -61,6 +61,7 @@ seed)
 baseline)
   python3 -I "$H/bi_rehearsal.py" precheck | tee "$E/precheck.txt"
   dump "$E/schema-0-baseline.sql"; checksum "$E/checksum-0-baseline.txt"
+  python3 -I "$H/bi_rehearsal.py" rowhash "$MP2_DIR/ids.json" > "$E/rows-0-baseline.txt"
   note "pre-checks (runbook SQL on the seeded base)" "$(cat "$E/precheck.txt")"
   note "baseline" "pg_dump --schema-only: $(wc -l < "$E/schema-0-baseline.sql") lines; checksums:%0A$(cat "$E/checksum-0-baseline.txt")" ;;
 locks)
@@ -76,6 +77,7 @@ locks)
   note "M2 lock queue: A open writer tx, B migration, C REAL GoTrue login" "$(cat "$E/lockqueue-up.txt")" ;;
 up)
   mig_dirs
+  checksum "$E/checksum-0b-just-before-up.txt"
   t0=$(date +%s%N); "$here/migrate.sh" "$MP2_DIR/mig-all" > "$E/up-1.log" 2>&1; rc=$?; t1=$(date +%s%N)
   "$here/migrate.sh" "$MP2_DIR/mig-all" > "$E/up-2.log" 2>&1; rc2=$?
   dump "$E/schema-1-after-up.sql"; checksum "$E/checksum-1-after-up.txt"
@@ -83,7 +85,8 @@ up)
   dump "$E/schema-2-after-up-twice.sql"
   d12=$(diff "$E/schema-1-after-up.sql" "$E/schema-2-after-up-twice.sql" | grep -c '^[<>]')
   diff "$E/schema-0-baseline.sql" "$E/schema-1-after-up.sql" > "$E/schema-diff-baseline-vs-up.diff"
-  dchk=$(diff "$E/checksum-0-baseline.txt" "$E/checksum-1-after-up.txt" > /dev/null && echo "identical to baseline" || echo "DIFFERENT: $(diff "$E/checksum-0-baseline.txt" "$E/checksum-1-after-up.txt" | tr '\n' ' ')")
+  dchk=$(diff "$E/checksum-0b-just-before-up.txt" "$E/checksum-1-after-up.txt" > /dev/null && echo "identical to the checksum taken just before UP" || echo "DIFFERENT from just before UP: $(diff "$E/checksum-0b-just-before-up.txt" "$E/checksum-1-after-up.txt" | tr '\n' ' ')")
+  dchk="$dchk; vs baseline (before the lock probes' REAL logins): $(diff "$E/checksum-0-baseline.txt" "$E/checksum-0b-just-before-up.txt" | grep '^[<>]' | tr '\n' ' ')"
   note "UP via migrate.sh (REAL)" "run 1 rc=$rc in $(( (t1 - t0) / 1000000 )) ms wall (docker exec + psql + commit): $(grep -E 'applicerar|klart' "$E/up-1.log" | tr '\n' ' ')%0Arun 2 rc=$rc2: $(grep -E 'hoppar.*20261029|klart' "$E/up-2.log" | tr '\n' ' ')%0Araw SQL a 2nd time without ledger rc=$rc3 in $(( (t3 - t2) / 1000000 )) ms: $(tr '\n' ' ' < "$E/up-3-raw.log" | cut -c1-300)%0Aschema diff after UP vs after 2nd UP: $d12 lines; baseline vs UP: $(grep -c '^[<>]' "$E/schema-diff-baseline-vs-up.diff") lines: $(grep -E '^> (CREATE|REVOKE|GRANT|ALTER)' "$E/schema-diff-baseline-vs-up.diff" | cut -c1-160 | tr '\n' ' ')%0Adata checksum after UP: $dchk"
   owner=$(sql -c "select proowner::regrole || ' acl=' || coalesce(proacl::text,'default') || ' md5=' || md5(prosrc) from pg_proc where proname = 'handle_auth_user_registration_metadata'")
   note "UP result objects" "function: $owner; trigger: $(sql -c "select pg_get_triggerdef(oid) from pg_trigger where tgname = 'auth_user_registration_metadata'")"
@@ -105,11 +108,15 @@ down)
   note "DOWN locks + lock queue with REAL GoTrue login (rolled back)" "$(grep -E 'own-lock relation auth|victim' "$E/locks-down.txt")%0A$(cat "$E/lockqueue-down.txt")"
   # Probe only: as the non-superuser postgres role, inside a transaction that is always rolled back.
   { echo '\set ON_ERROR_STOP 1'; echo 'begin;'; cat "$MP2_DIR/down-probe.sql"; echo 'rollback;'; } | docker exec -i berryit-support-db psql -U postgres -d postgres -f - > "$E/down-as-postgres.log" 2>&1; rp=$?
+  checksum "$E/checksum-2b-just-before-down.txt"
   t0=$(date +%s%N); sql -f - < "$repo/$MP2_DOWN" > "$E/down-1.log" 2>&1; rc=$?; t1=$(date +%s%N)
   sql -f - < "$repo/$MP2_DOWN" > "$E/down-2.log" 2>&1; rc2=$?
   dump "$E/schema-3-after-down.sql"; checksum "$E/checksum-3-after-down.txt"
   diff "$E/schema-0-baseline.sql" "$E/schema-3-after-down.sql" > "$E/schema-diff-baseline-vs-down.diff"; nd=$(grep -c '^[<>]' "$E/schema-diff-baseline-vs-down.diff")
-  same=$(diff "$E/checksum-2-before-down.txt" "$E/checksum-3-after-down.txt" >/dev/null && echo "DOWN changed no data (checksum before DOWN == after DOWN)" || echo "DOWN CHANGED DATA: $(diff "$E/checksum-2-before-down.txt" "$E/checksum-3-after-down.txt" | tr '\n' ' ')")
+  same=$(diff "$E/checksum-2b-just-before-down.txt" "$E/checksum-3-after-down.txt" >/dev/null && echo "DOWN changed no data (checksum just before DOWN == after DOWN)" || echo "DOWN CHANGED DATA: $(diff "$E/checksum-2b-just-before-down.txt" "$E/checksum-3-after-down.txt" | tr '\n' ' ')")
+  python3 -I "$H/bi_rehearsal.py" rowhash "$MP2_DIR/ids.json" > "$E/rows-3-after-down.txt"
+  rows=$(diff "$E/rows-0-baseline.txt" "$E/rows-3-after-down.txt" | grep '^>' | cut -d' ' -f2,3 | tr '\n' ',')
+  same="$same%0Apre-existing accounts whose row differs from the baseline after UP+verification+DOWN: ${rows:-none}"
   vsb=$(diff "$E/checksum-0-baseline.txt" "$E/checksum-3-after-down.txt" | grep '^[<>]' | tr '\n' ' ')
   note "DOWN (REAL)" "as postgres (non-superuser in this image) rc=$rp: $(grep -E 'ERROR|NOTICE: +ROLLBACK' "$E/down-as-postgres.log" | head -2 | tr '\n' ' ' | cut -c1-300)%0Aas supabase_admin (migrate.sh role) rc=$rc in $(( (t1 - t0) / 1000000 )) ms: $(grep -E 'NOTICE|ERROR' "$E/down-1.log" | tr '\n' ' ' | cut -c1-300)%0Asecond run rc=$rc2%0Aschema diff baseline vs after DOWN: $nd lines $(head -c 600 "$E/schema-diff-baseline-vs-down.diff" | tr '\n' ' ')%0A$same%0Avs pre-UP baseline (rows created/changed by the verification): $vsb%0Aledger row present: $(sql -c "select count(*) from public.schema_migrations where version = '$V'")"
   [ $rc -eq 0 ] && [ $rc2 -eq 0 ] && [ "$nd" = 0 ] ;;
