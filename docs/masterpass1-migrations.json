@@ -101,7 +101,7 @@
       "name": "20261029090000_registration_gotrue_metadata.sql",
       "state": "pending",
       "predecessor": "20261016150000_ai_diagnostics.sql",
-      "sha256": "e4d58a22362c530b2501012e8f605a72d43da8e4031bab8bc488615d4611008b"
+      "sha256": "90d8e3473f746bdf2c72db4247e50c5413fe795dc320b68435902d7ea8b2646f"
     }
   ]
 }
