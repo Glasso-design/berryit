@@ -18,7 +18,8 @@ const quote = name => { assert.match(name, /^[a-z_][a-z_0-9]*$/); return '"' + n
 
 test("reviewed 6+8 upgrade, retained fixture data and existing registry pilot", async t => {
   const manifest = upgradeManifest();
-  assert.equal(manifest.filter(m => m.state === "pending").length, 10);
+  // 8 historical pending + project_access + ai_diagnostics + MASTER PASS 1 registration fix (inventory, see upgrade-plan.mjs).
+  assert.equal(manifest.filter(m => m.state === "pending").length, 11);
   const db = await PGlite.create({ extensions: { pgcrypto } });
   try {
     await db.exec(sql("local_bootstrap.sql"));

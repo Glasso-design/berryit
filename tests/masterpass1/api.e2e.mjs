@@ -88,6 +88,16 @@ test("B2 attachments: multipart upload -> Storage -> signed URL, internal file h
     form.set("file", new File([content], name, { type: "text/plain" }));
     return fetch(`${WEB}/api/control/support`, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form });
   };
+  const exe = new FormData();
+  exe.set("action", "upload"); exe.set("args", JSON.stringify({ id: S.ticketA, visibility: "customer" }));
+  exe.set("file", new File(["MZ"], "verktyg.exe", { type: "application/x-msdownload" }));
+  const badType = await fetch(`${WEB}/api/control/support`, { method: "POST", headers: { Authorization: `Bearer ${T.techa}` }, body: exe });
+  assert.equal(badType.status, 400, "disallowed MIME type must be refused");
+  const otherTenant = new FormData();
+  otherTenant.set("action", "upload"); otherTenant.set("args", JSON.stringify({ id: S.ticketA, visibility: "customer" }));
+  otherTenant.set("file", new File(["x"], "intrang.txt", { type: "text/plain" }));
+  const custBUpload = await fetch(`${WEB}/api/control/support`, { method: "POST", headers: { Authorization: `Bearer ${T.custb}` }, body: otherTenant });
+  assert.equal(custBUpload.status, 400, "other tenant cannot attach to the ticket");
   const pub = await upload(T.techa, "kund.txt", "MP1 kundsynlig fil", "customer");
   assert.equal(pub.status, 200, JSON.stringify(await json(pub)));
   const internal = await upload(T.techa, "intern.txt", "MP1 intern fil", "internal");
