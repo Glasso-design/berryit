@@ -1,7 +1,8 @@
 {
   "git": {
     "deploymentEnabled": {
-      "fix/masterpass1-berryit-20261029": false
+      "fix/masterpass1-berryit-20261029": false,
+      "fix/masterpass2-berryit-review-fixes-20261029": false
     }
   }
 }
