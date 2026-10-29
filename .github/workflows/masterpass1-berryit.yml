@@ -20,10 +20,11 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    env:
-      MP1_DIR: ${{ runner.temp }}/mp1
-      MP1_STATUS: ${{ runner.temp }}/mp1-status.txt
     steps:
+      - name: Paths
+        run: |
+          echo "MP1_DIR=$RUNNER_TEMP/mp1" >> "$GITHUB_ENV"
+          echo "MP1_STATUS=$RUNNER_TEMP/mp1-status.txt" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
