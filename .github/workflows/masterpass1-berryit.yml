@@ -106,6 +106,11 @@ jobs:
             out="$out [$cmd]=$c"
             if [ $c -ne 0 ]; then echo "::error title=regression $cmd::$(tail -c 2500 "$MP1_DIR/regression.log" | sed ':a;N;$!ba;s/\n/%0A/g')"; fi
           done
+          # Repo's desktop connection/render suite needs the Verify build defaults (127.0.0.1:8700).
+          BERRYIT_PUBLIC_BACKEND_URL=http://127.0.0.1:8700 BERRYIT_PUBLIC_ANON_KEY=sb_publishable_synthetic_connection_test_only BERRYIT_PUBLIC_CONTROL_URL="" npm run build --prefix desktop > "$MP1_DIR/regression.log" 2>&1 \
+            && npx playwright test --config=tests/desktop/playwright.config.ts --reporter=line > "$MP1_DIR/regression.log" 2>&1; c=$?
+          out="$out [test:desktop-connection]=$c"
+          if [ $c -ne 0 ]; then echo "::error title=regression test:desktop-connection::$(grep -E '✘|Error|expect|Received|unexpected' "$MP1_DIR/regression.log" | head -30 | cut -c1-200 | sed ':a;N;$!ba;s/\n/%0A/g')"; fi
           echo "::notice title=regression::$out"
           echo "$out" | grep -q '=[1-9]' && echo "regression 1" >> "$MP1_STATUS" || echo "regression 0" >> "$MP1_STATUS"
 
