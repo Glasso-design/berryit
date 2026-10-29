@@ -54,5 +54,7 @@ describe("Ask ONARLY AI contract", () => {
   it("maps safe server error codes to actionable Swedish messages", () => {
     expect(aiErrorMessage("GATEWAY_DISABLED")).toContain("inte konfigurerad");
     expect(aiErrorMessage("FORBIDDEN")).toContain("behörighet");
+    // MASTER PASS 2 (M7): a replayed attempt id that does not match what was stored
+    expect(aiErrorMessage("IDEMPOTENCY_CONFLICT")).toContain("Starta en ny chatt");
   });
 });

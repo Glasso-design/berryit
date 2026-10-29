@@ -20,7 +20,7 @@ export const PENDING_MIGRATIONS = Object.freeze([
   "20261014235633_complete_support_workflow.sql",
 ]);
 // Separate from the historical PASS 1 eight-step review; never silently deploy.
-export const ADDITIONAL_MIGRATIONS = Object.freeze(['20261016090000_project_access.sql','20261016150000_ai_diagnostics.sql']);
+export const ADDITIONAL_MIGRATIONS = Object.freeze(['20261016090000_project_access.sql','20261016150000_ai_diagnostics.sql','20261029090000_registration_gotrue_metadata.sql']);
 export function upgradeManifest() {
   const directory = new URL("./migrations/", import.meta.url);
   const files = readdirSync(directory).filter(name => name.endsWith(".sql")).sort();
