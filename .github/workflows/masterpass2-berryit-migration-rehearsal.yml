@@ -1,0 +1,88 @@
+name: masterpass2-berryit-migration-rehearsal
+
+# MASTER PASS 2 (2026-10-29): rehearsal of the not-yet-applied migration
+# supabase/migrations/20261029090000_registration_gotrue_metadata.sql before staging/production.
+# Pre-state (base migrations + data made through REAL GoTrue, incl. half-registered accounts) -> baseline
+# (pg_dump --schema-only + checksums) -> lock probes -> UP via migrate.sh (twice + raw) -> REAL GoTrue verification
+# -> DOWN (docs/release/rollback) -> diff/checksum -> verification of base behaviour -> RE-UP -> verification.
+# Everything runs on this throwaway runner with the repo's own stack definition and freshly generated keys.
+# No repository secrets, no remote backend, no deploy. Results are check-run annotations.
+on:
+  push:
+    branches: ["fix/masterpass2-berryit-migration-rehearsal-20261029"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: masterpass2-berryit-migration-rehearsal-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rehearsal:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        candidate:
+          - name: "29307ef (PR #1 head)"
+            up: supabase/migrations/20261029090000_registration_gotrue_metadata.sql
+            down: docs/release/rollback/20261029090000_registration_gotrue_metadata.down.sql
+            m1_fixed: "0"
+    name: rehearsal ${{ matrix.candidate.name }}
+    env:
+      MP2_CANDIDATE: ${{ matrix.candidate.up }}
+      MP2_DOWN: ${{ matrix.candidate.down }}
+      MP2_EXPECT_M1_FIXED: ${{ matrix.candidate.m1_fixed }}
+      R: node tests/masterpass2/migration-rehearsal/report.mjs
+      S: bash tests/masterpass2/migration-rehearsal/berryit-ci.sh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Paths and candidate
+        run: |
+          echo "MP2_DIR=$RUNNER_TEMP/mp2" >> "$GITHUB_ENV"; mkdir -p "$RUNNER_TEMP/mp2"
+          echo "::notice title=candidate::${{ matrix.candidate.name }} up=$MP2_CANDIDATE sha256=$(sha256sum "$MP2_CANDIDATE" | cut -c1-64) down=$MP2_DOWN sha256=$(sha256sum "$MP2_DOWN" | cut -c1-64)"
+      - name: 1 stack on the base schema (REAL supabase/postgres + GoTrue + PostgREST + Storage, migrate.sh)
+        id: stack
+        run: $R "1 stack" -- $S stack
+      - name: 2 seed representative existing data through REAL GoTrue
+        id: seed
+        if: ${{ !cancelled() && steps.stack.outcome == 'success' }}
+        run: $R "2 seed" -- $S seed
+      - name: 3 baseline (pre-checks, pg_dump --schema-only, checksums)
+        id: baseline
+        if: ${{ !cancelled() && steps.seed.outcome == 'success' }}
+        run: $R "3 baseline" -- $S baseline
+      - name: 4 lock probes (rolled back) incl. M2 queue with REAL GoTrue login
+        if: ${{ !cancelled() && steps.baseline.outcome == 'success' }}
+        run: $R "4 locks" -- $S locks
+      - name: 5 UP via migrate.sh, again, and raw
+        id: up
+        if: ${{ !cancelled() && steps.baseline.outcome == 'success' }}
+        run: $R "5 up" -- $S up
+      - name: 6 verify after UP (REAL GoTrue + SIM cases on the real image)
+        if: ${{ !cancelled() && steps.up.outcome == 'success' }}
+        run: $R "6 verify up" -- $S verify-up
+      - name: 7 DOWN (rollback file), schema diff, checksums
+        id: down
+        if: ${{ !cancelled() && steps.up.outcome == 'success' }}
+        run: $R "7 down" -- $S down
+      - name: 8 verify after DOWN (base behaviour expected)
+        if: ${{ !cancelled() && steps.down.outcome == 'success' }}
+        run: $R "8 verify down" -- $S verify-down
+      - name: 9 RE-UP via migrate.sh
+        id: reup
+        if: ${{ !cancelled() && steps.down.outcome == 'success' }}
+        run: $R "9 re-up" -- $S reup
+      - name: 10 verify after RE-UP
+        if: ${{ !cancelled() && steps.reup.outcome == 'success' }}
+        run: $R "10 verify re-up" -- $S verify-reup
+      - name: Teardown
+        if: ${{ always() }}
+        run: |
+          (cd deploy/berryit-support && docker compose --project-directory . --env-file secrets/stack.env -f compose.yaml down -v >/dev/null 2>&1 || true)
+          rm -rf deploy/berryit-support/secrets "$RUNNER_TEMP/mp2/fixture.json"
