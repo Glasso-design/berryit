@@ -41,6 +41,10 @@ jobs:
         run: |
           set +e
           mkdir -p "$MP1_DIR"
+          # Runbook regression: the README tells operators to run these directly.
+          for f in generate-secrets.sh migrate.sh stack.sh backup.sh restore-test.sh security-gate.sh; do
+            [ -x "deploy/berryit-support/$f" ] || echo "::error title=runbook script not executable::deploy/berryit-support/$f (git mode 100644)"
+          done
           bash tests/masterpass1/stack-up.sh > "$MP1_DIR/stack-up.log" 2>&1
           s=$?; echo "stack $s" >> "$MP1_STATUS"
           grep '^::' "$MP1_DIR/stack-up.log"
@@ -87,6 +91,7 @@ jobs:
         if: ${{ !cancelled() }}
         run: |
           set +e
+          mkdir -p test-results   # desktop react-bundle test writes its evidence file here
           out=""
           for cmd in "npm run lint" "npm run typecheck" "npm test --prefix desktop" "npm run db:test" "npm run test:support-workflow" "npm run test:ai-diagnostics" "node --test services/onarly-ai-adapter/server.test.mjs services/onarly-ai-adapter/diagnostics.test.mjs services/onarly-ai-adapter/diagnostic-http.test.mjs"; do
             env -u NEXT_PUBLIC_SUPABASE_URL $cmd > "$MP1_DIR/regression.log" 2>&1; c=$?
