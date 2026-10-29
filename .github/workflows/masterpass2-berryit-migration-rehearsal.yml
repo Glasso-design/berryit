@@ -25,20 +25,27 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # Already rehearsed (run 40902918351, both green); re-enable a row to run it again:
+        #   - name: "29307ef (PR #1 head)"
+        #     up: supabase/migrations/20261029090000_registration_gotrue_metadata.sql
+        #     down: docs/release/rollback/20261029090000_registration_gotrue_metadata.down.sql
+        #     m1_fixed: "0"
+        #   - name: "review-fixes c64ed10 (migration as changed in place, 902bea5)"
+        #     up: tests/masterpass2/migration-rehearsal/candidates/review-fixes-c64ed10.up.sql
+        #     down: docs/release/rollback/20261029090000_registration_gotrue_metadata.review-fixes.down.sql
+        #     m1_fixed: "1"
         candidate:
-          - name: "29307ef (PR #1 head)"
-            up: supabase/migrations/20261029090000_registration_gotrue_metadata.sql
-            down: docs/release/rollback/20261029090000_registration_gotrue_metadata.down.sql
-            m1_fixed: "0"
-          - name: "review-fixes c64ed10 (migration as changed in place, 902bea5)"
+          - name: "review-fixes c64ed10 + its own supabase/rollback file"
             up: tests/masterpass2/migration-rehearsal/candidates/review-fixes-c64ed10.up.sql
-            down: docs/release/rollback/20261029090000_registration_gotrue_metadata.review-fixes.down.sql
+            down: tests/masterpass2/migration-rehearsal/candidates/review-fixes-c64ed10.repo-rollback.sql
             m1_fixed: "1"
+            down_single_tx: "1"
     name: rehearsal ${{ matrix.candidate.name }}
     env:
       MP2_CANDIDATE: ${{ matrix.candidate.up }}
       MP2_DOWN: ${{ matrix.candidate.down }}
       MP2_EXPECT_M1_FIXED: ${{ matrix.candidate.m1_fixed }}
+      MP2_DOWN_SINGLE_TX: ${{ matrix.candidate.down_single_tx || '0' }}
       R: node tests/masterpass2/migration-rehearsal/report.mjs
       S: bash tests/masterpass2/migration-rehearsal/berryit-ci.sh
     steps:

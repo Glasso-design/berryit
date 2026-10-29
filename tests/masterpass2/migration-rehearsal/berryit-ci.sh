@@ -112,8 +112,9 @@ down)
   # Probe only: as the non-superuser postgres role, inside a transaction that is always rolled back.
   { echo '\set ON_ERROR_STOP 1'; echo 'begin;'; cat "$MP2_DIR/down-probe.sql"; echo 'rollback;'; } | docker exec -i berryit-support-db psql -U postgres -d postgres -f - > "$E/down-as-postgres.log" 2>&1; rp=$?
   checksum "$E/checksum-2b-just-before-down.txt"
-  t0=$(date +%s%N); sql -f - < "$repo/$MP2_DOWN" > "$E/down-1.log" 2>&1; rc=$?; t1=$(date +%s%N)
-  sql -f - < "$repo/$MP2_DOWN" > "$E/down-2.log" 2>&1; rc2=$?
+  st=""; [ "${MP2_DOWN_SINGLE_TX:-0}" = 1 ] && st="--single-transaction"   # rollback files without their own BEGIN/COMMIT
+  t0=$(date +%s%N); sql $st -f - < "$repo/$MP2_DOWN" > "$E/down-1.log" 2>&1; rc=$?; t1=$(date +%s%N)
+  sql $st -f - < "$repo/$MP2_DOWN" > "$E/down-2.log" 2>&1; rc2=$?
   dump "$E/schema-3-after-down.sql"; checksum "$E/checksum-3-after-down.txt"
   diff "$E/schema-0-baseline.sql" "$E/schema-3-after-down.sql" > "$E/schema-diff-baseline-vs-down.diff"; nd=$(grep -c '^[<>]' "$E/schema-diff-baseline-vs-down.diff")
   same=$(diff "$E/checksum-2b-just-before-down.txt" "$E/checksum-3-after-down.txt" >/dev/null && echo "DOWN changed no data (checksum just before DOWN == after DOWN)" || echo "DOWN CHANGED DATA: $(diff "$E/checksum-2b-just-before-down.txt" "$E/checksum-3-after-down.txt" | tr '\n' ' ')")
