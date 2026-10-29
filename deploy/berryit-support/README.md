@@ -35,11 +35,93 @@ Images byggs aldrig på servern; de hämtas färdiga från registry.
 ./security-gate.sh              # endast separat isolerad och märkt teststack
 ./backup.sh                     # databas + filstorage
 ./restore-test.sh               # återställer till tillfällig databas och verifierar
+./registration-check.sh         # skrivskyddad: halvregistrerade kundkonton (exit 3 = träffar)
 ./stack.sh down                 # stoppar, behåller volymer
 ```
 
 Superanvändaren i `supabase/postgres` är **`supabase_admin`** (rollen `postgres`
 är degraderad i imagen). Alla skript använder den som standard.
+
+### Migrering med låsgräns
+
+`migrate.sh` kör varje fil i **en** transaktion (`psql --single-transaction`, även
+när SQL läses från stdin; verifierat med psql 16 och 17). Migreringar som tar lås
+på `auth.users` sätter därför `set local lock_timeout = '5s'` och
+`set local statement_timeout = '60s'` först i filen, och vägrar köra utanför en
+transaktion. Skälet: en migrering som *väntar* på sitt lås ställer alla nya
+skrivningar på tabellen i kö bakom sig, även GoTrues inloggningar
+(`last_sign_in_at`). Utan tidsgräns står inloggningarna still tills den
+blockerande transaktionen är klar.
+
+`20261029090000_registration_gotrue_metadata.sql` tar `ShareRowExclusiveLock` på
+`auth.users` (`create or replace trigger`). Läsare påverkas inte; skrivare väntar
+högst 5 s.
+
+Om `migrate.sh` avbryts med `canceling statement due to lock timeout`
+(SQLSTATE `55P03`):
+
+1. Ingenting av den migreringen är applicerat: hela transaktionen, även raden i
+   `public.schema_migrations`, är tillbakarullad. Tidigare migreringar i samma
+   körning är redan klara och hoppas över nästa gång.
+2. Se vad som blockerade (skrivskyddat):
+
+   ```bash
+   docker exec -i berryit-support-db psql -U supabase_admin -d postgres -c \
+     "select pid, usename, application_name, state, now() - xact_start as xact_age, left(query, 80) as query
+        from pg_stat_activity
+       where pid in (select unnest(pg_blocking_pids(pid)) from pg_stat_activity)
+          or (state like 'idle in transaction%' and xact_start < now() - interval '1 minute');"
+   ```
+
+3. Vänta tills den transaktionen är klar. Avbryt den inte utan att veta vad den
+   är (`pg_cancel_backend` bara efter beslut).
+4. Kör `./migrate.sh ../../supabase/migrations` igen. Försöket är säkert att
+   upprepa: migreringen är idempotent och ledgern skrivs bara när allt lyckats.
+5. Slår gränsen till upprepade gånger: kör i ett servicefönster med låg trafik.
+   Höj inte tidsgränsen i migreringsfilen.
+
+Återställning finns i `../../supabase/rollback/20261029090000_registration_gotrue_metadata_rollback.sql`
+(samma tidsgränser; tar `AccessExclusiveLock` på `auth.users` och tar bort
+ledger-raden i samma transaktion så att `migrate.sh` kan applicera igen).
+
+### GoTrue- eller Supabase Auth-uppgradering med BERRYiT-triggers
+
+BERRYiT har triggers på `auth.users` (`auth_user_created`, och
+`auth_user_registration_metadata` som är `after update of raw_app_meta_data`).
+Kolumnlistan är avsiktlig: funktionen körs bara när app_metadata ändras, inte vid
+varje inloggning. Den skapar ett beroende i `pg_depend`, så en GoTrue-migrering som
+gör `ALTER COLUMN raw_app_meta_data TYPE …` eller `DROP COLUMN` på kolumnen
+misslyckas så länge triggern finns.
+
+Därför gäller:
+
+- **Varje** uppgradering av GoTrue/Supabase Auth (image-tagg i `compose.yaml`, eller
+  hostad Supabase Auth) repeteras först på en kopia med triggrarna på plats, aldrig
+  direkt i drift: `./restore-test.sh`-kopia eller isolerad teststack →
+  `migrate.sh` → byt GoTrue-image → låt GoTrue köra sina migreringar → kontrollera:
+  1. GoTrue startar och `/auth/v1/health` visar den nya versionen;
+  2. `auth.schema_migrations` har fått de nya versionerna;
+  3. triggern finns kvar och är aktiv
+     (`select tgenabled from pg_trigger where tgname = 'auth_user_registration_metadata'` ger `O`);
+  4. en kundregistrering via `/api/control/customers` ger organisation,
+     aktiveringsspärr, registrar och **exakt en** audit-rad, och en nekad
+     registrering (aal1-session) lämnar noll rader.
+- Läs GoTrue-versionens migreringar innan uppgraderingen. Rör någon av dem
+  `raw_app_meta_data` med `ALTER`/`DROP`: kör återställningen ovan före GoTrue-
+  uppgraderingen och `migrate.sh` (framåt) efteråt.
+- CI repeterar detta på varje masterpass-körning: stacken startar med
+  `supabase/gotrue:v2.196.0`, får migreringarna och uppgraderas sedan till den
+  version som supabase CLI pinnar (`MP2_GOTRUE_UPGRADE_IMAGE`, nu `v2.197.0`;
+  testet M3 i `tests/masterpass1/ops.e2e.mjs`).
+
+### Halvregistrerade kundkonton
+
+`./registration-check.sh` listar konton som registrerades via
+`/api/control/customers` innan `20261029090000` fanns, där profilen saknar
+organisation, aktiveringsspärr, registrar eller audit-rad. Kontrollen är
+skrivskyddad och reparerar ingenting. Kör den på varje stack där
+`20261014235633_complete_support_workflow.sql` redan applicerats. Hantering av träffar:
+`../../docs/masterpass2-registration-check.md`.
 
 ## Säkerhet
 
