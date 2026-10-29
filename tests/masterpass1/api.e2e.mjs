@@ -57,12 +57,19 @@ test("B1 route handler: technician creates, works and closes a ticket for own-sc
   S.ticketA = created.data;
   const foreign = await route(T.techa, "create", { input: { customerId: fx.users.custb, subject: `MP1 foreign ${run}`, description: "Ska nekas av RLS-scope.", category_key: "natverk" } });
   assert.equal(foreign.status, 400, "creating for another tenant's customer must fail");
-  for (const [action, args] of [["message", { id: S.ticketA, body: "Hej! Vi tittar på det. (MP1)", staff: true }], ["note", { id: S.ticketA, body: "INTERNAL-MP1-SECRET felsökning" }], ["update", { id: S.ticketA, changes: { status_key: "pagar", assignee_id: fx.users.techa } }]]) {
+  for (const [action, args] of [["message", { id: S.ticketA, body: "Hej! Vi tittar på det. (MP1)", staff: true }], ["note", { id: S.ticketA, body: "INTERNAL-MP1-SECRET felsökning" }], ["update", { id: S.ticketA, changes: { status_key: "pagar" } }]]) {
     const r = await route(T.techa, action, args);
     assert.equal(r.status, 200, `${action}: ${JSON.stringify(await json(r)).slice(0, 300)}`);
   }
+  // IT SUPPORT (technician) has tickets.write but not tickets.reassign: assignment is refused by the DB
+  // and the detail must say so (canAssign=false) so the UI does not offer a control that always fails.
+  const selfAssign = await route(T.techa, "update", { id: S.ticketA, changes: { assignee_id: fx.users.techa } });
+  assert.equal(selfAssign.status, 400);
+  assert.equal((await route(T.saapi, "update", { id: S.ticketA, changes: { assignee_id: fx.users.techa } })).status, 200, "Super Admin assigns");
+  assert.equal((await json(await route(T.saapi, "detail", { id: S.ticketA }))).data.canAssign, true);
   const detail = (await json(await route(T.techa, "detail", { id: S.ticketA }))).data;
   assert.equal(detail.canWork, true);
+  assert.equal(detail.canAssign, false, "technician detail must expose canAssign=false");
   assert.equal(detail.ticket.status_key, "pagar");
   assert.equal(detail.ticket.assignee_id, fx.users.techa);
   assert.equal(detail.notes.length, 1);
@@ -206,6 +213,8 @@ test("B8 customer registration via /api/control/customers (GoTrue admin + DB tri
   assert.equal(profile.registered_by, fx.users.saapi);
   const audit = sql(`select count(*)::int n from public.support_admin_audit where action='customer_registered' and target_id='${body.id}'`)[0].n;
   assert.equal(audit, 1, "registration audited");
+  const visible = (await json(await route(T.techa, "overview"))).data.customers.some((c) => c.id === body.id);
+  assert.equal(visible, true, "registered org-A customer is selectable for org-A technician");
   const loginNew = await fetch(`${G}/auth/v1/token?grant_type=password`, { method: "POST", headers: { apikey: fx.anonKey, "Content-Type": "application/json" }, body: JSON.stringify({ email: mail, password: "gissning-123-ABC" }) });
   assert.notEqual(loginNew.status, 200);
   ok("customer registration", JSON.stringify(profile));

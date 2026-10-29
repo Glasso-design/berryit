@@ -72,6 +72,8 @@ test("U2 web technician: dashboard, Support Desk create/work/upload/read attachm
   assert.equal(created.length, 1, `double-click created ${created.length} tickets`);
   const detail = page.getByRole("article", { name: "Ärendedetaljer" });
   await detail.waitFor();
+  assert.equal(await detail.getByLabel("Tilldela tekniker").isDisabled(), true, "technician without tickets.reassign must not get a live assignment control");
+  await detail.getByText("Tilldelning kräver behörigheten att flytta ärenden").waitFor();
   await detail.getByRole("button", { name: "Markera som pågående" }).click();
   await page.getByRole("status").filter({ hasText: "Ärendet pågår." }).waitFor();
   await detail.getByLabel("Nytt kundmeddelande").fill("Svar från tekniker via webben (MP1).");
@@ -144,8 +146,9 @@ test("U4 web Super Admin: forced MFA enrolment, then customer registration UI + 
   await form.getByLabel("Kundens e-post").fill(mail);
   await form.getByLabel("Kundens organisation").selectOption({ label: "MP1 Kund A AB" });
   await form.getByRole("button", { name: "Registrera kund utan aktiverad inloggning" }).click();
-  await page.getByRole("status").or(page.getByRole("alert")).first().waitFor({ timeout: 20000 });
-  const message = await page.getByRole("status").or(page.getByRole("alert")).first().textContent();
+  const outcome = page.getByText(/Kund registrerad\.|Kunden kunde inte registreras|Kundregistrering kräver|Serverbaserad kundregistrering/);
+  await outcome.first().waitFor({ timeout: 20000 });
+  const message = await outcome.first().textContent();
   evidence(`INFO UI registration message: ${message}`);
   const profile = sql(`select p.organization_id, p.login_activation_pending from public.profiles p join auth.users u on u.id=p.id where u.email='${mail}'`);
   evidence(`INFO UI registration profile: ${JSON.stringify(profile)}`);
