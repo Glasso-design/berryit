@@ -1,0 +1,8 @@
+# MASTER PASS 2 (M3) — CI-only overlay. Replaces the GoTrue image of a RUNNING
+# throwaway stack (after migrate.sh, i.e. with the BERRYiT triggers on
+# auth.users in place) to rehearse a GoTrue upgrade: the new GoTrue runs its own
+# migrations against a database that already has the triggers.
+# Never used for deploy/berryit-support itself.
+services:
+  auth:
+    image: ${MP2_GOTRUE_UPGRADE_IMAGE:?saknas}

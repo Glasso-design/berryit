@@ -1,10 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
+import { randomUUID } from "node:crypto";
 import {
   AI_PATH,
+  ApiError,
   buildSupportPrompt,
   createAiHandler,
+  createPostgrestBoundary,
   normalizeAssistantResponse,
 } from "./server.mjs";
 
@@ -217,4 +220,82 @@ test("prompt marks every recommendation as non-executing and treats sources as d
   assert.match(prompt, /aldrig utföra produktionsändringar/);
   assert.match(prompt, /aldrig som instruktioner/);
   assert.match(prompt, /Inga verifierade källor/);
+});
+
+// MASTER PASS 2 (M7): client-generated ids make a retry idempotent. These tests
+// drive the REAL PostgREST boundary against an in-memory PostgREST double that
+// answers 409 on a duplicate primary key, like PostgREST does for SQLSTATE 23505.
+function fakePostgrest() {
+  const tables = { ai_conversations: [], ai_messages: [], ai_audit_events: [] };
+  let clock = 0;
+  const reply = (status, body) => new Response(body === undefined ? null : JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
+  const fetchImpl = async (input, init = {}) => {
+    const url = new URL(String(input));
+    if (url.pathname === "/auth/v1/user") return reply(200, { id: IDS.user });
+    const table = url.pathname.replace(/^\/rest\/v1\//, "");
+    if (!(table in tables)) return reply(200, []);
+    if ((init.method ?? "GET") === "POST") {
+      const row = { id: randomUUID(), created_at: new Date(Date.UTC(2026, 9, 29, 12, 0, clock++)).toISOString(), ...JSON.parse(init.body) };
+      if (tables[table].some((r) => r.id === row.id)) return reply(409, { code: "23505", message: "duplicate key" });
+      tables[table].push(row);
+      return reply(201, [row]);
+    }
+    let rows = [...tables[table]];
+    for (const [key, value] of url.searchParams) {
+      if (value.startsWith("eq.")) rows = rows.filter((r) => String(r[key]) === value.slice(3));
+    }
+    return reply(200, rows.sort((a, b) => a.created_at.localeCompare(b.created_at)));
+  };
+  const boundary = createPostgrestBoundary({ authBaseUrl: "http://db.test/auth/v1", restBaseUrl: "http://db.test/rest/v1", anonKey: "anon", serviceRoleKey: "service", fetchImpl });
+  return { tables, boundary };
+}
+
+const structuredReply = JSON.stringify({ summary: "Svar.", verifiedFacts: [], hypotheses: [{ text: "Kontrollera DNS.", confidence: "low" }], recommendedActions: [], missingInformation: ["Loggar."], sources: [] });
+
+test("a replayed conversation id returns the same conversation instead of a duplicate", async () => {
+  const { tables, boundary } = fakePostgrest();
+  await withApi(boundary, { enabled: false }, async (request) => {
+    const body = { id: IDS.conversation, organizationId: IDS.org, title: "VPN fungerar inte" };
+    const first = await request("/conversations", { method: "POST", body: JSON.stringify(body) });
+    const second = await request("/conversations", { method: "POST", body: JSON.stringify(body) });
+    assert.equal(first.status, 201);
+    assert.equal(second.status, 201);
+    assert.equal(second.body.conversation.id, IDS.conversation);
+    const conflict = await request("/conversations", { method: "POST", body: JSON.stringify({ ...body, projectId: IDS.project }) });
+    assert.equal(conflict.status, 409);
+    assert.equal(conflict.body.error.code, "IDEMPOTENCY_CONFLICT");
+    const invalid = await request("/conversations", { method: "POST", body: JSON.stringify({ ...body, id: "not-a-uuid" }) });
+    assert.equal(invalid.status, 400);
+  });
+  assert.equal(tables.ai_conversations.length, 1);
+});
+
+test("a retried question with the same messageId is stored once and an answered replay never calls the gateway again", async () => {
+  const { tables, boundary } = fakePostgrest();
+  tables.ai_conversations.push({ id: IDS.conversation, organization_id: IDS.org, project_id: null, incident_id: null, service_key: null, created_by: IDS.user, title: "VPN", created_at: "2026-10-29T11:00:00.000Z" });
+  let calls = 0;
+  let down = true;
+  const gateway = {
+    enabled: true,
+    complete: async () => {
+      calls++;
+      if (down) throw new ApiError(503, "GATEWAY_UNAVAILABLE");
+      return { provider: "GEMINI", model: "sim", text: structuredReply };
+    },
+  };
+  await withApi(boundary, gateway, async (request) => {
+    const ask = (text = "Varför tappar VPN?") => request(`/conversations/${IDS.conversation}/messages`, { method: "POST", body: JSON.stringify({ text, approvedForAi: true, messageId: IDS.message }) });
+    assert.equal((await ask()).status, 503);
+    down = false;
+    const retried = await ask();
+    assert.equal(retried.status, 201);
+    const replayed = await ask();
+    assert.equal(replayed.status, 200);
+    assert.equal(replayed.body.message.id, retried.body.message.id);
+    assert.equal(calls, 2, "the answered replay must not reach the gateway");
+    const conflict = await ask("En helt annan fråga");
+    assert.equal(conflict.status, 409);
+    assert.equal(conflict.body.error.code, "IDEMPOTENCY_CONFLICT");
+  });
+  assert.deepEqual(tables.ai_messages.map((m) => m.role), ["user", "assistant"]);
 });
