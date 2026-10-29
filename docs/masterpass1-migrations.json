@@ -1,0 +1,107 @@
+{
+  "status": "local-only-not-approved-for-production",
+  "entries": [
+    {
+      "name": "20261013080000_platform_bootstrap.sql",
+      "state": "deployed_baseline",
+      "predecessor": null,
+      "sha256": "5f2c17a8ba9bb9c330024cb5e8a82cb4e305832c6c97dfec1e89e724e01d737e"
+    },
+    {
+      "name": "20261013090000_support_desk_core.sql",
+      "state": "deployed_baseline",
+      "predecessor": "20261013080000_platform_bootstrap.sql",
+      "sha256": "86b79d0399074ff7819588c6ad8a382b930f1afdad5a1d4d6a93ab82dc5d6cbd"
+    },
+    {
+      "name": "20261013090100_support_desk_rls.sql",
+      "state": "deployed_baseline",
+      "predecessor": "20261013090000_support_desk_core.sql",
+      "sha256": "c2562efd40c8ce444513b96a5a6c49bf2d465d279c5a8e4e0e262e0a98717a6e"
+    },
+    {
+      "name": "20261013090200_support_desk_storage.sql",
+      "state": "deployed_baseline",
+      "predecessor": "20261013090100_support_desk_rls.sql",
+      "sha256": "90949b07235b3aa2780e43b55c891d4111e1845fa045d229f1483697b1f42be9"
+    },
+    {
+      "name": "20261013090300_support_authority.sql",
+      "state": "deployed_baseline",
+      "predecessor": "20261013090200_support_desk_storage.sql",
+      "sha256": "425637a96bd3ebc1bffbcd031dec53ec3582273c9eba6b587717aee9759e9cf3"
+    },
+    {
+      "name": "20261013091000_support_authority_hardening.sql",
+      "state": "deployed_baseline",
+      "predecessor": "20261013090300_support_authority.sql",
+      "sha256": "ec8041ed727ba0dc73e354dd34e0fe998ca8a70cbcd60d4d40b5ddca01df0e5a"
+    },
+    {
+      "name": "20261013110000_support_mfa_enforcement.sql",
+      "state": "pending",
+      "predecessor": "20261013091000_support_authority_hardening.sql",
+      "sha256": "5f28773e21b9daa1872d63e7f14e9d9d40512b2d08f43d273e0837c2880d75c8"
+    },
+    {
+      "name": "20261013120000_onarly_ai_assistant.sql",
+      "state": "pending",
+      "predecessor": "20261013110000_support_mfa_enforcement.sql",
+      "sha256": "c0debfb1733a48f7506be319b8ca79b86e3d7d68dbf22be084d2b7dd85cb9242"
+    },
+    {
+      "name": "20261013130000_connector_engine.sql",
+      "state": "pending",
+      "predecessor": "20261013120000_onarly_ai_assistant.sql",
+      "sha256": "4a8a3de2c65fe5ccedc919fed6ed42d3885d02493772c353b28dd894a6701b90"
+    },
+    {
+      "name": "20261013140000_infrastructure_monitoring.sql",
+      "state": "pending",
+      "predecessor": "20261013130000_connector_engine.sql",
+      "sha256": "356260b2088ee5089c2118f1c525fc9216a78c0e02434b4be38a8cfc60983620"
+    },
+    {
+      "name": "20261013150000_communications.sql",
+      "state": "pending",
+      "predecessor": "20261013140000_infrastructure_monitoring.sql",
+      "sha256": "37ef2ef982729fa8406169e0549d67a6172f70495a98649372154842f43649ea"
+    },
+    {
+      "name": "20261014110000_onarly_desk_integration.sql",
+      "state": "pending",
+      "predecessor": "20261013150000_communications.sql",
+      "sha256": "2374a67de4615bd61223fe9ca79990128a665b11dc03c684cc5ca0fe0973abe0"
+    },
+    {
+      "name": "20261014190857_security_ci_repair.sql",
+      "state": "pending",
+      "predecessor": "20261014110000_onarly_desk_integration.sql",
+      "sha256": "27f0a674e8365f13120fd4f368c45dc6e9eaabbc72c8369bffa91066db91379e"
+    },
+    {
+      "name": "20261014235633_complete_support_workflow.sql",
+      "state": "pending",
+      "predecessor": "20261014190857_security_ci_repair.sql",
+      "sha256": "60b1ddc6d6d0f53c1746d74dd8c054f3f5e67439f38077f966cc876eee335bb1"
+    },
+    {
+      "name": "20261016090000_project_access.sql",
+      "state": "pending",
+      "predecessor": "20261014235633_complete_support_workflow.sql",
+      "sha256": "0677a549a50503898c26ea5d7edc17276a6dbf22435cc392d5dfdb74d7601940"
+    },
+    {
+      "name": "20261016150000_ai_diagnostics.sql",
+      "state": "pending",
+      "predecessor": "20261016090000_project_access.sql",
+      "sha256": "4c398813ab0520c1577261f69e1c5ee89a0d9ab41df6b3ac09ead390abc69c1d"
+    },
+    {
+      "name": "20261029090000_registration_gotrue_metadata.sql",
+      "state": "pending",
+      "predecessor": "20261016150000_ai_diagnostics.sql",
+      "sha256": "e4d58a22362c530b2501012e8f605a72d43da8e4031bab8bc488615d4611008b"
+    }
+  ]
+}

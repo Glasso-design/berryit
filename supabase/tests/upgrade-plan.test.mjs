@@ -13,7 +13,9 @@ test("six deployed migrations produce eight historical candidates plus the expli
   const extension=JSON.parse(readFileSync(new URL('../../docs/project-access-migrations.json',import.meta.url),'utf8'));
   assert.deepEqual(extension.entries,upgradeManifest().slice(0,15), 'Prior project/access review checksums remain unchanged');
   const diagnostics=JSON.parse(readFileSync(new URL('../../docs/ai-find-error-migrations.json',import.meta.url),'utf8'));
-  assert.deepEqual(diagnostics.entries,upgradeManifest(), 'Diagnostic review manifest must match every tested SQL file');
+  assert.deepEqual(diagnostics.entries,upgradeManifest().slice(0,16), 'Prior diagnostic review checksums remain unchanged');
+  const masterpass=JSON.parse(readFileSync(new URL('../../docs/masterpass1-migrations.json',import.meta.url),'utf8'));
+  assert.deepEqual(masterpass.entries,upgradeManifest(), 'MASTER PASS 1 review manifest must match every tested SQL file');
 });
 test("unknown, missing, duplicate and reordered ledger entries fail closed", () => {
   for (const applied of [[], DEPLOYED_BASELINE.slice(1), [...DEPLOYED_BASELINE, "unknown.sql"], [...DEPLOYED_BASELINE, PENDING_MIGRATIONS[1]], [...DEPLOYED_BASELINE, DEPLOYED_BASELINE.at(-1)]]) {
