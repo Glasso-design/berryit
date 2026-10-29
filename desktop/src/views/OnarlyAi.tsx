@@ -229,8 +229,8 @@ export function OnarlyAi({ onOpenTicket }: { onOpenTicket: (reference: string) =
     setBusy("ask");
     setError(null);
     setNotice(null);
+    let active = selectedConversation;
     try {
-      let active = selectedConversation;
       if (!active) {
         active = await client.createConversation({
           organizationId,
@@ -240,6 +240,10 @@ export function OnarlyAi({ onOpenTicket }: { onOpenTicket: (reference: string) =
           title: question.trim().slice(0, 160),
         });
         setConversationId(active.id);
+        // Select the new conversation in the history right away. Otherwise a
+        // failed first question (gateway down, timeout) leaves it unselected
+        // and the retry silently creates a duplicate conversation.
+        await loadConversations(organizationId);
       }
       await client.ask(active.id, question.trim(), approved);
       setQuestion("");
@@ -250,6 +254,12 @@ export function OnarlyAi({ onOpenTicket }: { onOpenTicket: (reference: string) =
       ]);
     } catch (caught) {
       setError(errorText(caught));
+      // The adapter stores the question before calling the gateway: show it, so
+      // the history matches what was saved and a retry continues the same chat.
+      if (active) {
+        const conversation = active.id;
+        await client.messages(conversation).then(setMessages).catch(() => undefined);
+      }
     } finally {
       setBusy(null);
     }

@@ -63,6 +63,8 @@ async function login(page:Page){
     if(rpc==='support_access_context')return json(authority);
     if(['can_register_support_customer','can_manage_connectors','can_work_ticket'].includes(rpc))return json(mfaVerified);
     if(['project_registry_status','support_ticket_technicians','support_ticket_people'].includes(rpc))return json([]);
+    // Ticket detail asks whether the caller may reassign (same check as the DB guard); the fixture is an ADMIN.
+    if(rpc==='has_resource_permission'){expect(req.postDataJSON().p_permission).toBe('tickets.reassign');return json(mfaVerified);}
     if(rpc==='project_access_details')return json({assignments:[],activity:[],reviews:[]});
     unexpected.push('RPC '+rpc);return route.fulfill({status:403,json:{message:'Unexpected fixture RPC'},headers});
    }

@@ -1,0 +1,28 @@
+# MASTER PASS 1 — CI-only overlay on deploy/berryit-support/compose.yaml.
+# Used only on a throwaway GitHub-hosted runner. It does not change the
+# production compose file: it builds the adapter image from this checkout and
+# adds a SIM ONARLY AI gateway that shares the adapter's network namespace, so
+# the adapter's loopback-only http rule is exercised unchanged.
+services:
+  ai-adapter:
+    image: berryit-onarly-ai-adapter:mp1
+    environment:
+      ONARLY_AI_GATEWAY_URL: http://127.0.0.1:9911/
+      ONARLY_AI_GATEWAY_TOKEN: ${MP1_GATEWAY_TOKEN:?saknas}
+      ONARLY_AI_GATEWAY_ROUTE: /chat
+
+  ai-gateway-stub:
+    profiles: ["onarly-ai"]
+    image: node:22.22.0-alpine
+    network_mode: "service:ai-adapter"
+    depends_on:
+      ai-adapter:
+        condition: service_started
+    environment:
+      STUB_TOKEN: ${MP1_GATEWAY_TOKEN:?saknas}
+      STUB_PORT: "9911"
+      STUB_DIR: /stub
+    volumes:
+      - ${MP1_DIR:?saknas}/stub:/stub
+      - ${MP1_REPO:?saknas}/tests/masterpass1/gateway-stub.mjs:/app/gateway-stub.mjs:ro
+    command: ["node", "/app/gateway-stub.mjs"]
