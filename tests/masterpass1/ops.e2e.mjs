@@ -91,9 +91,14 @@ test("M2 migrate.sh: SET LOCAL applies; a migration waiting on auth.users gives 
   const blocker = run("docker", dbPsql(["-c", `begin; update auth.users set email = email where id='${fx.users.custb}'; select pg_sleep(20); commit;`]), { timeoutMs: 60_000 });
   await sleep(1500);
   const migrate = run(`${here}/migrate.sh`, [`${repo}/supabase/migrations`], { timeoutMs: 60_000 });
-  await sleep(1000);
+  // Log in only once the migration's lock request is really queued on auth.users
+  // (migrate.sh first checks the ledger for every earlier file).
+  let queuedMode = null;
+  for (const started = Date.now(); !queuedMode && Date.now() - started < 20_000; await sleep(100)) {
+    queuedMode = sql("select mode from pg_locks where relation = 'auth.users'::regclass and not granted limit 1")[0]?.mode ?? null;
+  }
   const t0 = Date.now();
-  const loginWhileWaiting = await login("custa"); // GoTrue updates auth.users.last_sign_in_at
+  const loginWhileWaiting = await login("custa"); // GoTrue updates auth.users.last_sign_in_at in the login transaction
   const loginMs = Date.now() - t0;
   const failed = await migrate;
   const ledgerAfterFailure = sql(`select count(*)::int n from public.schema_migrations where version='${VERSION}'`)[0].n;
@@ -101,14 +106,16 @@ test("M2 migrate.sh: SET LOCAL applies; a migration waiting on auth.users gives 
   const retry = await run(`${here}/migrate.sh`, [`${repo}/supabase/migrations`], { timeoutMs: 60_000 });
   const ledgerAfterRetry = sql(`select count(*)::int n from public.schema_migrations where version='${VERSION}'`)[0].n;
   const trigger = sql("select tgenabled::text from pg_trigger where tgname='auth_user_registration_metadata' and tgrelid='auth.users'::regclass");
-  const facts = { psqlVersion, migrateExit: failed.code, migrateMs: failed.ms, loginStatus: loginWhileWaiting.status, loginMs, ledgerAfterFailure, blockerExit: held.code, retryExit: retry.code, ledgerAfterRetry, trigger };
+  const facts = { psqlVersion, queuedMode, migrateExit: failed.code, migrateMs: failed.ms, loginStatus: loginWhileWaiting.status, loginMs, ledgerAfterFailure, blockerExit: held.code, retryExit: retry.code, ledgerAfterRetry, trigger };
   evidence(`INFO M2 lock_timeout: ${JSON.stringify(facts)} migrate.sh: ${failed.out.replace(/\s+/g, " ").slice(-240)}`);
+  assert.ok(queuedMode, "the migration's lock request on auth.users was observed waiting before the login");
+  assert.equal(queuedMode, "ShareRowExclusiveLock", "readers are not blocked: the migration must not request AccessExclusiveLock");
   assert.notEqual(failed.code, 0, `the waiting migration must give up (lock_timeout), it ran ${failed.ms} ms: ${failed.out.slice(-400)}`);
   assert.match(failed.out, /lock timeout/);
   assert.ok(failed.ms < 15_000, `migration gave up after ${failed.ms} ms`);
   assert.equal(ledgerAfterFailure, 0, "a failed migration writes no ledger row");
   assert.equal(loginWhileWaiting.status, 200);
-  assert.ok(loginMs < 10_000, `login waited ${loginMs} ms behind the migration`);
+  assert.ok(loginMs < 8_000, `login waited ${loginMs} ms behind the migration (lock_timeout is 5 s)`);
   assert.equal(retry.code, 0, retry.out.slice(-600));
   assert.match(retry.out, /1 nya migrationer applicerade/);
   assert.equal(ledgerAfterRetry, 1);
