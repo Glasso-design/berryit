@@ -15,8 +15,13 @@ here="$(cd "$(dirname "$0")" && pwd)"
 container="${BERRYIT_DB_CONTAINER:-berryit-support-db}"
 db_user="${PGUSER:-supabase_admin}"
 
-out="$(docker exec -i -e PGOPTIONS='-c default_transaction_read_only=on' "$container" \
-  psql -v ON_ERROR_STOP=1 -X -U "$db_user" -d postgres < "$here/checks/half-registered-customers.sql")"
+# A psql failure must never look like "findings" (psql itself exits 3 on a script error).
+if ! out="$(docker exec -i -e PGOPTIONS='-c default_transaction_read_only=on' "$container" \
+  psql -v ON_ERROR_STOP=1 -X -U "$db_user" -d postgres < "$here/checks/half-registered-customers.sql" 2>&1)"; then
+  printf '%s\n' "$out" >&2
+  echo "kontrollen kunde inte köras" >&2
+  exit 1
+fi
 printf '%s\n' "$out"
 
 count="$(printf '%s\n' "$out" | sed -n 's/.*MP2-REGISTRATION-CHECK: \([0-9][0-9]*\) konto.*/\1/p' | head -1)"

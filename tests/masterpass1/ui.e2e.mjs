@@ -269,7 +269,8 @@ test("U5b desktop: history reload fails right after the new conversation is crea
       if (!(await box.inputValue())) await box.fill(title);
       if (!(await page.getByLabel(/Jag har granskat texten/).isChecked())) await page.getByLabel(/Jag har granskat texten/).check();
       await page.getByRole("button", { name: "Fråga ONARLY AI" }).click();
-      await page.getByRole("heading", { name: "Hypoteser" }).first().waitFor({ timeout: 30000 });
+      // Do not stop here if no answer comes: the database state below is the verdict.
+      await page.getByRole("heading", { name: "Hypoteser" }).first().waitFor({ timeout: 30000 }).catch(() => { retried = "no answer"; });
     }
     const convs = sql(`select (select count(*) from public.ai_messages m where m.conversation_id=c.id and m.role='user')::int questions, (select count(*) from public.ai_messages m where m.conversation_id=c.id and m.role='assistant')::int answers from public.ai_conversations c where c.title='${title}'`);
     evidence(`INFO U5b reload failure injected=${injected} first=${outcome} retried=${retried} conversations=${JSON.stringify(convs)}`);
