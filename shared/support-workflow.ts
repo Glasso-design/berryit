@@ -12,7 +12,7 @@ export type TicketAttachment = { id: string; ticket_id: string; uploaded_by: str
 export type TicketEvent = { id: string; actor_id: string | null; event_type: string; from_value: string | null; to_value: string | null; payload: Record<string, unknown>; created_at: string };
 export type Technician = { id: string; label: string; is_external: boolean; expires_at: string | null };
 export type SupportOverview = { tickets: Ticket[]; customers: Customer[]; organizations: Organization[]; categories: Lookup[]; statuses: Lookup[]; canRegister: boolean; projects?:{id:string;name:string;organization_id:string}[] };
-export type TicketDetail = { ticket: Ticket; canWork: boolean; canAssign: boolean; messages: TicketMessage[]; notes: TicketNote[]; attachments: TicketAttachment[]; events: TicketEvent[]; technicians: Technician[]; people: { id: string; label: string }[] };
+export type TicketDetail = { ticket: Ticket; canWork: boolean; messages: TicketMessage[]; notes: TicketNote[]; attachments: TicketAttachment[]; events: TicketEvent[]; technicians: Technician[]; people: { id: string; label: string }[] };
 export type NewTicket = { customerId: string; subject: string; description: string; category_key: string; projectId?:string|null };
 export const customerRegistrationSchema = z.object({
   full_name: z.string().trim().min(2).max(200), email: z.string().trim().email().max(254),
@@ -83,18 +83,15 @@ export function createSupportClient(supabase: SupabaseClient, userId: string, re
         supabase.from("tickets").select(TICKET_SELECT).eq("id", id).maybeSingle(), rpc<boolean>("can_work_ticket", { p_ticket_id: id }),
       ]);
       failed(result.error); if (!result.data) throw new Error("Ärendet finns inte eller är inte tillgängligt.");
-      const ticketRow = result.data as Ticket;
-      const [messages, notes, attachments, events, technicians, people, canAssign] = await Promise.all([
+      const [messages, notes, attachments, events, technicians, people] = await Promise.all([
         all<TicketMessage>("ticket_messages", "id,author_id,body,is_from_staff,created_at", [["ticket_id",id]]),
         canWork ? all<TicketNote>("ticket_internal_notes", "id,author_id,body,created_at", [["ticket_id",id]]) : Promise.resolve([]),
         all<TicketAttachment>("ticket_attachments", ATTACHMENT_SELECT, [["ticket_id",id]]),
         all<TicketEvent>("ticket_events", "id,actor_id,event_type,from_value,to_value,payload,created_at", [["ticket_id",id]]),
         rpc<Technician[]>("support_ticket_technicians", {p_ticket_id:id}),
         rpc<{id:string;label:string}[]>("support_ticket_people", {p_ticket_id:id}),
-        // Same check as the database guard for assignee changes (tickets.reassign in the ticket's scope).
-        canWork ? rpc<boolean>("has_resource_permission", {p_permission:"tickets.reassign",p_organization_id:ticketRow.organization_id,p_project_id:ticketRow.project_id??null}) : Promise.resolve(false),
       ]);
-      return { ticket: ticketRow, canWork: canWork === true, canAssign: canAssign === true, messages, notes, attachments, events, technicians, people };
+      return { ticket: result.data as Ticket, canWork: canWork === true, messages, notes, attachments, events, technicians, people };
     },
     async create(input) {
       const draft = ticketDraftSchema.parse(input); z.uuid().parse(input.customerId);
