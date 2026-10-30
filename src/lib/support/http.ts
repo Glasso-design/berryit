@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabase/config";
 import { SupportHttpError,assertSupportOrigin,supportOriginAllowed } from "@berryit/shared/support-http-policy";
+import { isSupportConnectionError } from "@berryit/shared/support-workflow";
 export {limitedSupportBody} from "@berryit/shared/support-http-policy";
 function allowedOrigin(request:Request){
   return supportOriginAllowed(request,process.env.CONTROL_ALLOWED_ORIGINS);
@@ -21,6 +22,7 @@ export async function supportActor(request:Request){
   return {actor,userId:result.data.user.id};
 }
 export function supportFailure(error:unknown,request?:Request){
-  const status=error instanceof SupportHttpError?error.status:400;
+  // 503 when the server itself could not reach the database/Auth: clients keep the user's input and retry.
+  const status=error instanceof SupportHttpError?error.status:isSupportConnectionError(error)?503:400;
   return Response.json({error:error instanceof Error?error.message:"Åtgärden kunde inte slutföras."},{status,headers:{"Cache-Control":"no-store",...(request?supportCors(request):{})}});
 }
