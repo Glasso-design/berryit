@@ -137,6 +137,32 @@ skrivskyddad och reparerar ingenting. Kör den på varje stack där
 `20261014235633_complete_support_workflow.sql` redan applicerats. Hantering av träffar:
 `../../docs/masterpass2-registration-check.md`.
 
+## Vercel Preview
+
+Webbens Vercel-projekt bygger en Preview för pushade grenar. En Preview kör
+ogranskad kod och nås av alla som har URL:en. Därför kör `npm run build` (det
+bygge Vercel kör, `vercel.json` → `buildCommand`) först `scripts/preview-guard.mjs`,
+som **vägrar bygga** när `VERCEL_ENV=preview` och
+
+- en `NEXT_PUBLIC_*`/`SUPABASE_*`-variabel pekar på en produktionsvärd:
+  `portal.berryit.se`, `prod-node-01` (även `prod-node-01.<tailnet>.ts.net`),
+  `100.100.11.6`, plus värdarna i `BERRYIT_PRODUCTION_DATA_HOSTS`
+  (kommaseparerad, underdomäner räknas). Lägg Vercel-projektets
+  produktions-Supabase-värd där (t.ex. `<ref>.supabase.co`), för alla miljöer;
+- `SUPABASE_SERVICE_ROLE_KEY` finns i Preview utan markören
+  `BERRYIT_PREVIEW_ISOLATED_BACKEND=<värd>`, som måste vara exakt värden i
+  `NEXT_PUBLIC_SUPABASE_URL` för en egen, isolerad Preview-backend (aldrig
+  produktion);
+- service role-nyckeln själv tillhör ett listat produktionsprojekt.
+
+I alla miljöer vägras en `NEXT_PUBLIC_*`-variabel som innehåller en service
+role-/secret-nyckel (den skulle hamna i webbläsarens JavaScript).
+
+Ägaråtgärd i Vercel (projektet `berryit`): ta bort `SUPABASE_SERVICE_ROLE_KEY`
+och produktions-URL:er från **Preview**; ge Preview en egen backend eller inga
+värden. Utan service role-nyckel svarar kundregistreringen ärligt "inte
+konfigurerad". Vakten visar variabelnamn och värdar, aldrig nyckelvärden.
+
 ## Säkerhet
 
 - Inga publika portar. Åtkomst sker via SSH/Tailscale tills DNS och proxy beslutas.
