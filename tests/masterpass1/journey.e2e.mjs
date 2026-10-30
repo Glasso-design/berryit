@@ -12,6 +12,8 @@
 //   J6 knowledge base: save a verified solution from an answer (SIM gateway), listed in the KB view
 //   J7 Sök felet (M7) REAL: lost create answer + failed history reload -> ONE conversation, analysis
 //   J8 audit trail: Super Admin reads it in the UI; technician does not; DB rows exact
+//   J9 role assignment (permissions per role) through /api/control/access: grant gives access at once,
+//      revoke removes it at once for the same JWT; technician and aal1 Super Admin are refused; audited
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createServer, request as httpRequest } from "node:http";
@@ -19,7 +21,7 @@ import { readFile, mkdir } from "node:fs/promises";
 import { resolve, extname, sep } from "node:path";
 import { randomUUID } from "node:crypto";
 import { chromium } from "@playwright/test";
-import { fx, G, WEB, sql, sqlExec, stub, totp, json, login, rest, evidence } from "./lib.mjs";
+import { fx, G, WEB, sql, sqlExec, stub, totp, json, login, loginAal2, rest, route, evidence } from "./lib.mjs";
 // lib.mjs refuses to run outside the throwaway CI runner and refuses non-loopback targets.
 
 const shots = `${process.env.MP1_DIR}/screenshots`;
@@ -473,4 +475,74 @@ test("J8 audit trail: Super Admin (aal2) reads it in the UI with actor names; te
   assert.deepEqual(await json(await rest(techRest.token, "/support_admin_audit?select=id&limit=1")), []);
   await tech.context.close();
   ok("J8 audit trail", "Super Admin sees attributed registrations; technician sees none (UI + REST)");
+});
+
+// ---------------------------------------------------------------------------------------------- J9
+test("J9 role assignment via /api/control/access: Super Admin (aal2) grants and revokes; access follows at once; technician and aal1 are refused; audited", async () => {
+  const saId = await createUser(`sa9.${run}`, "MP3 Behörighetsadmin");
+  sqlExec(`update public.profiles set role='admin' where id='${saId}';
+    insert into public.support_role_grants(grantee_id,role_key,scope,reason) values ('${saId}','BERRYIT_SUPPORT_SUPER_ADMIN','global','MP3 syntetiskt ägarbeslut (CI-runner)');`);
+  const sa = await loginAal2(`sa9.${run}`);
+  const techId = await createUser(`techb9.${run}`, "MP3 Tekniker B");
+  const access = (token, args) => route(token, null, args, "/api/control/access");
+  const grantArgs = { action: "grant", user: techId, role: "BERRYIT_SUPPORT_TECHNICIAN", org: fx.orgs.b, project: null, expires: null, reason: "MP3 tekniker för kund B", external: false, company: null, commissioner: null };
+  const subject = `MP3 ärende kund B ${run}`;
+  const created = await route(sa.token, "create", { input: { customerId: fx.users.custb, subject, description: "Ärende för kund B (MASTER PASS 3).", category_key: "dator", id: randomUUID() } });
+  assert.equal(created.status, 200, JSON.stringify(await json(created)));
+  const ticketId = (await json(await route(sa.token, "overview"))).data.tickets.find((t) => t.subject === subject)?.id;
+  assert.ok(ticketId);
+
+  // Refusals first: a technician without roles.grant, and the Super Admin on aal1 (MFA required for role delegation).
+  const auditBefore = sql("select coalesce(max(id),0)::bigint m from public.support_admin_audit")[0].m;
+  const techA = await login("techa");
+  const byTech = await access(techA.token, grantArgs);
+  const byTechBody = await json(byTech);
+  const byAal1 = await access(sa.aal1, grantArgs);
+  const byAal1Body = await json(byAal1);
+  const grantsAfterRefusals = sql(`select count(*)::int n from public.support_role_grants where grantee_id='${techId}'`)[0].n;
+  const denials = sql(`select actor_id, action from public.support_admin_audit where id > ${auditBefore} and action='access.denied' order by id`);
+  evidence(`INFO J9 refusals: technician HTTP ${byTech.status} "${byTechBody.error}"; aal1 Super Admin HTTP ${byAal1.status} "${byAal1Body.error}"; grants=${grantsAfterRefusals}; denial audit=${JSON.stringify(denials)}`);
+  assert.equal(byTech.status, 400); assert.equal(byAal1.status, 400);
+  assert.equal(grantsAfterRefusals, 0);
+  assert.ok(denials.some((d) => d.actor_id === fx.users.techa), "the technician's refused attempt is audited");
+
+  // Grant: the new technician sees customer B's ticket with the same JWT, at once.
+  const techB = await login(`techb9.${run}`);
+  const before = (await json(await route(techB.token, "overview"))).data;
+  const granted = await access(sa.token, grantArgs);
+  const grantedBody = await json(granted);
+  assert.equal(granted.status, 200, JSON.stringify(grantedBody));
+  const grantId = grantedBody.data;
+  assert.match(String(grantId), /^[0-9a-f-]{36}$/);
+  const after = (await json(await route(techB.token, "overview"))).data;
+  const detail = await json(await route(techB.token, "detail", { id: ticketId }));
+  assert.equal(before.tickets.some((t) => t.id === ticketId), false, "no access before the grant");
+  assert.equal(after.tickets.some((t) => t.id === ticketId), true, "access right after the grant (same JWT)");
+  assert.equal(detail.data?.canWork, true);
+  assert.equal(after.tickets.some((t) => t.organization_id === fx.orgs.a), false, "scope B only: no organisation A tickets");
+
+  // Revoke: gone at once for the same JWT.
+  const revoked = await access(sa.token, { action: "revoke", id: grantId, reason: "MP3 uppdraget avslutat" });
+  assert.equal(revoked.status, 200, JSON.stringify(await json(revoked)));
+  const afterRevoke = (await json(await route(techB.token, "overview"))).data;
+  const detailAfter = await route(techB.token, "detail", { id: ticketId });
+  assert.equal(afterRevoke.tickets.some((t) => t.id === ticketId), false, "access removed at once");
+  assert.equal(detailAfter.status, 400);
+  const audit = sql(`select action, actor_id from public.support_admin_audit where target_id='${techId}' and action like 'role.%' order by id`);
+  assert.deepEqual(audit, [{ action: "role.granted", actor_id: saId }, { action: "role.revoked", actor_id: saId }]);
+
+  // The UI for it: Projekt -> "Användare och tilldelningar" only for holders of roles.grant (390 px).
+  const { page } = S.sa;
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${WEB}/control/projekt`);
+  await page.getByRole("heading", { name: "Projekt och åtkomst" }).waitFor({ timeout: 20000 });
+  await page.getByRole("heading", { name: "Användare och tilldelningar" }).waitFor({ timeout: 20000 });
+  await noHorizontalOverflow(page, "j9-projekt-superadmin-390");
+  const tech = await webLogin("techa");
+  await tech.page.waitForURL(`${WEB}/control`);
+  await tech.page.goto(`${WEB}/control/projekt`);
+  await tech.page.getByRole("heading", { name: "Projekt och åtkomst" }).waitFor({ timeout: 20000 });
+  assert.equal(await tech.page.getByRole("heading", { name: "Användare och tilldelningar" }).count(), 0, "no role administration without roles.grant");
+  await tech.context.close();
+  ok("J9 role assignment", "grant -> access at once, revoke -> gone at once (same JWT), technician + aal1 refused and audited, role.granted/role.revoked by the Super Admin");
 });
