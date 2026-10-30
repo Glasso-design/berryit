@@ -59,6 +59,14 @@ async function noHorizontalOverflow(page, label) {
   assert.ok(m.sw <= m.cw + 1, `${label}: horizontal overflow ${m.sw} > ${m.cw}`);
 }
 
+/** Waits for an alert containing `expected`; on timeout the assertion names what the alerts actually said. */
+async function expectAlert(page, expected, label) {
+  const hit = page.getByRole("alert").filter({ hasText: expected }).first();
+  try { await hit.waitFor({ timeout: 20000 }); }
+  catch { assert.fail(`${label}: expected an alert containing "${expected}", the page shows: ${JSON.stringify(await page.getByRole("alert").allTextContents())}`); }
+  evidence(`INFO ${label}: alert "${(await hit.textContent()).slice(0, 160)}"`);
+}
+
 /** Lets the request reach the server, then drops the connection before the answer reaches the browser. */
 async function loseAnswer(route, label) {
   const response = await route.fetch();
@@ -143,10 +151,10 @@ test("J1 registration (web, Super Admin with MFA): company + private customer; d
   await form.getByLabel("Kundens e-post").fill(S.private.email);
   await form.getByLabel("Kundens organisation").selectOption({ label: "Privatperson — ingen organisation" });
   await form.getByRole("button", { name: "Registrera kund utan aktiverad inloggning" }).click();
-  await page.getByRole("alert").filter({ hasText: CONNECTION }).waitFor({ timeout: 20000 });
+  await expectAlert(page, CONNECTION, "J1 registration lost answer");
   assert.equal(await form.getByLabel("Kundens e-post").inputValue(), S.private.email, "the form keeps what was typed after a lost connection");
   await form.getByRole("button", { name: "Registrera kund utan aktiverad inloggning" }).click();
-  await page.getByRole("alert").filter({ hasText: "Det finns redan ett konto med den e-postadressen" }).waitFor({ timeout: 20000 });
+  await expectAlert(page, "Det finns redan ett konto med den e-postadressen", "J1 registration retry");
   await page.getByRole("cell", { name: S.private.name, exact: true }).waitFor({ timeout: 20000 });
   await page.unrouteAll({ behavior: "ignoreErrors" });
   const privateRows = sql(`select u.id, p.organization_id, p.login_activation_pending, p.registered_by from auth.users u join public.profiles p on p.id=u.id where u.email='${S.private.email}'`);
@@ -259,7 +267,7 @@ test("J3 broken connection (web): lost answer on create and on a message, offlin
     await form.getByLabel("Beskrivning").fill("Svaret på skapa-anropet tappas efter att servern sparat.");
     await form.getByLabel("Kategori").selectOption("dator");
     await form.getByRole("button", { name: "Skapa ärende" }).click();
-    await page.getByRole("alert").filter({ hasText: CONNECTION }).waitFor({ timeout: 20000 });
+    await expectAlert(page, CONNECTION, "J3 create lost answer");
     assert.equal(await form.getByLabel("Ämne").inputValue(), subject, "the create form keeps its values");
     const afterLost = sql(`select count(*)::int n from public.tickets where subject='${q(subject)}'`)[0].n;
     await form.getByRole("button", { name: "Skapa ärende" }).click();
@@ -275,7 +283,7 @@ test("J3 broken connection (web): lost answer on create and on a message, offlin
     const message = `MP3 meddelande vid avbrott ${run}`;
     await detail.getByLabel("Nytt kundmeddelande").fill(message);
     await detail.getByRole("button", { name: "Skicka kundmeddelande" }).click();
-    await page.getByRole("alert").filter({ hasText: CONNECTION }).waitFor({ timeout: 20000 });
+    await expectAlert(page, CONNECTION, "J3 message lost answer");
     assert.equal(await detail.count(), 1, "the ticket stays open after a lost connection");
     assert.equal(await detail.getByLabel("Nytt kundmeddelande").inputValue(), message, "the message text is kept");
     await detail.getByRole("button", { name: "Skicka kundmeddelande" }).click();
@@ -287,7 +295,7 @@ test("J3 broken connection (web): lost answer on create and on a message, offlin
     await detail.getByLabel("Felsökning och utförd åtgärd").fill(note);
     await context.setOffline(true);
     await detail.getByRole("button", { name: "Spara intern anteckning" }).click();
-    await page.getByRole("alert").filter({ hasText: CONNECTION }).waitFor({ timeout: 20000 });
+    await expectAlert(page, CONNECTION, "J3 note offline");
     assert.equal(await detail.getByLabel("Felsökning och utförd åtgärd").inputValue(), note);
     const offlineNotes = sql(`select count(*)::int n from public.ticket_internal_notes where ticket_id='${S.brokenTicket.id}'`)[0].n;
     await context.setOffline(false);
@@ -312,7 +320,7 @@ test("J4 Desktop Support Desk offline: error shown, ticket and text kept, retry 
     await detail.getByLabel("Nytt kundmeddelande").fill(message);
     await context.setOffline(true);
     await detail.getByRole("button", { name: "Skicka kundmeddelande" }).click();
-    await page.getByRole("alert").filter({ hasText: CONNECTION }).waitFor({ timeout: 20000 });
+    await expectAlert(page, CONNECTION, "J4 desktop message offline");
     assert.equal(await detail.count(), 1);
     assert.equal(await detail.getByLabel("Nytt kundmeddelande").inputValue(), message);
     await context.setOffline(false);
