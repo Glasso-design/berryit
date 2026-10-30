@@ -536,12 +536,16 @@ test("J9 role assignment via /api/control/access: Super Admin (aal2) grants and 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${WEB}/control/projekt`);
   await page.getByRole("heading", { name: "Projekt och åtkomst" }).waitFor({ timeout: 20000 });
+  await page.getByRole("button", { name: "Användare och roller", exact: true }).click();
+  await page.getByText("Rollnamn är fria.").waitFor({ timeout: 20000 });
   await page.getByRole("heading", { name: "Användare och tilldelningar" }).waitFor({ timeout: 20000 });
   await noHorizontalOverflow(page, "j9-projekt-superadmin-390");
   const tech = await webLogin("techa");
   await tech.page.waitForURL(`${WEB}/control`);
   await tech.page.goto(`${WEB}/control/projekt`);
   await tech.page.getByRole("heading", { name: "Projekt och åtkomst" }).waitFor({ timeout: 20000 });
+  await tech.page.getByRole("button", { name: "Användare och roller", exact: true }).click();
+  await tech.page.getByText("Rollnamn är fria.").waitFor({ timeout: 20000 });
   assert.equal(await tech.page.getByRole("heading", { name: "Användare och tilldelningar" }).count(), 0, "no role administration without roles.grant");
   await tech.context.close();
   ok("J9 role assignment", "grant -> access at once, revoke -> gone at once (same JWT), technician + aal1 refused and audited, role.granted/role.revoked by the Super Admin");
