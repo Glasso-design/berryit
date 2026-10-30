@@ -102,20 +102,30 @@ test("M2 migrate.sh: SET LOCAL applies; a migration waiting on auth.users gives 
   const loginMs = Date.now() - t0;
   const failed = await migrate;
   const ledgerAfterFailure = sql(`select count(*)::int n from public.schema_migrations where version='${VERSION}'`)[0].n;
+  // MASTER PASS 3 (F-B6): an operator's SHORTER lock_timeout set before the file is kept (it used to be overridden by 5 s),
+  // and the file refuses to run outside a transaction even when a session lock_timeout is set.
+  const migrationSql = readFileSync(`${repo}/supabase/migrations/${VERSION}`, "utf8");
+  const operator = await run("docker", dbPsql(["--single-transaction"]), { input: `set local lock_timeout = '700ms';\n${migrationSql}\n`, timeoutMs: 30_000 });
+  const outside = await run("docker", ["exec", "-i", "-e", "PGOPTIONS=-c lock_timeout=500ms", "berryit-support-db", "psql", "-v", "ON_ERROR_STOP=1", "-U", "supabase_admin", "-d", "postgres", "-f", "-"], { input: migrationSql, timeoutMs: 30_000 });
   const held = await blocker;
   const retry = await run(`${here}/migrate.sh`, [`${repo}/supabase/migrations`], { timeoutMs: 60_000 });
   const ledgerAfterRetry = sql(`select count(*)::int n from public.schema_migrations where version='${VERSION}'`)[0].n;
   const trigger = sql("select tgenabled::text from pg_trigger where tgname='auth_user_registration_metadata' and tgrelid='auth.users'::regclass");
-  const facts = { psqlVersion, queuedMode, migrateExit: failed.code, migrateMs: failed.ms, loginStatus: loginWhileWaiting.status, loginMs, ledgerAfterFailure, blockerExit: held.code, retryExit: retry.code, ledgerAfterRetry, trigger };
+  const facts = { psqlVersion, queuedMode, migrateExit: failed.code, migrateMs: failed.ms, loginStatus: loginWhileWaiting.status, loginMs, ledgerAfterFailure, operatorExit: operator.code, operatorMs: operator.ms, outsideTxExit: outside.code, outsideTx25P01: /måste köras i en transaktion/.test(outside.out), blockerExit: held.code, retryExit: retry.code, ledgerAfterRetry, trigger };
   evidence(`INFO M2 lock_timeout: ${JSON.stringify(facts)} migrate.sh: ${failed.out.replace(/\s+/g, " ").slice(-240)}`);
   assert.ok(queuedMode, "the migration's lock request on auth.users was observed waiting before the login");
   assert.equal(queuedMode, "ShareRowExclusiveLock", "readers are not blocked: the migration must not request AccessExclusiveLock");
   assert.notEqual(failed.code, 0, `the waiting migration must give up (lock_timeout), it ran ${failed.ms} ms: ${failed.out.slice(-400)}`);
   assert.match(failed.out, /lock timeout/);
-  assert.ok(failed.ms < 15_000, `migration gave up after ${failed.ms} ms`);
+  assert.ok(failed.ms < 8_000, `migration gave up after ${failed.ms} ms (lock_timeout is at most 2 s; migrate.sh also checks the ledger per file)`);
   assert.equal(ledgerAfterFailure, 0, "a failed migration writes no ledger row");
   assert.equal(loginWhileWaiting.status, 200);
-  assert.ok(loginMs < 8_000, `login waited ${loginMs} ms behind the migration (lock_timeout is 5 s)`);
+  assert.ok(loginMs < 3_500, `login waited ${loginMs} ms behind the migration (lock_timeout is at most 2 s)`);
+  assert.notEqual(operator.code, 0, `with the blocker still holding, the operator's 700ms run must time out: ${operator.out.slice(-300)}`);
+  assert.match(operator.out, /lock timeout/);
+  assert.ok(operator.ms < 1_900, `an operator's shorter lock_timeout (700ms) must be kept, the run took ${operator.ms} ms`);
+  assert.notEqual(outside.code, 0, "outside a transaction the file must refuse to run");
+  assert.match(outside.out, /måste köras i en transaktion/);
   assert.equal(retry.code, 0, retry.out.slice(-600));
   assert.match(retry.out, /1 nya migrationer applicerade/);
   assert.equal(ledgerAfterRetry, 1);
