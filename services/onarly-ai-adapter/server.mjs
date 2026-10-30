@@ -729,6 +729,11 @@ export function createAiHandler({
         const messageId = optionalUuid(body.messageId);
         conversation = await boundary.conversation(identity, requiredUuid(messagesMatch[1]));
         if(conversation.incident_id)fail(400,'DIAGNOSTIC_PREVIEW_REQUIRED');
+        // No configured gateway (the production default until the ONARLY AI
+        // Gateway exists): answer GATEWAY_DISABLED before anything is stored,
+        // so no unanswered question is left in the history. The attempt is
+        // still audited as ai.request.failed (auditFailure below).
+        if (!gateway.enabled) fail(503, "GATEWAY_DISABLED");
         const question = await boundary.addUserMessage(identity, conversation, text, messageId);
         // Replay of an attempt that was already answered (e.g. the response was
         // lost): return the stored answer, never a second gateway call/answer.

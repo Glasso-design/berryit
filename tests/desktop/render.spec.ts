@@ -77,6 +77,7 @@ async function login(page:Page){
     infra_nodes:[],infra_services:[],connector_integrations:[],project_external_identities:[],support_admin_audit:[],service_status_checks:[],
     monitoring_metric_kinds:[],monitoring_samples:[],monitoring_thresholds:[],incidents:[],
     ticket_messages:[],ticket_internal_notes:[],ticket_attachments:[],ticket_events:[],
+    ai_knowledge_entries:[],
     onarly_desk_devices:[],onarly_desk_sessions:[],onarly_desk_session_events:[],onarly_support_entitlements:[],
    };
    if(!(table in tables)||!['GET','HEAD'].includes(req.method())){unexpected.push(req.method()+' '+table);return route.fulfill({status:403,json:{message:'Unexpected fixture query'},headers});}
@@ -118,7 +119,14 @@ for(const [module,heading]of [['Kunder','Kunder'],['Projekt','Projekt och åtkom
      await page.getByRole('button',{name:ticket.reference,exact:true}).click();
      await expect(page.getByRole('heading',{name:`${ticket.reference} · ${ticket.subject}`,exact:true})).toBeVisible();
     }
-    if(module==='Ask ONARLY AI')await expect(page.getByText('Gateway ej ansluten',{exact:true})).toBeVisible();
+    if(module==='Ask ONARLY AI'){
+     await expect(page.getByText('Gateway ej ansluten',{exact:true})).toBeVisible();
+     // MASTER PASS 3: an explicit "not available" state, inputs disabled, knowledge base still readable.
+     await expect(page.getByRole('status',{name:'ONARLY AI är inte tillgänglig'})).toContainText('Synthetic disconnected Gateway');
+     await expect(page.getByPlaceholder('Fråga om ett fel, kod, drift eller ett supportärende…')).toBeDisabled();
+     await expect(page.getByRole('button',{name:'Fråga ONARLY AI',exact:true})).toBeDisabled();
+     await expect(page.getByRole('region',{name:'Kunskapsbas'})).toContainText('Inga verifierade lösningar för den här kunden ännu.');
+    }
     expect(evidence.errors).toEqual([]);expect(evidence.unexpected).toEqual([]);
     await page.screenshot({path:`test-results/desktop-react/${module.replaceAll(' ','-')}-${n}.png`});
     await nav.getByRole('button',{name:'Dashboard',exact:true}).click();await expect(page.getByRole('heading',{name:'Översikt',exact:true})).toBeVisible();

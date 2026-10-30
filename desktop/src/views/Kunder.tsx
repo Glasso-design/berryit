@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { createSupportClient,customerRegistrationSchema } from "@berryit/shared/support-workflow";
+import { createSupportClient,customerRegistrationSchema,SupportConnectionError } from "@berryit/shared/support-workflow";
 import { CustomerWorkspace } from "@berryit/shared/ui/CustomerWorkspace";
 import { useSession } from "@/auth/session";
 import { backendFetch } from "@/auth/client";
@@ -8,8 +8,11 @@ export function Kunder(){
   const client=useMemo(()=>supabase&&access?createSupportClient(supabase,access.userId,async input=>{
     if(!config?.controlUrl)throw new Error("Ange Control Center-URL i Inställningar för kundregistrering.");
     const {data}=await supabase.auth.getSession();if(!data.session)throw new Error("Logga in igen.");
-    const response=await backendFetch(config.controlUrl+"/api/control/customers",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${data.session.access_token}`},body:JSON.stringify(customerRegistrationSchema.parse(input))});
-    const result=await response.json();if(!response.ok)throw new Error(result.error??"Kundregistreringen misslyckades.");
+    const body=JSON.stringify(customerRegistrationSchema.parse(input));let response:Response;
+    try{response=await backendFetch(config.controlUrl+"/api/control/customers",{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${data.session.access_token}`},body});}
+    catch{throw new SupportConnectionError();}
+    const result=await response.json().catch(()=>null) as {error?:string}|null;
+    if(!response.ok){if(!result&&response.status>=502&&response.status<=504)throw new SupportConnectionError();throw new Error(result?.error??`Kundregistreringen misslyckades (HTTP ${response.status}).`);}
   }):null,[supabase,access,config]);
   if(!client||!access?.isStaff)return <p role="alert">Du saknar behörighet till kundregistret.</p>;
   return <CustomerWorkspace key={access.userId} client={client}/>;

@@ -23,6 +23,7 @@ echo ok > "$MP1_DIR/stub/mode.txt"
 env_file="$here/secrets/stack.env"
 set -a; . "$env_file"; set +a
 export MP1_GATEWAY_TOKEN="sim-gateway-$(openssl rand -hex 16)"
+export BERRYIT_ANON_KEY="$ANON_KEY" BERRYIT_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY"
 for value in "$ANON_KEY" "$SERVICE_ROLE_KEY" "$POSTGRES_PASSWORD" "$JWT_SECRET" "$MP1_GATEWAY_TOKEN"; do echo "::add-mask::$value"; done
 
 docker build -q -t berryit-onarly-ai-adapter:mp1 "$repo/services/onarly-ai-adapter" >/dev/null
@@ -44,6 +45,19 @@ for i in $(seq 1 60); do
   g=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8700/health || true)
   [[ "$a" == 200 && "$g" == 200 ]] && break
   sleep 2
+done
+
+# MASTER PASS 3: a second adapter from the same image with NO gateway configured,
+# exactly the production default of compose.yaml (ONARLY_AI_GATEWAY_URL/TOKEN empty,
+# the ONARLY AI Gateway source does not exist). Used for the "AI not available" journey.
+docker rm -f berryit-ai-adapter-nogw >/dev/null 2>&1 || true
+docker run -d --name berryit-ai-adapter-nogw --network berryit-support-net -p 127.0.0.1:8798:8788 \
+  -e PORT=8788 -e BERRYIT_AUTH_BASE_URL=http://auth:9999 -e BERRYIT_REST_BASE_URL=http://rest:3000 \
+  -e BERRYIT_ANON_KEY -e BERRYIT_SERVICE_ROLE_KEY -e ONARLY_AI_GATEWAY_URL= -e ONARLY_AI_GATEWAY_TOKEN= \
+  berryit-onarly-ai-adapter:mp1 >/dev/null
+for i in $(seq 1 30); do
+  [[ "$(curl -s http://127.0.0.1:8798/ai/v1/health || true)" == *disabled* ]] && break
+  sleep 1
 done
 
 "$here/migrate.sh" "$repo/supabase/migrations"
@@ -76,7 +90,7 @@ SQL
 python3 - "$MP1_DIR/fixture.json" <<PY
 import json, sys
 json.dump({
-  "gateway": "http://127.0.0.1:8700", "web": "http://localhost:3501", "password": "$pw",
+  "gateway": "http://127.0.0.1:8700", "aiDisabled": "http://127.0.0.1:8798", "web": "http://localhost:3501", "password": "$pw",
   "anonKey": "$ANON_KEY", "serviceKey": "$SERVICE_ROLE_KEY",
   "users": {"saweb": "${uid[saweb]}", "saapi": "${uid[saapi]}", "techa": "${uid[techa]}", "custa": "${uid[custa]}", "custb": "${uid[custb]}"},
   "orgs": {"a": "$orga", "b": "$orgb"},
@@ -90,4 +104,5 @@ chmod 600 "$MP1_DIR/fixture.json"
 dc ps --format '{{.Service}} {{.Image}} {{.State}}' > "$MP1_DIR/stack-ps.txt"
 images=$(tr '\n' ';' < "$MP1_DIR/stack-ps.txt")
 migs=$(sql -c "select count(*) from public.schema_migrations")
-echo "::notice title=stack-up::REAL stack uppe på runnern (${images}) – ${migs} migrationer applicerade via migrate.sh, 5 syntetiska konton, 2 organisationer"
+nogw=$(curl -s http://127.0.0.1:8798/ai/v1/health || echo unreachable)
+echo "::notice title=stack-up::REAL stack uppe på runnern (${images}) – ${migs} migrationer applicerade via migrate.sh, 5 syntetiska konton, 2 organisationer; adapter utan gateway (produktionsstandard) på :8798 health=${nogw}"

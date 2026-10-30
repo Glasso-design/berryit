@@ -36,16 +36,38 @@
 --       Retry procedure: deploy/berryit-support/README.md ("Migrering med låsgräns").
 --   M3  The column list (after update of raw_app_meta_data) is intentionally
 --       unchanged; see the runbook for the GoTrue upgrade rehearsal.
+--
+-- MASTER PASS 3 (2026-10-30), changed IN PLACE for the same reason (still never
+-- applied to a persistent or shared database; manifest checksum updated):
+--   F-B6 (migration rehearsal) The file forced lock_timeout = 5 s and so
+--       overrode a SHORTER value an operator had set before running it, and the
+--       guard demanded exactly 5 s; logins could stand still ~5 s per attempt
+--       (measured 4.06 s, REAL). Now: at most 2 s, and a shorter lock_timeout
+--       (or statement_timeout) already in force is kept. Function bodies are
+--       unchanged (the rollback's md5 guards still match).
 
--- M2: never wait more than 5 s for a lock on auth.users (logins queue behind a
--- waiting lock request). SET LOCAL only applies inside a transaction, which
--- migrate.sh provides (psql --single-transaction); refuse to run without one.
-set local lock_timeout = '5s';
-set local statement_timeout = '60s';
+-- M2 / F-B6: never wait more than 2 s for a lock on auth.users (logins queue
+-- behind a waiting lock request); keep an operator's shorter value, e.g.
+--   { echo "set local lock_timeout = '1s';"; cat <this file>; } | psql --single-transaction
+-- set_config(..., true) only lasts for the transaction, which migrate.sh
+-- provides (psql --single-transaction); the guard below refuses to run without
+-- one, because then neither the limit nor the all-or-nothing apply would hold.
 do $$
 begin
-  if current_setting('lock_timeout') <> '5s' then
-    raise exception 'Migrationen måste köras i en transaktion (deploy/berryit-support/migrate.sh), annars gäller inte lock_timeout'
+  if (select s.setting::bigint from pg_catalog.pg_settings s where s.name = 'lock_timeout') not between 1 and 2000 then
+    perform pg_catalog.set_config('lock_timeout', '2s', true);
+  end if;
+  if (select s.setting::bigint from pg_catalog.pg_settings s where s.name = 'statement_timeout') not between 1 and 60000 then
+    perform pg_catalog.set_config('statement_timeout', '60s', true);
+  end if;
+  perform pg_catalog.set_config('berryit.migration_xact', pg_catalog.pg_current_xact_id()::text, true);
+end;
+$$;
+do $$
+begin
+  if pg_catalog.current_setting('berryit.migration_xact', true) is distinct from pg_catalog.pg_current_xact_id()::text
+     or (select s.setting::bigint from pg_catalog.pg_settings s where s.name = 'lock_timeout') not between 1 and 2000 then
+    raise exception 'Migrationen måste köras i en transaktion (deploy/berryit-support/migrate.sh), annars gäller varken lock_timeout eller allt-eller-inget'
       using errcode = '25P01';
   end if;
 end;
@@ -130,6 +152,6 @@ $$;
 revoke all on function public.audit_support_registry_changes() from public, anon, authenticated;
 
 -- create or replace (PostgreSQL 14+) takes ShareRowExclusiveLock whether or not
--- the trigger exists. Readers are never blocked; writers wait at most lock_timeout.
+-- the trigger exists. Readers are never blocked; writers wait at most lock_timeout (<= 2 s).
 create or replace trigger auth_user_registration_metadata after update of raw_app_meta_data on auth.users
   for each row execute function public.handle_auth_user_registration_metadata();

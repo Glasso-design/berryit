@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { SupportClient, SupportOverview } from "../support-workflow";
+import { isSupportConnectionError } from "../support-workflow";
 
 const field = "w-full rounded-lg border border-field bg-ink px-3 py-2 text-sm text-paper";
 const button = "rounded-lg border border-line px-4 py-2 text-sm disabled:opacity-50";
@@ -19,7 +20,12 @@ export function CustomerWorkspace({ client }: { client: SupportClient }) {
   async function perform(action: () => Promise<void>, message: string, form: HTMLFormElement) {
     setBusy(true); setError(null); setNotice(null);
     try { await action(); setData(await client.overview()); form.reset(); setNotice(message); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
+    catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+      // The form keeps what was typed. Unless the connection is gone, show the register as the
+      // server has it now (e.g. "already exists" after a retry whose first answer was lost).
+      if (!isSupportConnectionError(cause)) void client.overview().then(setData).catch(() => undefined);
+    }
     finally { setBusy(false); }
   }
   return <section className="space-y-6" aria-label="Kundregister">

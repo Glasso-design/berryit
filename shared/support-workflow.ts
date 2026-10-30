@@ -13,7 +13,8 @@ export type TicketEvent = { id: string; actor_id: string | null; event_type: str
 export type Technician = { id: string; label: string; is_external: boolean; expires_at: string | null };
 export type SupportOverview = { tickets: Ticket[]; customers: Customer[]; organizations: Organization[]; categories: Lookup[]; statuses: Lookup[]; canRegister: boolean; projects?:{id:string;name:string;organization_id:string}[] };
 export type TicketDetail = { ticket: Ticket; canWork: boolean; canAssign: boolean; messages: TicketMessage[]; notes: TicketNote[]; attachments: TicketAttachment[]; events: TicketEvent[]; technicians: Technician[]; people: { id: string; label: string }[] };
-export type NewTicket = { customerId: string; subject: string; description: string; category_key: string; projectId?:string|null };
+/** `id` is a client-generated id for this create attempt: a retry with the same id never creates a second ticket. */
+export type NewTicket = { customerId: string; subject: string; description: string; category_key: string; projectId?:string|null; id?: string };
 export const customerRegistrationSchema = z.object({
   full_name: z.string().trim().min(2).max(200), email: z.string().trim().email().max(254),
   phone: z.string().trim().max(60).default(""), organization_id: z.uuid().nullable(),
@@ -23,8 +24,9 @@ export type SupportClient = {
   overview(): Promise<SupportOverview>;
   detail(id: string): Promise<TicketDetail>;
   create(input: NewTicket): Promise<string>;
-  message(id: string, body: string, staff: boolean): Promise<void>;
-  note(id: string, body: string): Promise<void>;
+  /** `messageId`/`noteId`: client-generated id of this attempt; a retry with the same id is stored once. */
+  message(id: string, body: string, staff: boolean, messageId?: string): Promise<void>;
+  note(id: string, body: string, noteId?: string): Promise<void>;
   update(id: string, changes: { status_key?: string; assignee_id?: string | null }): Promise<void>;
   reopen(id: string, reason: string): Promise<void>;
   upload(id: string, file: File, visibility: "customer" | "internal", retryId?: string): Promise<void>;
@@ -36,7 +38,24 @@ export type SupportClient = {
 const TICKET_SELECT = "id,reference,subject,description,requester_id,status_key,priority_key,category_key,organization_id,project_id,assignee_id,contact_name,contact_email,contact_phone,created_at,updated_at,resolved_at,closed_at";
 const CUSTOMER_SELECT = "id,full_name,email,phone,organization_id,login_activation_pending";
 const ATTACHMENT_SELECT = "id,ticket_id,uploaded_by,file_name,mime_type,size_bytes,visibility,upload_completed_at,created_at";
-const failed = (error: { message: string } | null) => { if (error) throw new Error(error.message); };
+/**
+ * The request never reached the server or its answer never came back (offline,
+ * proxy down, connection reset). The action may or may not have been applied;
+ * the UI keeps what the user wrote and a retry reuses the same client id.
+ */
+export const SUPPORT_CONNECTION_ERROR = "Ingen kontakt med servern. Kontrollera anslutningen och försök igen. Det du skrivit finns kvar, och ett nytt försök sparar det bara en gång.";
+export class SupportConnectionError extends Error { constructor(){ super(SUPPORT_CONNECTION_ERROR); this.name = "SupportConnectionError"; } }
+const NETWORK_FAILURE = /Failed to fetch|fetch failed|NetworkError|Load failed|FetchError|ECONNREFUSED|ECONNRESET|socket hang up/i;
+export function isSupportConnectionError(error: unknown) {
+  return error instanceof SupportConnectionError || (error instanceof Error && error.message === SUPPORT_CONNECTION_ERROR);
+}
+const failed = (error: { message: string; code?: string } | null) => {
+  if (!error) return;
+  if (!error.code && NETWORK_FAILURE.test(error.message)) throw new SupportConnectionError();
+  throw new Error(error.message);
+};
+const DUPLICATE = "23505";
+const ATTEMPT_CONFLICT = "Försöket matchar inte det som redan sparats med samma id. Uppdatera ärendet och försök igen.";
 const text = (body: string) => z.string().trim().min(1, "Skriv en text.").max(20000).parse(body);
 export const SUPPORT_FILE_TYPES = ["image/png","image/jpeg","image/gif","image/webp","image/heic","application/pdf","text/plain","text/csv","application/zip","application/msword","application/vnd.openxmlformats-officedocument.wordprocessingml.document","application/vnd.ms-excel","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet","application/vnd.ms-outlook","message/rfc822"];
 export function validateSupportFile(file: File) {
@@ -98,20 +117,44 @@ export function createSupportClient(supabase: SupabaseClient, userId: string, re
     },
     async create(input) {
       const draft = ticketDraftSchema.parse(input); z.uuid().parse(input.customerId);
+      const attemptId = input.id === undefined ? undefined : z.uuid().parse(input.id);
       const customer = await supabase.from("profiles").select(CUSTOMER_SELECT).eq("id",input.customerId).eq("role","customer").eq("is_active",true).maybeSingle();
       failed(customer.error); if (!customer.data) throw new Error("Kunden är inte tillgänglig.");
       const result = await supabase.from("tickets").insert({
+        ...(attemptId ? {id:attemptId} : {}),
         requester_id:customer.data.id, organization_id:customer.data.organization_id,
         project_id:input.projectId?z.uuid().parse(input.projectId):null,
         subject:draft.subject,description:draft.description,category_key:draft.category_key,source:"portal",
         contact_name:customer.data.full_name,contact_email:customer.data.email,contact_phone:customer.data.phone,
-      }).select("id").single(); failed(result.error); return result.data!.id;
+      }).select("id").single();
+      if (attemptId && result.error?.code === DUPLICATE) {
+        // A retry of an attempt whose answer was lost: the ticket exists already.
+        const existing = await supabase.from("tickets").select("id,requester_id,subject").eq("id",attemptId).maybeSingle();
+        failed(existing.error);
+        if (existing.data && existing.data.requester_id === customer.data.id && existing.data.subject === draft.subject) return attemptId;
+        throw new Error(ATTEMPT_CONFLICT);
+      }
+      failed(result.error); return result.data!.id;
     },
-    async message(id, body, staff) {
-      const result = await supabase.from("ticket_messages").insert({ticket_id:id,author_id:userId,body:text(body),is_from_staff:staff}); failed(result.error);
+    async message(id, body, staff, messageId) {
+      const attemptId = messageId === undefined ? undefined : z.uuid().parse(messageId); const value = text(body);
+      const result = await supabase.from("ticket_messages").insert({...(attemptId ? {id:attemptId} : {}),ticket_id:id,author_id:userId,body:value,is_from_staff:staff});
+      if (attemptId && result.error?.code === DUPLICATE) {
+        const existing = await supabase.from("ticket_messages").select("id,ticket_id,author_id,body").eq("id",attemptId).maybeSingle(); failed(existing.error);
+        if (existing.data && existing.data.ticket_id === id && existing.data.author_id === userId && existing.data.body === value) return;
+        throw new Error(ATTEMPT_CONFLICT);
+      }
+      failed(result.error);
     },
-    async note(id, body) {
-      const result = await supabase.from("ticket_internal_notes").insert({ticket_id:id,author_id:userId,body:text(body)}); failed(result.error);
+    async note(id, body, noteId) {
+      const attemptId = noteId === undefined ? undefined : z.uuid().parse(noteId); const value = text(body);
+      const result = await supabase.from("ticket_internal_notes").insert({...(attemptId ? {id:attemptId} : {}),ticket_id:id,author_id:userId,body:value});
+      if (attemptId && result.error?.code === DUPLICATE) {
+        const existing = await supabase.from("ticket_internal_notes").select("id,ticket_id,author_id,body").eq("id",attemptId).maybeSingle(); failed(existing.error);
+        if (existing.data && existing.data.ticket_id === id && existing.data.author_id === userId && existing.data.body === value) return;
+        throw new Error(ATTEMPT_CONFLICT);
+      }
+      failed(result.error);
     },
     async update(id, changes) {
       const valid = z.object({status_key:z.enum(["mottaget","pagar","vantar_pa_kund","lost","stangt"]).optional(),assignee_id:z.uuid().nullable().optional()}).strict().parse(changes);
@@ -152,20 +195,35 @@ export function createSupportClient(supabase: SupabaseClient, userId: string, re
 
 /** Browser portal uses its httpOnly cookie, not a browser-readable JWT. */
 export function createPortalSupportClient(request: typeof fetch = fetch, base = "/api/control/support"): SupportClient {
+  async function send(url: string, init: RequestInit): Promise<{ data?: unknown; error?: string }> {
+    let response: Response;
+    try { response = await request(url, init); }
+    catch { throw new SupportConnectionError(); }
+    let result: { data?: unknown; error?: string } | null = null;
+    try { result = await response.json(); } catch { result = null; }
+    if (!result || typeof result !== "object") {
+      if (response.status === 502 || response.status === 503 || response.status === 504) throw new SupportConnectionError();
+      throw new Error(`Servern svarade inte som väntat (HTTP ${response.status}). Försök igen.`);
+    }
+    if (!response.ok) {
+      if (response.status === 503 && result.error === SUPPORT_CONNECTION_ERROR) throw new SupportConnectionError();
+      throw new Error(result.error ?? "Åtgärden misslyckades.");
+    }
+    return result;
+  }
   async function call<T>(action: string, args: Record<string,unknown> = {}, file?: File): Promise<T> {
     let body: BodyInit; let headers: HeadersInit | undefined;
     if (file) { const data = new FormData(); data.set("action",action); data.set("args",JSON.stringify(args)); data.set("file",file); body=data; }
     else { body=JSON.stringify({action,args}); headers={"Content-Type":"application/json"}; }
-    const response = await request(base,{method:"POST",headers,body,credentials:"same-origin"});
-    const result = await response.json(); if (!response.ok) throw new Error(result.error ?? "Åtgärden misslyckades.");
+    const result = await send(base,{method:"POST",headers,body,credentials:"same-origin"});
     return result.data as T;
   }
   return {
     overview:()=>call("overview"),detail:(id)=>call("detail",{id}),create:(input)=>call("create",{input}),
-    message:(id,body,staff)=>call("message",{id,body,staff}),note:(id,body)=>call("note",{id,body}),
+    message:(id,body,staff,messageId)=>call("message",{id,body,staff,messageId}),note:(id,body,noteId)=>call("note",{id,body,noteId}),
     update:(id,changes)=>call("update",{id,changes}),reopen:(id,reason)=>call("reopen",{id,reason}),
     upload:(id,file,visibility,retryId)=>call("upload",{id,visibility,retryId},file),download:(attachmentId)=>call("download",{attachmentId}),
-    register:async(input)=>{const response=await request("/api/control/customers",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(input),credentials:"same-origin"});const body=await response.json();if(!response.ok)throw new Error(body.error??"Kunden kunde inte registreras.");},
+    register:async(input)=>{await send("/api/control/customers",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(input),credentials:"same-origin"});},
     organization:(name,orgNo)=>call("organization",{name,orgNo}),
   };
 }

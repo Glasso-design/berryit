@@ -8,6 +8,7 @@ import type {
 import { useSession } from "@/auth/session";
 import { AiClientError, createAiClient } from "@/ai/client";
 import { DiagnosticPanel } from '@/ai/DiagnosticPanel';
+import { KnowledgeBase } from "@/ai/KnowledgeBase";
 
 function errorText(error: unknown): string {
   return error instanceof AiClientError
@@ -141,7 +142,7 @@ function MessageCard({ message }: { message: AiMessage }) {
 }
 
 export function OnarlyAi({ onOpenTicket }: { onOpenTicket: (reference: string) => void }) {
-  const { access, config, session } = useSession();
+  const { access, config, session, supabase } = useSession();
   const client = useMemo(
     () => (config && session ? createAiClient(config, session) : null),
     [config, session],
@@ -159,6 +160,9 @@ export function OnarlyAi({ onOpenTicket }: { onOpenTicket: (reference: string) =
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Why the AI service itself could not be reached (adapter not deployed, down, refused).
+  const [contextError, setContextError] = useState<string | null>(null);
+  const [knowledgeVersion, setKnowledgeVersion] = useState(0);
   const askAttempt = useRef<AskAttempt | null>(null);
   const diagnosticAttempt = useRef<DiagnosticAttempt | null>(null);
 
@@ -195,11 +199,12 @@ export function OnarlyAi({ onOpenTicket }: { onOpenTicket: (reference: string) =
       .context()
       .then((next) => {
         if (cancelled) return;
+        setContextError(null);
         setContext(next);
         setOrganizationId((current) => current || next.organizations[0]?.id || "");
       })
       .catch((caught) => {
-        if (!cancelled) setError(errorText(caught));
+        if (!cancelled) setContextError(errorText(caught));
       });
     return () => {
       cancelled = true;
@@ -240,6 +245,14 @@ export function OnarlyAi({ onOpenTicket }: { onOpenTicket: (reference: string) =
   );
   const latestAssistant = [...messages].reverse().find((message) => message.role === "assistant") ?? null;
   const latestQuestion = [...messages].reverse().find((message) => message.role === "user")?.body ?? "";
+  // Honest availability: only a server-configured gateway can answer. Without it
+  // nothing is sent and no answer is created (the adapter refuses with GATEWAY_DISABLED).
+  const aiAvailable = Boolean(context?.gateway.available);
+  const unavailableReason = contextError
+    ? `BerryIT:s AI-tjänst svarar inte: ${contextError}`
+    : context && !context.gateway.available
+      ? context.gateway.reason ?? "ONARLY AI Gateway saknar serverkonfiguration."
+      : null;
 
   const ask = async () => {
     const text = question.trim();
@@ -343,6 +356,7 @@ export function OnarlyAi({ onOpenTicket }: { onOpenTicket: (reference: string) =
         verifiedSolution: solution,
       });
       setNotice(`”${entry.title}” sparades som verifierad lösning.`);
+      setKnowledgeVersion((value) => value + 1);
     } catch (caught) {
       setError(errorText(caught));
     } finally {
@@ -384,6 +398,20 @@ export function OnarlyAi({ onOpenTicket }: { onOpenTicket: (reference: string) =
         </span>
       </header>
 
+      {unavailableReason && (
+        <section
+          role="status"
+          aria-label="ONARLY AI är inte tillgänglig"
+          className="rounded-2xl border border-amber-300/40 bg-amber-300/5 p-4 text-sm"
+        >
+          <h2 className="font-display text-lg font-semibold text-amber-300">ONARLY AI är inte tillgänglig</h2>
+          <p className="mt-2">{unavailableReason}</p>
+          <p className="mt-2 text-muted">
+            Inga frågor skickas och inga AI-svar skapas. Sparad historik och kunskapsbasen går att läsa, och
+            Sök felet kan förhandsgranska underlag.
+          </p>
+        </section>
+      )}
       {error && (
         <p role="alert" className="rounded-xl border border-berry/40 bg-berry/10 px-4 py-3 text-sm">
           {error}
@@ -541,13 +569,15 @@ export function OnarlyAi({ onOpenTicket }: { onOpenTicket: (reference: string) =
               onChange={(event) => setQuestion(event.target.value)}
               rows={4}
               maxLength={8000}
+              disabled={!aiAvailable}
               placeholder="Fråga om ett fel, kod, drift eller ett supportärende…"
-              className="w-full resize-y rounded-xl border border-field bg-ink-2 px-4 py-3 text-sm text-paper placeholder:text-muted focus:border-berry focus:outline-none"
+              className="w-full resize-y rounded-xl border border-field bg-ink-2 px-4 py-3 text-sm text-paper placeholder:text-muted focus:border-berry focus:outline-none disabled:opacity-50"
             />
             <label className="mt-3 flex items-start gap-2 text-xs text-muted">
               <input
                 type="checkbox"
                 checked={approved}
+                disabled={!aiAvailable}
                 onChange={(event) => setApproved(event.target.checked)}
                 className="mt-0.5"
               />
@@ -565,7 +595,7 @@ export function OnarlyAi({ onOpenTicket }: { onOpenTicket: (reference: string) =
                   !question.trim() ||
                   !organizationId ||
                   !approved ||
-                  !context?.gateway.available
+                  !aiAvailable
                 }
                 className="rounded-full bg-berry px-5 py-2 text-sm font-semibold text-white hover:bg-berry-deep disabled:opacity-50"
               >
@@ -591,6 +621,10 @@ export function OnarlyAi({ onOpenTicket }: { onOpenTicket: (reference: string) =
           </div>
         </section>
       </div>
+
+      {supabase && organizationId && (
+        <KnowledgeBase supabase={supabase} organizationId={organizationId} version={knowledgeVersion} />
+      )}
     </div>
   );
 }

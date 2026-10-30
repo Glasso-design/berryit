@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import type { SupportClient, SupportOverview, Ticket, TicketDetail } from "../support-workflow";
+import { isSupportConnectionError } from "../support-workflow";
 
 const button="rounded-lg border border-line px-3 py-2 text-sm disabled:opacity-50";
 const field="w-full rounded-lg border border-field bg-ink px-3 py-2 text-sm text-paper";
 const when=(value:string|null)=>value ? new Date(value).toLocaleString("sv-SE") : "Ej registrerat";
 const chronological=<T extends {created_at:string;id:string}>(rows:T[])=>[...rows].sort((a,b)=>a.created_at.localeCompare(b.created_at)||a.id.localeCompare(b.id));
+const errorText=(cause:unknown)=>cause instanceof Error?cause.message:String(cause);
 const eventLabel:Record<string,string>={created:"Skapat",status_changed:"Status ändrad",priority_changed:"Prioritet ändrad",category_changed:"Kategori ändrad",assigned:"Tekniker tilldelad",customer_message:"Meddelande",internal_note:"Intern anteckning",attachment_added:"Bilaga registrerad"};
 
 export function SupportWorkspace({client,userId,focus=null,renderAdditional}:{client:SupportClient;userId:string;focus?:string|null;renderAdditional?:(ticket:Ticket)=>ReactNode}) {
@@ -17,6 +19,11 @@ export function SupportWorkspace({client,userId,focus=null,renderAdditional}:{cl
   const [error,setError]=useState<string|null>(null);
   const [busy,setBusy]=useState(false);
   const [notice,setNotice]=useState<string|null>(null);
+  // One client-generated id per write attempt, reused for every retry of the same
+  // input (lost answer, broken connection, double submit): the server stores it once.
+  const createAttempt=useRef<{key:string;id:string}|null>(null);
+  const writeAttempts=useRef(new Map<string,string>());
+  const attempt=(kind:string,ticketId:string,body:string)=>{const key=`${kind}|${ticketId}|${body}`;let id=writeAttempts.current.get(key);if(!id){id=crypto.randomUUID();writeAttempts.current.set(key,id);}return {key,id};};
   useEffect(()=>{
     let cancelled=false;
     client.overview().then(value=>{if(!cancelled){setData(value);if(focus)setSelected(value.tickets.find(ticket=>ticket.reference===focus||ticket.id===focus)?.id??null);}}).catch(cause=>{if(!cancelled)setError(String(cause.message??cause));});
@@ -28,14 +35,22 @@ export function SupportWorkspace({client,userId,focus=null,renderAdditional}:{cl
     return()=>{cancelled=true;};
   },[client,selected]);
   async function refresh(id=selected) {
-    setDetail(null);
     const overview=await client.overview();setData(overview);
     if(id){const value=await client.detail(id);setDetail(value);setSelected(id);}
   }
   async function perform(action:()=>Promise<void>,message:string,form?:HTMLFormElement){
     setBusy(true);setError(null);setNotice(null);
-    try{await action();form?.reset();await refresh();setNotice(message);}
-    catch(cause){setError(cause instanceof Error?cause.message:String(cause));setDetail(null);}
+    try{await action();}
+    catch(cause){
+      setError(errorText(cause));
+      // A lost connection keeps the ticket and everything typed, so the user can retry.
+      // Any other refusal reloads what the server allows now (rights may have changed).
+      if(!isSupportConnectionError(cause)&&selected){const id=selected;void client.detail(id).then(setDetail,()=>setDetail(null));}
+      setBusy(false);return;
+    }
+    form?.reset();
+    try{await refresh();setNotice(message);}
+    catch(cause){setNotice(message);setError(`Vyn kunde inte uppdateras: ${errorText(cause)}`);}
     finally{setBusy(false);}
   }
   const ticket=detail?.ticket;
@@ -50,7 +65,9 @@ export function SupportWorkspace({client,userId,focus=null,renderAdditional}:{cl
       <form aria-label="Skapa supportärende" className="space-y-3 rounded-xl border border-line p-5" onSubmit={event=>{
         event.preventDefault();const form=event.currentTarget;const values=new FormData(form);
         setBusy(true);setError(null);setNotice(null);
-        void client.create({customerId:String(values.get("customerId")),subject:String(values.get("subject")),description:String(values.get("description")),category_key:String(values.get("category_key")),projectId:String(values.get("projectId")??"")||null}).then(async id=>{form.reset();await refresh(id);setNotice("Ärendet är skapat.");}).catch(cause=>setError(String(cause.message??cause))).finally(()=>setBusy(false));
+        const input={customerId:String(values.get("customerId")),subject:String(values.get("subject")),description:String(values.get("description")),category_key:String(values.get("category_key")),projectId:String(values.get("projectId")??"")||null};
+        const key=JSON.stringify(input);const current=createAttempt.current?.key===key?createAttempt.current:{key,id:crypto.randomUUID()};createAttempt.current=current;
+        void client.create({...input,id:current.id}).then(async id=>{createAttempt.current=null;form.reset();setNotice("Ärendet är skapat.");try{await refresh(id);}catch(cause){setError(`Vyn kunde inte uppdateras: ${errorText(cause)}`);}}).catch(cause=>setError(errorText(cause))).finally(()=>setBusy(false));
       }}><h2 className="text-xl font-semibold">Nytt supportärende</h2>
         <label className="block text-sm">Välj kund<select aria-label="Välj kund" name="customerId" className={field} required defaultValue={data.customers.some(customer=>customer.id===userId)?userId:""}><option value="">Välj befintlig kund</option>{data.customers.map(customer=><option key={customer.id} value={customer.id}>{customer.full_name||customer.email||"Kund"} · {customer.organization_id ? data.organizations.find(org=>org.id===customer.organization_id)?.name??"Företagskund":"Privatperson"}</option>)}</select></label>
         <p className="text-xs text-muted">Ny kund registreras i Kunder av behörig administratör. Privatperson kräver ingen organisation.</p>
@@ -72,9 +89,9 @@ export function SupportWorkspace({client,userId,focus=null,renderAdditional}:{cl
         {closed&&<form aria-label="Återöppna ärende" className="space-y-2" onSubmit={event=>{event.preventDefault();const form=event.currentTarget;void perform(()=>client.reopen(ticket.id,String(new FormData(form).get("reason"))),"Ärendet är återöppnat och orsaken finns i historiken.",form);}}><p className="text-sm text-muted">Orsaken visas även för kunden i ärendehistoriken. Lägg interna uppgifter i arbetsanteckningar.</p><label className="block text-sm">Orsak till återöppning<input name="reason" className={field} required minLength={3} maxLength={1000}/></label><button className={button} disabled={busy}>Återöppna ärende</button></form>}
       </section>}
       <section aria-label="Kundmeddelanden" className="space-y-3"><h3 className="text-xl font-semibold">Kundmeddelanden</h3><ol className="space-y-2">{chronological(detail.messages).map(message=><li key={message.id} className="rounded-lg border border-line p-3"><p className="text-xs text-muted">{message.is_from_staff?"Support":"Kund"} · {when(message.created_at)}</p><p className="mt-1 whitespace-pre-wrap">{message.body}</p></li>)}</ol>
-        {(!closed||detail.canWork)&&<form aria-label="Skriv kundmeddelande" onSubmit={event=>{event.preventDefault();const form=event.currentTarget;void perform(()=>client.message(ticket.id,String(new FormData(form).get("body")),detail.canWork),"Kundmeddelandet är registrerat.",form);}}><label className="block text-sm">Nytt kundmeddelande<textarea name="body" className={field} required maxLength={20000}/></label><button className={button} disabled={busy}>Skicka kundmeddelande</button></form>}
+        {(!closed||detail.canWork)&&<form aria-label="Skriv kundmeddelande" onSubmit={event=>{event.preventDefault();const form=event.currentTarget;const body=String(new FormData(form).get("body"));const current=attempt("message",ticket.id,body);void perform(async()=>{await client.message(ticket.id,body,detail.canWork,current.id);writeAttempts.current.delete(current.key);},"Kundmeddelandet är registrerat.",form);}}><label className="block text-sm">Nytt kundmeddelande<textarea name="body" className={field} required maxLength={20000}/></label><button className={button} disabled={busy}>Skicka kundmeddelande</button></form>}
       </section>
-      {detail.canWork&&<section aria-label="Interna arbetsanteckningar" className="space-y-3"><h3 className="text-xl font-semibold">Interna arbetsanteckningar</h3><p className="text-sm text-muted">Felsökning och åtgärder för behörig personal. Visas inte för kunden. Rättelser läggs till som nya anteckningar.</p><ol className="space-y-2">{chronological(detail.notes).map(note=><li key={note.id} className="rounded-lg border border-line p-3"><p className="text-xs text-muted">{when(note.created_at)}</p><p className="whitespace-pre-wrap">{note.body}</p></li>)}</ol><form aria-label="Dokumentera felsökning" onSubmit={event=>{event.preventDefault();const form=event.currentTarget;void perform(()=>client.note(ticket.id,String(new FormData(form).get("body"))),"Intern arbetsanteckning sparad.",form);}}><label className="block text-sm">Felsökning och utförd åtgärd<textarea className={field} name="body" required maxLength={20000}/></label><button className={button} disabled={busy}>Spara intern anteckning</button></form></section>}
+      {detail.canWork&&<section aria-label="Interna arbetsanteckningar" className="space-y-3"><h3 className="text-xl font-semibold">Interna arbetsanteckningar</h3><p className="text-sm text-muted">Felsökning och åtgärder för behörig personal. Visas inte för kunden. Rättelser läggs till som nya anteckningar.</p><ol className="space-y-2">{chronological(detail.notes).map(note=><li key={note.id} className="rounded-lg border border-line p-3"><p className="text-xs text-muted">{when(note.created_at)}</p><p className="whitespace-pre-wrap">{note.body}</p></li>)}</ol><form aria-label="Dokumentera felsökning" onSubmit={event=>{event.preventDefault();const form=event.currentTarget;const body=String(new FormData(form).get("body"));const current=attempt("note",ticket.id,body);void perform(async()=>{await client.note(ticket.id,body,current.id);writeAttempts.current.delete(current.key);},"Intern arbetsanteckning sparad.",form);}}><label className="block text-sm">Felsökning och utförd åtgärd<textarea className={field} name="body" required maxLength={20000}/></label><button className={button} disabled={busy}>Spara intern anteckning</button></form></section>}
       <section aria-label="Ärendebilagor" className="space-y-3"><h3 className="text-xl font-semibold">Bilagor</h3><ul className="space-y-2">{detail.attachments.map(attachment=><li key={attachment.id} className="rounded-lg border border-line p-3"><span>{attachment.file_name} · {attachment.visibility==="internal"?"Intern":"Kundsynlig"} · {attachment.upload_completed_at?"Uppladdad":"Uppladdning ej slutförd"}</span>{attachment.upload_completed_at?<button className={`${button} ml-2`} disabled={busy} onClick={()=>{
         // Open a blank tab synchronously; no remote session or unsafe scheme.
         const tab=window.open("about:blank","_blank");if(tab)tab.opener=null;

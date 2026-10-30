@@ -46,16 +46,19 @@ Superanvändaren i `supabase/postgres` är **`supabase_admin`** (rollen `postgre
 
 `migrate.sh` kör varje fil i **en** transaktion (`psql --single-transaction`, även
 när SQL läses från stdin; verifierat med psql 16 och 17). Migreringar som tar lås
-på `auth.users` sätter därför `set local lock_timeout = '5s'` och
-`set local statement_timeout = '60s'` först i filen, och vägrar köra utanför en
-transaktion. Skälet: en migrering som *väntar* på sitt lås ställer alla nya
+på `auth.users` begränsar därför först i filen `lock_timeout` till **högst 2 s** och
+`statement_timeout` till högst 60 s, för just den transaktionen. Har operatören
+redan satt ett kortare värde behålls det (MASTER PASS 3, fynd F-B6), t.ex.
+`{ echo "set local lock_timeout = '1s';"; cat <fil>; } | … psql --single-transaction`.
+Filen vägrar köra utanför en transaktion (SQLSTATE `25P01`, ingenting ändras). Skälet: en migrering som *väntar* på sitt lås ställer alla nya
 skrivningar på tabellen i kö bakom sig, även GoTrues inloggningar
 (`last_sign_in_at`). Utan tidsgräns står inloggningarna still tills den
 blockerande transaktionen är klar.
 
 `20261029090000_registration_gotrue_metadata.sql` tar `ShareRowExclusiveLock` på
 `auth.users` (`create or replace trigger`). Läsare påverkas inte; skrivare väntar
-högst 5 s.
+högst 2 s (uppmätt: en inloggning som köar bakom en väntande migrering tar ≈1 s
+i stället för ≈4 s med den tidigare gränsen 5 s).
 
 Om `migrate.sh` avbryts med `canceling statement due to lock timeout`
 (SQLSTATE `55P03`):
@@ -80,9 +83,20 @@ Om `migrate.sh` avbryts med `canceling statement due to lock timeout`
 5. Slår gränsen till upprepade gånger: kör i ett servicefönster med låg trafik.
    Höj inte tidsgränsen i migreringsfilen.
 
-Återställning finns i `../../supabase/rollback/20261029090000_registration_gotrue_metadata_rollback.sql`
-(samma tidsgränser; tar `AccessExclusiveLock` på `auth.users` och tar bort
-ledger-raden i samma transaktion så att `migrate.sh` kan applicera igen).
+Återställning finns i `../../supabase/rollback/20261029090000_registration_gotrue_metadata_rollback.sql`.
+Den har egen `BEGIN`/`COMMIT` och körs som `supabase_admin`:
+
+```bash
+docker exec -i berryit-support-db psql -U supabase_admin -d postgres -v ON_ERROR_STOP=1 -f - \
+  < ../../supabase/rollback/20261029090000_registration_gotrue_metadata_rollback.sql
+```
+
+Den vägrar innan något ändras om rollen varken är superuser eller ägare av
+`auth.users`, eller om någon av de två funktionerna inte har exakt den repeterade
+kroppen (md5-vakt). Den tar `AccessExclusiveLock` på `auth.users` (även läsare
+väntar), väntar därför högst 2 s (kortare operatörsvärde behålls), återställer
+`audit_support_registry_changes()` och tar bort ledger-raden i samma transaktion
+så att `migrate.sh` kan applicera igen. En andra körning är ofarlig.
 
 ### GoTrue- eller Supabase Auth-uppgradering med BERRYiT-triggers
 
@@ -122,6 +136,32 @@ organisation, aktiveringsspärr, registrar eller audit-rad. Kontrollen är
 skrivskyddad och reparerar ingenting. Kör den på varje stack där
 `20261014235633_complete_support_workflow.sql` redan applicerats. Hantering av träffar:
 `../../docs/masterpass2-registration-check.md`.
+
+## Vercel Preview
+
+Webbens Vercel-projekt bygger en Preview för pushade grenar. En Preview kör
+ogranskad kod och nås av alla som har URL:en. Därför kör `npm run build` (det
+bygge Vercel kör, `vercel.json` → `buildCommand`) först `scripts/preview-guard.mjs`,
+som **vägrar bygga** när `VERCEL_ENV=preview` och
+
+- en `NEXT_PUBLIC_*`/`SUPABASE_*`-variabel pekar på en produktionsvärd:
+  `portal.berryit.se`, `prod-node-01` (även `prod-node-01.<tailnet>.ts.net`),
+  `100.100.11.6`, plus värdarna i `BERRYIT_PRODUCTION_DATA_HOSTS`
+  (kommaseparerad, underdomäner räknas). Lägg Vercel-projektets
+  produktions-Supabase-värd där (t.ex. `<ref>.supabase.co`), för alla miljöer;
+- `SUPABASE_SERVICE_ROLE_KEY` finns i Preview utan markören
+  `BERRYIT_PREVIEW_ISOLATED_BACKEND=<värd>`, som måste vara exakt värden i
+  `NEXT_PUBLIC_SUPABASE_URL` för en egen, isolerad Preview-backend (aldrig
+  produktion);
+- service role-nyckeln själv tillhör ett listat produktionsprojekt.
+
+I alla miljöer vägras en `NEXT_PUBLIC_*`-variabel som innehåller en service
+role-/secret-nyckel (den skulle hamna i webbläsarens JavaScript).
+
+Ägaråtgärd i Vercel (projektet `berryit`): ta bort `SUPABASE_SERVICE_ROLE_KEY`
+och produktions-URL:er från **Preview**; ge Preview en egen backend eller inga
+värden. Utan service role-nyckel svarar kundregistreringen ärligt "inte
+konfigurerad". Vakten visar variabelnamn och värdar, aldrig nyckelvärden.
 
 ## Säkerhet
 

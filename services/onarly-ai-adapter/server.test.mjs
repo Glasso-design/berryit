@@ -299,3 +299,26 @@ test("a retried question with the same messageId is stored once and an answered 
   });
   assert.deepEqual(tables.ai_messages.map((m) => m.role), ["user", "assistant"]);
 });
+
+// MASTER PASS 3: without a configured ONARLY AI Gateway (the production default)
+// a question is refused with GATEWAY_DISABLED before anything is stored.
+test("gateway not configured: 503 GATEWAY_DISABLED, no question stored, failure audited, no gateway call", async () => {
+  const failures = [];
+  const boundary = fakeBoundary({ auditFailure: async (_c, _i, _r, code) => { failures.push(code); } });
+  let gatewayCalls = 0;
+  const gateway = { enabled: false, complete: async () => { gatewayCalls++; } };
+  await withApi(boundary, gateway, async (request) => {
+    const response = await request(`/conversations/${IDS.conversation}/messages`, {
+      method: "POST",
+      body: JSON.stringify({ text: "Varför fungerar inte VPN?", approvedForAi: true, messageId: randomUUID() }),
+    });
+    assert.equal(response.status, 503);
+    assert.equal(response.body.error.code, "GATEWAY_DISABLED");
+    const context = await request("/context");
+    assert.equal(context.status, 200);
+    assert.equal(context.body.gateway.available, false);
+  });
+  assert.equal(gatewayCalls, 0);
+  assert.equal(boundary.calls.some((call) => call[0] === "user-message"), false, "no unanswered question may be stored");
+  assert.deepEqual(failures, ["GATEWAY_DISABLED"]);
+});
