@@ -7,9 +7,13 @@ name: masterpass1-berryit
 # and a SIM ONARLY AI gateway. No repository secrets, no external backends.
 # MASTER PASS 2: also on fix/masterpass2-** (review fixes) with the ops step
 # (M2 lock_timeout via migrate.sh, M4 registration check, M3 GoTrue upgrade).
+# MASTER PASS 3: also on fix/masterpass3-** with the complete user journey
+# (journey.e2e.mjs, incl. a second AI adapter WITHOUT gateway = production default),
+# the Vercel Preview build guard proven with real `npm run build`s (job preview-guard),
+# and the migration rehearsal of the changed 20261029090000 + rollback (job migration-rehearsal).
 on:
   push:
-    branches: ["fix/masterpass1-**", "fix/masterpass2-**"]
+    branches: ["fix/masterpass1-**", "fix/masterpass2-**", "fix/masterpass3-**"]
 
 permissions:
   contents: read
@@ -101,6 +105,13 @@ jobs:
           MP1_REPO="$PWD" MP1_SUITE=ui-real node --test --test-reporter=./tests/masterpass1/annotate-reporter.mjs --test-reporter-destination=stdout tests/masterpass1/ui.e2e.mjs
           s=$?; echo "ui $s" >> "$MP1_STATUS"
 
+      - name: REAL user journey (registration, tickets per role, broken connection, AI unavailable, KB, Sök felet, audit, 390 px)
+        if: ${{ !cancelled() }}
+        run: |
+          set +e
+          MP1_REPO="$PWD" MP1_SUITE=journey-real node --test --test-reporter=./tests/masterpass1/annotate-reporter.mjs --test-reporter-destination=stdout tests/masterpass1/journey.e2e.mjs
+          s=$?; echo "journey $s" >> "$MP1_STATUS"
+
       - name: REAL ops tests (M4 registration check, M2 lock_timeout via migrate.sh, M3 GoTrue upgrade)
         if: ${{ !cancelled() }}
         timeout-minutes: 10
@@ -115,7 +126,7 @@ jobs:
           set +e
           mkdir -p test-results   # desktop react-bundle test writes its evidence file here
           out=""
-          for cmd in "npm run lint" "npm run typecheck" "npm test --prefix desktop" "npm run db:test" "npm run db:repair-test" "npm run db:upgrade-test" "npm run db:master-upgrade-test" "npm run db:access-test" "node --test supabase/tests/upgrade-plan.test.mjs supabase/tests/http-preflight.test.mjs supabase/tests/isolated-environment.test.mjs" "npm run test:support-workflow" "npm run test:project-access" "npm run test:ai-diagnostics" "node --test services/onarly-ai-adapter/server.test.mjs services/onarly-ai-adapter/diagnostics.test.mjs services/onarly-ai-adapter/diagnostic-http.test.mjs"; do
+          for cmd in "npm run lint" "npm run typecheck" "npm test --prefix desktop" "npm run db:test" "npm run db:repair-test" "npm run db:upgrade-test" "npm run db:master-upgrade-test" "npm run db:access-test" "node --test supabase/tests/upgrade-plan.test.mjs supabase/tests/http-preflight.test.mjs supabase/tests/isolated-environment.test.mjs" "node --test scripts/preview-guard.test.mjs" "npm run test:support-workflow" "npm run test:project-access" "npm run test:ai-diagnostics" "node --test services/onarly-ai-adapter/server.test.mjs services/onarly-ai-adapter/diagnostics.test.mjs services/onarly-ai-adapter/diagnostic-http.test.mjs"; do
             env -u NEXT_PUBLIC_SUPABASE_URL $cmd > "$MP1_DIR/regression.log" 2>&1; c=$?
             out="$out [$cmd]=$c"
             if [ $c -ne 0 ]; then echo "::error title=regression $cmd::$(tail -c 2500 "$MP1_DIR/regression.log" | sed ':a;N;$!ba;s/\n/%0A/g')"; fi
@@ -139,6 +150,7 @@ jobs:
           export MP1_GATEWAY_TOKEN=unused-for-logs MP1_REPO="$GITHUB_WORKSPACE"
           cd deploy/berryit-support
           if grep -q ' [1-9]' "$MP1_STATUS"; then
+            echo "::warning title=logs ai-adapter-nogw::$(docker logs --tail 25 berryit-ai-adapter-nogw 2>&1 | grep -v -i 'key\|secret\|password' | tail -c 2000 | sed ':a;N;$!ba;s/\n/%0A/g')"
             for svc in ai-adapter auth rest storage; do
               echo "::warning title=logs $svc::$(docker compose --project-directory . --env-file secrets/stack.env -f compose.yaml -f ../../tests/masterpass1/compose.override.yaml --profile onarly-ai logs --no-color --tail 25 $svc 2>/dev/null | grep -v -i 'key\|secret\|password' | tail -c 2500 | sed ':a;N;$!ba;s/\n/%0A/g')"
             done
@@ -161,6 +173,140 @@ jobs:
       - name: Teardown + verdict
         if: ${{ always() }}
         run: |
+          docker rm -f berryit-ai-adapter-nogw >/dev/null 2>&1 || true
           (export MP1_GATEWAY_TOKEN=unused-for-teardown MP1_REPO="$GITHUB_WORKSPACE"; cd deploy/berryit-support && docker compose --project-directory . --env-file secrets/stack.env -f compose.yaml -f ../../tests/masterpass1/compose.override.yaml --profile onarly-ai down -v >/dev/null 2>&1 || true)
           cat "$MP1_STATUS" 2>/dev/null
           ! grep -q ' [1-9]' "$MP1_STATUS"
+
+  # MASTER PASS 3: the Vercel Preview build guard (scripts/preview-guard.mjs), proven with the
+  # real build Vercel runs (`npm run build`, vercel.json buildCommand). No secret is used: the
+  # "service-role key" below is a syntactically valid but unsigned fixture; nothing is deployed
+  # and every .next/ output is deleted.
+  preview-guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      PROD_URL: https://portal.berryit.se
+      ISOLATED_URL: https://berryit-preview.isolated-ci.net
+      FIXTURE_ANON: sb_publishable_ci_fixture_not_a_real_key
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install
+        run: npm ci --no-audit --no-fund
+      - name: Fixture service-role key (unsigned, CI only)
+        run: |
+          k=$(node -e 'const b=o=>Buffer.from(JSON.stringify(o)).toString("base64url");console.log([b({alg:"HS256",typ:"JWT"}),b({role:"service_role",iss:"supabase"}),"ci-fixture-unsigned"].join("."))')
+          echo "::add-mask::$k"; echo "FIXTURE_SERVICE=$k" >> "$GITHUB_ENV"
+      - name: Guard unit tests
+        run: |
+          set +e
+          node --test --test-reporter=tap scripts/preview-guard.test.mjs > unit.log 2>&1; code=$?
+          pass=$(grep -E '^# pass' unit.log | awk '{print $3}'); fail=$(grep -E '^# fail' unit.log | awk '{print $3}')
+          if [ "$code" = 0 ]; then echo "::notice title=preview guard unit tests::PASS ${pass} / fail ${fail}"; else echo "::error title=preview guard unit tests::exit ${code}, pass ${pass} fail ${fail}%0A$(grep -E '^not ok' unit.log | head -5 | tr '\n' ' ')"; fi
+          exit $code
+      - name: Gap on the RC (4d5bb97 build = next build --webpack, no guard) - Preview against production builds
+        run: |
+          set +e
+          rm -rf .next
+          VERCEL_ENV=preview NEXT_PUBLIC_SUPABASE_URL=$PROD_URL NEXT_PUBLIC_SUPABASE_ANON_KEY=$FIXTURE_ANON SUPABASE_SERVICE_ROLE_KEY=$FIXTURE_SERVICE \
+            npx next build --webpack > gap.log 2>&1; code=$?
+          echo "::notice title=RC build path without guard::VERCEL_ENV=preview -> ${PROD_URL} with a service-role key: exit ${code}, BUILD_ID $([ -f .next/BUILD_ID ] && echo present || echo absent) (0/present = the gap this branch closes)"
+          rm -rf .next; exit 0
+      - name: Refused - real npm run build (preview -> production host / listed host / service key without marker / secret in NEXT_PUBLIC)
+        run: |
+          set +e; fails=0; out=""
+          refuse() { # $1 label; rest = env assignments
+            local label="$1"; shift; rm -rf .next
+            env "$@" npm run build > refused.log 2>&1; local code=$?
+            local msg=$(grep -E '^ERROR' refused.log | head -1 | cut -c1-300)
+            if [ "$code" != 0 ] && [ ! -f .next/BUILD_ID ]; then out="$out%0AREFUSED ${label}: exit ${code}, no build. ${msg}"; else out="$out%0ANOT REFUSED ${label}: exit ${code}"; fails=$((fails+1)); fi
+          }
+          refuse "preview -> portal.berryit.se" VERCEL_ENV=preview VERCEL_GIT_COMMIT_REF="$GITHUB_REF_NAME" NEXT_PUBLIC_SUPABASE_URL=$PROD_URL NEXT_PUBLIC_SUPABASE_ANON_KEY=$FIXTURE_ANON
+          refuse "preview -> prod-node-01 tailnet" VERCEL_ENV=preview NEXT_PUBLIC_SUPABASE_URL=http://100.100.11.6:8700 NEXT_PUBLIC_SUPABASE_ANON_KEY=$FIXTURE_ANON
+          refuse "preview -> host from BERRYIT_PRODUCTION_DATA_HOSTS" VERCEL_ENV=preview BERRYIT_PRODUCTION_DATA_HOSTS=prodref123.supabase.co NEXT_PUBLIC_SUPABASE_URL=https://prodref123.supabase.co NEXT_PUBLIC_SUPABASE_ANON_KEY=$FIXTURE_ANON
+          refuse "preview isolated URL + service-role key, no marker" VERCEL_ENV=preview NEXT_PUBLIC_SUPABASE_URL=$ISOLATED_URL NEXT_PUBLIC_SUPABASE_ANON_KEY=$FIXTURE_ANON SUPABASE_SERVICE_ROLE_KEY=$FIXTURE_SERVICE
+          refuse "preview service-role key, marker names another host" VERCEL_ENV=preview NEXT_PUBLIC_SUPABASE_URL=$ISOLATED_URL NEXT_PUBLIC_SUPABASE_ANON_KEY=$FIXTURE_ANON SUPABASE_SERVICE_ROLE_KEY=$FIXTURE_SERVICE BERRYIT_PREVIEW_ISOLATED_BACKEND=portal.berryit.se
+          refuse "production: service-role key in NEXT_PUBLIC_SUPABASE_ANON_KEY" VERCEL_ENV=production NEXT_PUBLIC_SUPABASE_URL=$PROD_URL NEXT_PUBLIC_SUPABASE_ANON_KEY=$FIXTURE_SERVICE
+          rm -rf .next
+          if [ $fails = 0 ]; then echo "::notice title=preview guard refusals (real npm run build)::$out"; else echo "::error title=preview guard refusals (real npm run build)::$fails not refused$out"; fi
+          exit $fails
+      - name: Builds - real npm run build of an isolated Preview (with and without a declared service-role backend)
+        run: |
+          set +e; fails=0; out=""
+          build() { local label="$1"; shift; rm -rf .next
+            env "$@" npm run build > built.log 2>&1; local code=$?
+            local prod=$(grep -rl 'portal\.berryit\.se' .next 2>/dev/null | wc -l); local iso=$(grep -rl 'berryit-preview\.isolated-ci\.net' .next 2>/dev/null | wc -l)
+            if [ "$code" = 0 ] && [ -f .next/BUILD_ID ] && [ "$prod" = 0 ]; then out="$out%0ABUILT ${label}: exit 0, BUILD_ID present, ${iso} output files carry the isolated host, 0 carry portal.berryit.se. $(grep -E '^(INFO|WARN)' built.log | head -2 | tr '\n' ' ' | cut -c1-260)"
+            else out="$out%0AFAILED ${label}: exit ${code}, prod refs ${prod}, isolated refs ${iso}. $(grep -E '^(ERROR|Error|error)' built.log | head -3 | tr '\n' ' ' | cut -c1-400)"; fails=$((fails+1)); fi; }
+          build "isolated Preview, no service-role key" VERCEL_ENV=preview VERCEL_GIT_COMMIT_REF="$GITHUB_REF_NAME" NEXT_PUBLIC_SUPABASE_URL=$ISOLATED_URL NEXT_PUBLIC_SUPABASE_ANON_KEY=$FIXTURE_ANON
+          build "isolated Preview with service-role key + matching marker" VERCEL_ENV=preview NEXT_PUBLIC_SUPABASE_URL=$ISOLATED_URL NEXT_PUBLIC_SUPABASE_ANON_KEY=$FIXTURE_ANON SUPABASE_SERVICE_ROLE_KEY=$FIXTURE_SERVICE BERRYIT_PREVIEW_ISOLATED_BACKEND=berryit-preview.isolated-ci.net
+          rm -rf .next
+          if [ $fails = 0 ]; then echo "::notice title=isolated Preview builds (real npm run build)::$out"; else echo "::error title=isolated Preview builds (real npm run build)::$out"; fi
+          exit $fails
+
+  # MASTER PASS 3: re-run the pass-2 rehearsal steps that the changed migration (F-B6) and the
+  # adopted guarded rollback (F-B7) affect, on the repo's own production stack definition with
+  # REAL GoTrue: base -> seed -> baseline -> lock probes -> UP -> verify -> DOWN -> verify -> RE-UP -> verify.
+  migration-rehearsal:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      MP2_CANDIDATE: supabase/migrations/20261029090000_registration_gotrue_metadata.sql
+      MP2_DOWN: supabase/rollback/20261029090000_registration_gotrue_metadata_rollback.sql
+      MP2_EXPECT_M1_FIXED: "1"
+      MP2_DOWN_SINGLE_TX: "0"
+      R: node tests/masterpass2/migration-rehearsal/report.mjs
+      S: bash tests/masterpass2/migration-rehearsal/berryit-ci.sh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Paths and candidate
+        run: |
+          echo "MP2_DIR=$RUNNER_TEMP/mp2" >> "$GITHUB_ENV"; mkdir -p "$RUNNER_TEMP/mp2"
+          echo "::notice title=candidate::up=$MP2_CANDIDATE sha256=$(sha256sum "$MP2_CANDIDATE" | cut -c1-64) down=$MP2_DOWN sha256=$(sha256sum "$MP2_DOWN" | cut -c1-64)"
+      - name: 1 stack on the base schema (REAL supabase/postgres + GoTrue + PostgREST + Storage, migrate.sh)
+        id: stack
+        run: $R "1 stack" -- $S stack
+      - name: 2 seed representative existing data through REAL GoTrue
+        id: seed
+        if: ${{ !cancelled() && steps.stack.outcome == 'success' }}
+        run: $R "2 seed" -- $S seed
+      - name: 3 baseline (pre-checks, pg_dump --schema-only, checksums)
+        id: baseline
+        if: ${{ !cancelled() && steps.seed.outcome == 'success' }}
+        run: $R "3 baseline" -- $S baseline
+      - name: 4 lock probes (rolled back) incl. lock queue with REAL GoTrue login and operator timeouts (F-B6)
+        if: ${{ !cancelled() && steps.baseline.outcome == 'success' }}
+        run: $R "4 locks" -- $S locks
+      - name: 5 UP via migrate.sh, again, and raw
+        id: up
+        if: ${{ !cancelled() && steps.baseline.outcome == 'success' }}
+        run: $R "5 up" -- $S up
+      - name: 6 verify after UP (REAL GoTrue + SIM cases on the real image)
+        if: ${{ !cancelled() && steps.up.outcome == 'success' }}
+        run: $R "6 verify up" -- $S verify-up
+      - name: 7 DOWN (guarded rollback file, F-B7), schema diff, checksums
+        id: down
+        if: ${{ !cancelled() && steps.up.outcome == 'success' }}
+        run: $R "7 down" -- $S down
+      - name: 8 verify after DOWN (base behaviour expected)
+        if: ${{ !cancelled() && steps.down.outcome == 'success' }}
+        run: $R "8 verify down" -- $S verify-down
+      - name: 9 RE-UP via migrate.sh
+        id: reup
+        if: ${{ !cancelled() && steps.down.outcome == 'success' }}
+        run: $R "9 re-up" -- $S reup
+      - name: 10 verify after RE-UP
+        if: ${{ !cancelled() && steps.reup.outcome == 'success' }}
+        run: $R "10 verify re-up" -- $S verify-reup
+      - name: Teardown
+        if: ${{ always() }}
+        run: |
+          (cd deploy/berryit-support && docker compose --project-directory . --env-file secrets/stack.env -f compose.yaml down -v >/dev/null 2>&1 || true)
+          rm -rf deploy/berryit-support/secrets "$RUNNER_TEMP/mp2/fixture.json"

@@ -177,13 +177,35 @@ test("B4 negative: wrong role / other tenant / forged staff flag / invalid input
   ok("negative matrix support route", JSON.stringify(results));
 });
 
-test("B5 double submit: two identical concurrent create requests", async () => {
+test("B5 double submit: two identical concurrent create requests (without and with the UI's client id)", async () => {
   const subject = `MP1 dubbel ${run}`;
   const input = { input: { customerId: fx.users.custa, subject, description: "Dubbelklick-simulering MASTER PASS 1.", category_key: "dator" } };
   const statuses = (await Promise.all([route(T.techa, "create", input), route(T.techa, "create", input)])).map((r) => r.status);
   const n = sql(`select count(*)::int n from public.tickets where subject='${subject}'`)[0].n;
-  evidence(`INFO double-submit API: statuses=${statuses} tickets=${n} (no idempotency key in the API; UI test covers button lock)`);
+  evidence(`INFO double-submit API without a client id: statuses=${statuses} tickets=${n} (an API client that sends no id gets no dedupe)`);
   assert.deepEqual(statuses, [200, 200]);
+  // MASTER PASS 3: the web and Desktop UIs send a client-generated id per create attempt.
+  // Two concurrent identical requests with the SAME id (double submit, or a retry after a lost answer) create ONE ticket.
+  const keyed = `MP3 dubbel med id ${run}`;
+  const id = randomUUID();
+  const keyedInput = { input: { ...input.input, subject: keyed, id } };
+  const keyedResponses = await Promise.all([route(T.techa, "create", keyedInput), route(T.techa, "create", keyedInput)]);
+  const keyedBodies = await Promise.all(keyedResponses.map(json));
+  const keyedRows = sql(`select id from public.tickets where subject='${keyed}'`);
+  const retry = await route(T.techa, "create", keyedInput);
+  const retryBody = await json(retry);
+  const conflict = await route(T.techa, "create", { input: { ...keyedInput.input, subject: `${keyed} ändrad` } });
+  const conflictBody = await json(conflict);
+  const after = sql(`select count(*)::int n from public.tickets where subject like 'MP3 dubbel med id ${run}%'`)[0].n;
+  evidence(`INFO double-submit API with one client id: statuses=${keyedResponses.map((r) => r.status)} ids=${keyedBodies.map((b) => b.data === id)} tickets=${keyedRows.length} retry=${retry.status}/${retryBody.data === id} conflict=${conflict.status} total=${after}`);
+  assert.deepEqual(keyedResponses.map((r) => r.status), [200, 200], JSON.stringify(keyedBodies));
+  assert.deepEqual(keyedBodies.map((b) => b.data), [id, id]);
+  assert.deepEqual(keyedRows, [{ id }], "same client id => exactly one ticket");
+  assert.equal(retry.status, 200); assert.equal(retryBody.data, id);
+  assert.equal(conflict.status, 400, "same id with different content is refused");
+  assert.match(conflictBody.error, /Försöket matchar inte/);
+  assert.equal(after, 1);
+  ok("double submit with client id", `1 ticket for 2 concurrent + 1 retried request; conflict refused`);
 });
 
 test("B6 close, reopen with reason, history visible to customer", async () => {
