@@ -125,7 +125,8 @@ export default async function InstallningarPage() {
         )}
         {ctx.isSuperAdmin && (
           <p className="mt-4 text-sm text-muted">
-            Att dela ut och återkalla roller görs i ett senare pass. Databasen tillåter det redan, med revision.
+            Roller delas ut och återkallas under Projekt → Användare och tilldelningar (kräver behörigheten roles.grant
+            och verifierad tvåfaktor). Varje ändring revisionsloggas.
           </p>
         )}
       </section>
